@@ -1,3 +1,4 @@
+/** @registry part-of="knowns-core" */
 import type { ReactNode } from "react";
 
 /** One run of JSON text: a key, a string, a number, a literal (true/false/null) or plain punctuation. */

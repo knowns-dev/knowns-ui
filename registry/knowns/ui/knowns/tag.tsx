@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="tag" type="ui" title="Tag" description="Quiet chips and TagGroup with selection, removal and roving focus." */
 
 import {
   isValidElement,

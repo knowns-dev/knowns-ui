@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="data-table" type="ui" title="Data table" description="A real <table> with multi-sort, filters and search, range selection, column visibility, density, pagination or virtualised rows." */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
@@ -300,7 +301,7 @@ export function DataTable<T>({
       <div
         ref={scrollRef}
         onScroll={(e) => virtual && setScrollTop(e.currentTarget.scrollTop)}
-        className={cn("relative overflow-auto border-t [scrollbar-width:thin]", HAIR, !pg && "rounded-b-2xl")}
+        className={cn("kn-scroll kn-scroll-fade-x relative overflow-auto border-t", HAIR, !pg && "rounded-b-2xl")}
         style={!paged ? { maxHeight } : undefined}
       >
         <table aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : ariaLabel} aria-rowcount={virtual ? sorted.length + 1 : undefined} aria-busy={loading || undefined} className="w-full border-separate border-spacing-0 text-[13px]">

@@ -1,3 +1,4 @@
+/** @registry name="knowns-floating" type="lib" title="Floating position" description="useFloating(): portal host, fixed positioning, flip and clamp for tooltips, popovers, menus and comboboxes." deps="knowns-core" */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type RefObject } from "react";
 
 export type FloatingSide = "top" | "bottom" | "left" | "right";

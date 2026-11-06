@@ -1,3 +1,4 @@
+/** @registry name="skeleton" type="ui" title="Skeleton" description="Loading placeholder." */
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 /** Placeholder while content loads. Size it with classes: <Skeleton className="h-4 w-32" />. */

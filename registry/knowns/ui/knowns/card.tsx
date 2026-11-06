@@ -1,3 +1,4 @@
+/** @registry name="card" type="ui" title="Card" description="Bordered surface with header, content and footer parts." */
 import type { HTMLAttributes } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 

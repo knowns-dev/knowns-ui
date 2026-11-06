@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="file-drop" type="ui" title="File drop" description="Drop zone with type/size/count validation and FileItem rows with progress, retry and remove." */
 
 import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

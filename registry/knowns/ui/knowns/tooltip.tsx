@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="tooltip" type="ui" title="Tooltip" description="Short hint on hover or focus, four sides, optional description; portaled above everything." */
 
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";

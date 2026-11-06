@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="thinking-state" type="ui" title="Thinking state" description="What an agent is doing before it answers: live steps, searched sources, tool calls, streaming reasoning and a 'Thought for 12s' summary." */
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

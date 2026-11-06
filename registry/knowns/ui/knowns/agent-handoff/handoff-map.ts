@@ -1,3 +1,4 @@
+/** @registry part-of="agent-handoff" */
 import type { AgentSnapshot, Task, TaskItem } from "@/registry/knowns/lib/knowns/types";
 
 /** Something passed along with a handoff (the run's TaskItem). `lost` means it didn't make it. */

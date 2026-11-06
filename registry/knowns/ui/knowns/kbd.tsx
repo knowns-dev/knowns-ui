@@ -1,3 +1,4 @@
+/** @registry name="kbd" type="ui" title="Kbd" description="Keyboard key." */
 import type { HTMLAttributes } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 

@@ -1,3 +1,4 @@
+/** @registry part-of="agent-fleet" */
 import type { ReactNode } from "react";
 import type { Actor, AgentSnapshot } from "@/registry/knowns/lib/knowns/types";
 import type { AgentRun } from "@/registry/knowns/lib/knowns/run";
@@ -310,6 +311,44 @@ export function sidePoints(from: Pt, trunkX: number, to: Pt): Pt[] {
 /** Children below the parent: straight down from the parent's edge, then right into the child. */
 export function belowPoints(from: Pt, to: Pt): Pt[] {
   return [from, { x: from.x, y: to.y }, to];
+}
+
+/**
+ * Children in a row below the parent card. When the child starts right of the parent's dot: down, then
+ * right (belowPoints). When it sits further left (the tree is pulled in from the edge): down into the gap
+ * at `gapY`, left to a trunk just before the child, down, then right into it.
+ */
+export function dropPoints(from: Pt, to: Pt, gapY: number, trunkGap = 20): Pt[] {
+  if (to.x - from.x >= 24) return belowPoints(from, to);
+  const trunk = to.x - trunkGap;
+  return [from, { x: from.x, y: gapY }, { x: trunk, y: gapY }, { x: trunk, y: to.y }, to];
+}
+
+/** Grid columns that repeat(auto-fill, minmax(min, 1fr)) makes in `width` with `gap`. */
+export function gridColumns(width: number, min: number, gap: number): number {
+  return Math.max(1, Math.floor((width + gap) / (min + gap)));
+}
+
+/**
+ * Columns for `count` cards in `width`: as many as fit at `min` px, but no more than there are cards, so a
+ * short fleet fills the row instead of leaving empty tracks. Cards stop growing at `max` px: past that the
+ * grid keeps extra (empty) columns rather than stretching one or two cards across a wide screen.
+ */
+export function fleetColumns(width: number, count: number, min: number, max: number, gap: number): number {
+  const fit = gridColumns(width, min, gap);
+  const enough = Math.max(1, Math.min(fit, count));
+  const notTooWide = Math.ceil((width + gap) / (max + gap));
+  return Math.min(fit, Math.max(enough, notTooWide));
+}
+
+/** Index of the last card in the open card's row: the tree row goes right after it. */
+export function rowEnd(index: number, cols: number, count: number): number {
+  return Math.min(count - 1, Math.floor(index / cols) * cols + cols - 1);
+}
+
+/** Left offset of the tree under the open card: indented from the card, pulled in so `treeW` fits. */
+export function treeLeft(cardLeft: number, width: number, treeW: number, indent: number, min = 24): number {
+  return Math.round(Math.max(min, Math.min(cardLeft + indent, width - treeW)));
 }
 
 /** SVG path through orthogonal points with rounded corners (radius clamped to half of each leg). */

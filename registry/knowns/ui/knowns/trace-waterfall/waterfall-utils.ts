@@ -1,3 +1,4 @@
+/** @registry part-of="trace-waterfall" */
 import type { Actor, Span } from "@/registry/knowns/lib/knowns/types";
 
 export interface WaterfallRow {

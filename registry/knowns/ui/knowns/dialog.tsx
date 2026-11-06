@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="dialog" type="ui" title="Dialog" description="Modal on the native dialog element." */
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

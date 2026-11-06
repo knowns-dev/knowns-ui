@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="otp-input" type="ui" title="OTP input" description="One-time code in N slots: paste fills all, auto-advance and backspace, numeric or alphanumeric, masked, error state, onComplete." */
 
 import { useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

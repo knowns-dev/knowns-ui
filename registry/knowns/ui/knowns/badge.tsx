@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="badge" type="ui" title="Badge" description="Status labels in six tones: sizes, pill shape, icons, clickable and removable badges, and BadgeGroup with +N overflow." */
 
 import {
   Children,

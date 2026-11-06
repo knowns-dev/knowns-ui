@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="agent-graph" type="ui" title="Agent graph" description="Live graph of agents and the tools they call: tree, horizontal and center layouts, light streaks per call, detail popover." */
 
 import {
   useCallback,
@@ -17,6 +18,7 @@ import type { Actor, ActorState, Link, Span } from "@/registry/knowns/lib/knowns
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
 import { STATE_LABEL, actorColors, formatUsd, rootAgent, spanColor } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
+import { layoutScale } from "@/registry/knowns/lib/knowns/utils";
 import { buildTree } from "./tree";
 import { EMPTY_LAYOUT, layoutCenterStable, layoutFlow, layoutTree, type Layout } from "./layout";
 import { layoutRadial } from "./radial";
@@ -73,6 +75,12 @@ export interface AgentGraphProps {
    * Fitting keeps the graph clear of them.
    */
   zoomControls?: boolean | ZoomCorner;
+  /**
+   * Touch in a fixed frame. "pan" (default): one finger pans, two pinch, like a canvas app. "scroll": swipes
+   * scroll the page (touch-action: pan-y) and the graph only takes taps and its zoom buttons. Use "scroll"
+   * when the graph sits in a long page, such as a landing hero, so a swipe never gets trapped.
+   */
+  touch?: "pan" | "scroll";
   formatSpend?: (amount: number) => string;
   /** Header title, or false to hide the header bar. */
   header?: ReactNode | false;
@@ -143,6 +151,7 @@ export function AgentGraph(props: AgentGraphProps) {
     width: frameW,
     fit = "contain",
     zoomControls,
+    touch = "pan",
   } = props;
   /** A fixed frame: the canvas is scaled to fit `height` (and `width`), with pan and zoom. */
   const framed = height !== undefined && fit === "contain";
@@ -401,8 +410,10 @@ export function AgentGraph(props: AgentGraphProps) {
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
+      // Screen px to the stage's layout px, so the focal point holds under CSS zoom (a docs preview at 50%).
       const r = el.getBoundingClientRect();
-      zoomAt(Math.exp(-e.deltaY * 0.0022), e.clientX - r.left, e.clientY - r.top, false);
+      const k = layoutScale(el);
+      zoomAt(Math.exp(-e.deltaY * 0.0022), (e.clientX - r.left) / k.x, (e.clientY - r.top) / k.y, false);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -412,7 +423,8 @@ export function AgentGraph(props: AgentGraphProps) {
   const gesture = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean; dist?: number } | null>(null);
   const isEmptyTarget = (t: EventTarget | null) => !(t as HTMLElement | null)?.closest?.("button, a, input, [role=dialog], [data-zoom-controls], [data-card]");
   const onStagePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!framed || (e.pointerType === "mouse" && e.button !== 0) || !isEmptyTarget(e.target)) return;
+    // touch="scroll": a finger never starts a pan, so the page keeps the swipe.
+    if (!framed || (e.pointerType === "mouse" && e.button !== 0) || (e.pointerType === "touch" && touch === "scroll") || !isEmptyTarget(e.target)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
     const v = view.current;
@@ -431,7 +443,8 @@ export function AgentGraph(props: AgentGraphProps) {
     if (pts.length >= 2 && g.dist) {
       const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       const r = e.currentTarget.getBoundingClientRect();
-      zoomAt(d / g.dist, (pts[0].x + pts[1].x) / 2 - r.left, (pts[0].y + pts[1].y) / 2 - r.top, false);
+      const k = layoutScale(e.currentTarget);
+      zoomAt(d / g.dist, ((pts[0].x + pts[1].x) / 2 - r.left) / k.x, ((pts[0].y + pts[1].y) / 2 - r.top) / k.y, false);
       g.dist = d;
       return;
     }
@@ -439,8 +452,10 @@ export function AgentGraph(props: AgentGraphProps) {
     const dy = e.clientY - g.y;
     if (!g.moved && Math.hypot(dx, dy) < 4) return;
     g.moved = true;
-    v.x = g.vx + dx;
-    v.y = g.vy + dy;
+    // The drag follows the pointer in layout px (screen px divided by any CSS zoom).
+    const k = layoutScale(e.currentTarget);
+    v.x = g.vx + dx / k.x;
+    v.y = g.vy + dy / k.y;
     v.user = true;
     clampView();
     applyView(false);
@@ -1020,7 +1035,7 @@ export function AgentGraph(props: AgentGraphProps) {
         onDoubleClick={(e) => framed && isEmptyTarget(e.target) && fitNow()}
         onPointerEnter={(e) => framed && e.pointerType === "mouse" && setOverCanvas(true)}
         onPointerLeave={() => setOverCanvas(false)}
-        style={framed ? { height, touchAction: "none" } : undefined}
+        style={framed ? { height, touchAction: touch === "scroll" ? "pan-y" : "none" } : undefined}
         className={cn(
           "group/stage relative min-h-[200px] bg-muted/20 dark:bg-transparent [background-attachment:local] [background-image:radial-gradient(color-mix(in_srgb,var(--foreground)_7%,transparent)_1px,transparent_1.2px),linear-gradient(color-mix(in_srgb,var(--foreground)_3%,transparent)_1px,transparent_1px),linear-gradient(90deg,color-mix(in_srgb,var(--foreground)_3%,transparent)_1px,transparent_1px)] [background-position:9px_9px,0_0,0_0] [background-size:18px_18px,90px_90px,90px_90px]",
           framed ? "cursor-grab select-none overflow-hidden active:cursor-grabbing" : "overflow-x-auto overflow-y-hidden",

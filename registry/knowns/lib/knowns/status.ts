@@ -1,3 +1,4 @@
+/** @registry part-of="knowns-core" */
 import type { Actor, ActorState } from "./types";
 
 export const STATE_LABEL: Record<ActorState, string> = {

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="switch" type="ui" title="Switch" description="On/off toggle with role=switch." */
 
 import { useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

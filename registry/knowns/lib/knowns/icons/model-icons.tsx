@@ -1,3 +1,4 @@
+/** @registry part-of="knowns-icons" */
 import type { ReactNode } from "react";
 import { MODEL_SVGS } from "./model-icons.data";
 

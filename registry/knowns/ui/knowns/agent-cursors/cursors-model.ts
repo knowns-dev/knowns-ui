@@ -1,3 +1,4 @@
+/** @registry part-of="agent-cursors" */
 /**
  * Agent Cursors model: the document, tracked-change suggestions and comments, plus the pure helpers the
  * component uses (text segments with suggestions applied, tag layout without overlaps, pointer motion).

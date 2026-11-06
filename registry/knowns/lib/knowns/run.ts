@@ -1,3 +1,4 @@
+/** @registry name="knowns-core" type="lib" title="Knowns UI core" description="cn() helper, Actor/Span/Task/Approval types, the event-fed run store (createAgentRun, useAgentRun) and shared state labels and colours." css="knowns-core.css.json" */
 import { useState, useSyncExternalStore } from "react";
 import type { Actor, AgentEvent, AgentSnapshot, Approval, Link, Span, Task } from "./types";
 

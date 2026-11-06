@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="breadcrumb" type="ui" title="Breadcrumb" description="Path of links that collapses middle items into an overflow menu." */
 
 import type { ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

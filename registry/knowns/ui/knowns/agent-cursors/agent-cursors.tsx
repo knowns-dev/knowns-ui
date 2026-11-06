@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="agent-cursors" type="ui" title="Agent cursors" description="Agents editing a document like multiplayer teammates: coloured live pointers with name, action and spend, suggestions typed in as tracked changes with accept, reject and Accept all, image resize, code edits, margin comments with a typing indicator, and a Table tab." */
 
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import type { AgentRun } from "@/registry/knowns/lib/knowns/run";
@@ -6,7 +7,7 @@ import { useAgentSnapshot } from "@/registry/knowns/lib/knowns/run";
 import type { Actor } from "@/registry/knowns/lib/knowns/types";
 import { AGENT_PALETTE, formatUsd, readableInk, rootAgent, STATE_LABEL } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
-import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { cn, focusRing, layoutScale, localRect } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
 import { SegmentedControl } from "../segmented-control";
 import {
@@ -281,16 +282,19 @@ export function AgentCursors({
       const dt = Math.min(64, now - last);
       last = now;
       const { agents, presence, animate } = live.current;
+      // Everything below is in the frame's own layout px, so the cursors land right under CSS zoom too.
       const fr = frame.getBoundingClientRect();
+      const sc = layoutScale(frame);
+      const local = (r: DOMRect): Rect => ({ left: (r.left - fr.left) / sc.x, top: (r.top - fr.top) / sc.y, w: r.width / sc.x, h: r.height / sc.y });
       const targets = agents.map((a, i) => {
         const caret = frame.querySelector<HTMLElement>(`[data-kn-caret="${CSS.escape(a.id)}"]`);
         const id = presence[a.id]?.target;
         const anchor = caret ?? (id ? frame.querySelector<HTMLElement>(`[data-kn-anchor="${CSS.escape(id)}"]`) : null);
-        const r = anchor && anchor.getClientRects().length ? anchor.getBoundingClientRect() : null;
+        const r = anchor && anchor.getClientRects().length ? localRect(anchor, frame) : null;
         if (!r) return { a, i, on: false, x: 0, y: 0 };
         // The caret's foot while typing; otherwise a spot near the start of the target.
-        const x = caret ? r.right - fr.left : r.left - fr.left + Math.min(28 + i * 9, r.width * 0.4);
-        const y = caret ? r.bottom - fr.top - 2 : r.top - fr.top + Math.min(r.height * 0.55, 18);
+        const x = caret ? r.right : r.left + Math.min(28 + i * 9, r.width * 0.4);
+        const y = caret ? r.bottom - 2 : r.top + Math.min(r.height * 0.55, 18);
         return { a, i, on: true, x, y };
       });
       const boxes: TagBox[] = [];
@@ -321,17 +325,17 @@ export function AgentCursors({
       // Tags keep off the comment rail and off the text being edited (each line of a pending suggestion).
       const obstacles: Rect[] = [];
       for (const el of frame.querySelectorAll<HTMLElement>("[data-kn-rail-card], [data-kn-edit]")) {
-        for (const r of el.getClientRects()) obstacles.push({ left: r.left - fr.left, top: r.top - fr.top, w: r.width, h: r.height });
+        for (const r of el.getClientRects()) obstacles.push(local(r));
       }
       if (now - softAt > 150) {
         softAt = now;
         soft = [];
         for (const el of frame.querySelectorAll<HTMLElement>("[data-kn-text]")) {
           range.selectNodeContents(el);
-          for (const r of range.getClientRects()) if (r.width > 1) soft.push({ left: r.left - fr.left, top: r.top - fr.top, w: r.width, h: r.height });
+          for (const r of range.getClientRects()) if (r.width > 1) soft.push(local(r));
         }
       }
-      for (const pl of layoutTags(boxes, { w: fr.width, h: fr.height }, { obstacles, soft })) {
+      for (const pl of layoutTags(boxes, { w: frame.offsetWidth, h: frame.offsetHeight }, { obstacles, soft })) {
         const tag = tagEls.current.get(pl.id)!;
         const prev = tagPos.get(pl.id);
         // Ease between spots so a tag that changes side glides instead of jumping.

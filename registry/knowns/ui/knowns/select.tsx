@@ -1,3 +1,4 @@
+/** @registry name="select" type="ui" title="Select" description="Native select in the field style, with sizes, a leading icon and a placeholder." */
 import type { ReactNode, Ref, SelectHTMLAttributes } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { fieldClass } from "./input";

@@ -1,8 +1,9 @@
 "use client";
+/** @registry name="ai-answer" type="ui" title="AI answer" description="Streamed answer with steps, sources, numbered citations that preview their source, copy, regenerate, feedback and follow-ups." */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
 import { Spinner } from "../spinner";
 import { Tooltip } from "../tooltip";
@@ -196,7 +197,7 @@ export function AiAnswer({
 
   const copy = async () => {
     const plain = toPlainText(text, sources);
-    await navigator.clipboard?.writeText(plain);
+    await writeClipboard(plain);
     onCopy?.(plain);
     setCopied(true);
     setAnnounce("Answer copied");

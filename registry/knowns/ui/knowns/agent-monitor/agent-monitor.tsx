@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="agent-monitor" type="ui" title="Agent monitor" description="One agent at work as a card: current step with a clock and cost, a time strip, finished steps with tool logos, the exact command when it needs your OK, and a folded bar." */
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

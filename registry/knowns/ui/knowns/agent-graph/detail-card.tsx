@@ -1,4 +1,5 @@
 "use client";
+/** @registry part-of="agent-graph" */
 
 import type { ReactNode, Ref } from "react";
 import type { Actor, ActorState, Span } from "@/registry/knowns/lib/knowns/types";

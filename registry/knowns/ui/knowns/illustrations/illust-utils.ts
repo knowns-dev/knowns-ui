@@ -1,3 +1,4 @@
+/** @registry name="illustrations-core" type="ui" title="Illustrations core" description="Shared helpers for illustrations: pause offscreen, in hidden tabs and under reduced motion." deps="knowns-core" */
 /** Small geometry and text helpers shared by the illustrations. */
 
 export type Pt = { x: number; y: number };

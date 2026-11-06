@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="checkbox" type="ui" title="Checkbox" description="Native checkbox with label, description, indeterminate state and sizes; CheckboxGroup with select-all." */
 
 import { useCallback, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

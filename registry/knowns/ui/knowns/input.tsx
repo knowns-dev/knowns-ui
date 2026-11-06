@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="input" type="ui" title="Input" description="Input with sizes, prefix/suffix, shortcut and password reveal; InputGroup; Textarea with counter and auto-grow; Field with label, hint, error, required and help." */
 
 import {
   Children,
@@ -90,13 +91,22 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   /** Content inside the field, on the right (a unit, a button). */
   trailing?: ReactNode;
   invalid?: boolean;
+  /** type="password" only: whether the value is shown. Leave unset to let the eye button manage it. */
+  revealed?: boolean;
+  /** type="password" only: called when the eye button is pressed. */
+  onRevealedChange?: (revealed: boolean) => void;
   ref?: Ref<HTMLInputElement>;
 }
 
-export function Input({ size = "md", icon, prefix, suffix, shortcut, trailing, invalid, type, className, ref, ...rest }: InputProps) {
+export function Input({ size = "md", icon, prefix, suffix, shortcut, trailing, invalid, revealed, onRevealedChange, type, className, ref, ...rest }: InputProps) {
   const inner = useRef<HTMLInputElement>(null);
   const setRef = useMergedRef(inner, ref);
-  const [shown, setShown] = useState(false);
+  const [ownShown, setOwnShown] = useState(false);
+  const shown = revealed ?? ownShown;
+  const setShown = (next: boolean) => {
+    if (revealed === undefined) setOwnShown(next);
+    onRevealedChange?.(next);
+  };
   const password = type === "password";
 
   // Clicks on the prefix, suffix or padding still put the caret in the input.
@@ -134,7 +144,7 @@ export function Input({ size = "md", icon, prefix, suffix, shortcut, trailing, i
           aria-label="Show password"
           aria-pressed={shown}
           disabled={rest.disabled}
-          onClick={() => setShown((s) => !s)}
+          onClick={() => setShown(!shown)}
           className={cn(
             "-mr-1.5 grid size-6 flex-none cursor-pointer place-items-center rounded-[6px] text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground disabled:pointer-events-none",
             focusRing,

@@ -1,10 +1,13 @@
 "use client";
+/** @registry name="context-window" type="ui" title="Context window" description="How full a model context is and what fills it: segmented token bar or cell field, thresholds in words, per-part files you can remove, compact action, ring variant and per-turn sparkline." */
 
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
 import { Tooltip } from "../tooltip";
+import { ContextCells } from "./context-cells";
 import {
+  autoCellTokens,
   contextState,
   contextTotals,
   drops,
@@ -12,6 +15,7 @@ import {
   formatTokens as defaultFormat,
   isReserve,
   resolveLimit,
+  segTokens,
   segmentColors,
   stateSentence,
   thresholdsText,
@@ -19,7 +23,7 @@ import {
   type ContextState,
 } from "./context-utils";
 
-export type { ContextKind, ContextSegment, ContextState } from "./context-utils";
+export type { ContextKind, ContextPart, ContextSegment, ContextState } from "./context-utils";
 
 export interface ContextWindowProps {
   /** What's in the window, in order: system prompt, tool definitions, history, files… and the output reserve. */
@@ -45,6 +49,15 @@ export interface ContextWindowProps {
   action?: ReactNode;
   /** "bar": the full card. "ring": a small donut for headers, breakdown in a tooltip. */
   variant?: "bar" | "ring";
+  /** The card's picture: a segmented "bar" (default) or a field of "cells", each worth `cellTokens`. */
+  view?: "bar" | "cells";
+  /** Tokens per cell (cells view). Default: a round number giving about 240 cells. */
+  cellTokens?: number;
+  /** Remove one part of a segment (a file): shows an x on each part in the legend. */
+  onRemove?: (segmentId: string, partId: string) => void;
+  /** Shows a footer with what's left and a New chat button. */
+  onNewChat?: () => void;
+  newChatLabel?: string;
   /** Ring diameter in px (ring only). */
   size?: number;
   title?: ReactNode;
@@ -79,6 +92,11 @@ export function ContextWindow(props: ContextWindowProps) {
     compacting,
     action,
     variant = "bar",
+    view = "bar",
+    cellTokens,
+    onRemove,
+    onNewChat,
+    newChatLabel = "New chat",
     title = "Context window",
     formatTokens: fmt = defaultFormat,
     className,
@@ -88,6 +106,7 @@ export function ContextWindow(props: ContextWindowProps) {
   const state = limit ? contextState(totals.fill, warnAt, fullAt) : "ok";
   const colors = useMemo(() => segmentColors(segments), [segments]);
   const [hot, setHot] = useState<string | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
   const titleId = useId();
 
   const valueText = limit
@@ -140,6 +159,23 @@ export function ContextWindow(props: ContextWindowProps) {
         {compactButton && <div className="flex-none">{compactButton}</div>}
       </div>
 
+      {view === "cells" ? (
+        <div {...meter} aria-labelledby={titleId}>
+          <ContextCells
+            segments={segments}
+            span={span}
+            cellTokens={cellTokens ?? autoCellTokens(span)}
+            colors={colors}
+            limit={limit}
+            warnAt={warnAt}
+            fullAt={fullAt}
+            hot={hot}
+            onHot={setHot}
+            busy={compacting ? segments.filter((s) => s.kind === "history").map((s) => s.id) : undefined}
+            fmt={fmt}
+          />
+        </div>
+      ) : (
       <div {...meter} aria-labelledby={titleId} className="relative">
         <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted" onMouseLeave={() => setHot(null)}>
           {ordered.map((s) => {
@@ -151,7 +187,7 @@ export function ContextWindow(props: ContextWindowProps) {
                 onMouseEnter={() => setHot(s.id)}
                 className="h-full transition-[width,opacity] duration-500 ease-out first:rounded-l-full motion-reduce:transition-none [&+&]:border-l [&+&]:border-card"
                 style={{
-                  width: `${(Math.max(0, s.tokens) / span) * 100}%`,
+                  width: `${(segTokens(s) / span) * 100}%`,
                   background: isReserve(s) ? HATCH(c) : c,
                   opacity: hot && hot !== s.id ? 0.3 : 1,
                 }}
@@ -174,6 +210,7 @@ export function ContextWindow(props: ContextWindowProps) {
             />
           ))}
       </div>
+      )}
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[12.5px]">
         <span className={cn("font-medium", STATE_TONE[state])} aria-live="polite">
@@ -182,34 +219,100 @@ export function ContextWindow(props: ContextWindowProps) {
         {limit && <span className="text-muted-foreground">{thresholdsText(warnAt, fullAt)}</span>}
       </div>
 
-      <ul className="grid grid-cols-1 gap-x-4 gap-y-0.5 @lg:grid-cols-2" onMouseLeave={() => setHot(null)}>
+      <ul className="grid grid-cols-1 items-start gap-x-4 gap-y-0.5 @lg:grid-cols-2" onMouseLeave={() => setHot(null)}>
         {ordered.map((s) => {
           const c = colors.get(s.id)!;
-          const share = limit ? s.tokens / limit : totals.used ? s.tokens / totals.used : 0;
-          return (
-            <li
-              key={s.id}
-              tabIndex={0}
-              onMouseEnter={() => setHot(s.id)}
-              onFocus={() => setHot(s.id)}
-              onBlur={() => setHot(null)}
-              aria-label={`${s.label}: ${fmt(s.tokens)} tokens, ${formatPct(share)}${isReserve(s) ? ", reserved" : ""}`}
-              className={cn(
-                "flex items-center gap-2 rounded-md px-1.5 py-1 text-[12.5px] outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ring/70",
-                hot && hot !== s.id && "opacity-45",
-                hot === s.id && "bg-muted/60",
-              )}
-            >
+          const tokens = segTokens(s);
+          const share = limit ? tokens / limit : totals.used ? tokens / totals.used : 0;
+          const parts = s.parts ?? [];
+          const isOpen = !!open[s.id];
+          const row = (
+            <>
               <span aria-hidden="true" className="size-2.5 flex-none rounded-[3px]" style={{ background: isReserve(s) ? HATCH(c) : c }} />
-              <span className="min-w-0 flex-1 truncate">{s.label}</span>
-              <span className="tabular-nums text-muted-foreground">{fmt(s.tokens)}</span>
+              <span className="min-w-0 flex-1 truncate">
+                {s.label}
+                {parts.length > 0 && <span className="text-muted-foreground"> · {parts.length}</span>}
+              </span>
+              <span className="tabular-nums text-muted-foreground">{fmt(tokens)}</span>
               <span className="w-9 text-right tabular-nums text-muted-foreground">{formatPct(share)}</span>
+            </>
+          );
+          const rowClass = cn(
+            "flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-[12.5px] outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ring/70",
+            hot && hot !== s.id && "opacity-45",
+            hot === s.id && "bg-muted/60",
+          );
+          const label = `${s.label}: ${fmt(tokens)} tokens, ${formatPct(share)}${isReserve(s) ? ", reserved" : ""}`;
+          if (!parts.length)
+            return (
+              <li key={s.id} tabIndex={0} onMouseEnter={() => setHot(s.id)} onFocus={() => setHot(s.id)} onBlur={() => setHot(null)} aria-label={label} className={rowClass}>
+                {row}
+              </li>
+            );
+          return (
+            <li key={s.id} className={cn("flex flex-col", isOpen && "@lg:col-span-2")}>
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-label={`${label}, ${parts.length} ${parts.length === 1 ? "item" : "items"}`}
+                onClick={() => setOpen((o) => ({ ...o, [s.id]: !o[s.id] }))}
+                onMouseEnter={() => setHot(s.id)}
+                onFocus={() => setHot(s.id)}
+                onBlur={() => setHot(null)}
+                className={cn(rowClass, "cursor-pointer hover:bg-muted/60")}
+              >
+                {row}
+                <svg aria-hidden="true" viewBox="0 0 16 16" className={cn("-mr-0.5 size-3.5 flex-none text-muted-foreground transition-transform", isOpen && "rotate-90")} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m6 4 4 4-4 4" />
+                </svg>
+              </button>
+              {isOpen && (
+                <ul className="mt-0.5 mb-1 ml-[11px] flex flex-col border-l pl-3">
+                  {parts.map((p) => (
+                    <li key={p.id} className="group flex min-h-7 items-center gap-2 text-[12.5px]">
+                      <span className="min-w-0 flex-1 truncate" title={p.detail}>
+                        {p.label}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">{fmt(p.tokens)}</span>
+                      {onRemove && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${p.label}`}
+                          onClick={() => onRemove(s.id, p.id)}
+                          className="grid size-6 flex-none place-items-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/70"
+                        >
+                          <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                            <path d="m4.5 4.5 7 7m0-7-7 7" />
+                          </svg>
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           );
         })}
       </ul>
 
       {history && history.length > 1 && <Sparkline history={history} limit={limit} warnAt={warnAt} fullAt={fullAt} fmt={fmt} />}
+
+      {onNewChat && (
+        <div className="flex items-center justify-between gap-3 border-t pt-3 text-[12.5px]">
+          <span className="text-muted-foreground">
+            {limit ? (
+              <>
+                <span className={cn("font-medium tabular-nums", state === "ok" ? "text-foreground" : STATE_TONE[state])}>{fmt(Math.max(0, totals.free))}</span> left
+              </>
+            ) : (
+              `${fmt(totals.used)} used`
+            )}
+          </span>
+          <Button size="sm" variant={state === "full" || state === "over" ? "primary" : "secondary"} onClick={onNewChat}>
+            {newChatLabel}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
@@ -295,7 +398,7 @@ function Ring({
   const span = Math.max(limit ?? 0, totals.used + totals.reserved, 1);
   let at = 0;
   const arcs = [...segments.filter((s) => !isReserve(s)), ...segments.filter(isReserve)].map((s) => {
-    const len = (Math.max(0, s.tokens) / span) * C;
+    const len = (segTokens(s) / span) * C;
     const arc = { s, len, offset: at };
     at += len;
     return arc;
@@ -309,7 +412,7 @@ function Ring({
           {segments.map((s) => (
             <span key={s.id} className="flex items-center gap-1.5">
               <span className="size-2 rounded-[2px]" style={{ background: colors.get(s.id) }} />
-              {s.label}: {fmt(s.tokens)}
+              {s.label}: {fmt(segTokens(s))}
               {isReserve(s) ? " (reserved)" : ""}
             </span>
           ))}

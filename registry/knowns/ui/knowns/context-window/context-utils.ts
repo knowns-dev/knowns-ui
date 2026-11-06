@@ -1,16 +1,35 @@
+/** @registry part-of="context-window" */
 /** What fills a model's context window, and how full it is. Pure helpers. */
 
 export type ContextKind = "system" | "tools" | "history" | "files" | "output" | "other";
 
+/** One piece of a segment: a file, a turn, a tool result. */
+export interface ContextPart {
+  id: string;
+  label: string;
+  tokens: number;
+  /** A second line for hover and focus (a path, a time, a tool name). */
+  detail?: string;
+  /** Ids of the parts this one replaced (a compaction summary). */
+  summaryOf?: string[];
+}
+
 export interface ContextSegment {
   id: string;
   label: string;
+  /** The segment's size. With `parts`, pass their sum (or leave the parts to say it: see `segmentTokens`). */
   tokens: number;
   /** Picks the default colour; "output" is a reserve by default. */
   kind?: ContextKind;
   color?: string;
   /** Space held back (e.g. for the model's answer): drawn hatched after what's used, not counted as used. */
   reserve?: boolean;
+  /** What it is made of: files, turns, results. The legend can open them (and remove one); the treemap draws each. */
+  parts?: ContextPart[];
+  /** A second line for hover and focus. */
+  detail?: string;
+  /** Ids of the parts or segments this one replaced (a compaction summary): the treemap squeezes them into it. */
+  summaryOf?: string[];
 }
 
 export type ContextState = "ok" | "warn" | "full" | "over";
@@ -27,6 +46,12 @@ export const KIND_COLOR: Record<ContextKind, string> = {
 const EXTRA = ["#14b8a6", "#ec4899", "#06b6d4", "#84cc16", "#f43f5e"];
 
 export const isReserve = (s: ContextSegment) => s.reserve ?? s.kind === "output";
+
+/** A segment's tokens: its own number, or the sum of its parts when it has parts and tokens is 0. */
+export function segTokens(s: ContextSegment): number {
+  if (s.tokens > 0) return s.tokens;
+  return s.parts?.reduce((n, p) => n + Math.max(0, p.tokens), 0) ?? 0;
+}
 
 /** Segment colours: its own, else its kind's, else the next extra colour. */
 export function segmentColors(segments: ContextSegment[]): Map<string, string> {
@@ -59,8 +84,8 @@ export interface ContextTotals {
 }
 
 export function contextTotals(segments: ContextSegment[], limit: number | null): ContextTotals {
-  const used = segments.filter((s) => !isReserve(s)).reduce((n, s) => n + Math.max(0, s.tokens), 0);
-  const reserved = segments.filter(isReserve).reduce((n, s) => n + Math.max(0, s.tokens), 0);
+  const used = segments.filter((s) => !isReserve(s)).reduce((n, s) => n + segTokens(s), 0);
+  const reserved = segments.filter(isReserve).reduce((n, s) => n + segTokens(s), 0);
   if (!limit) return { used, reserved, free: 0, pct: 0, fill: 0 };
   return { used, reserved, free: limit - used - reserved, pct: used / limit, fill: (used + reserved) / limit };
 }
@@ -115,5 +140,46 @@ export const thresholdsText = (warnAt: number, fullAt: number) => `Warns at ${fo
 export function drops(history: number[]): number[] {
   const out: number[] = [];
   for (let i = 1; i < history.length; i++) if (history[i] < history[i - 1] * 0.8) out.push(i);
+  return out;
+}
+
+/* ── Cells: the window as a field of equal cells, each worth a fixed number of tokens ── */
+
+/** The smallest 1, 2 or 5 x 10^n at or above `x`: 830 -> 1000, 1200 -> 2000. */
+export function niceStep(x: number): number {
+  if (!(x > 0)) return 1;
+  const p = 10 ** Math.floor(Math.log10(x));
+  for (const m of [1, 2, 5, 10]) if (m * p >= x) return m * p;
+  return 10 * p;
+}
+
+/** Tokens per cell so the window is about `target` cells, on a round number. */
+export const autoCellTokens = (span: number, target = 240) => niceStep(span / target);
+
+export interface CellSlot {
+  /** The segment filling this cell; null for free room. */
+  id: string | null;
+  reserve: boolean;
+}
+
+/**
+ * Which segment fills each cell. Segments are laid end to end (what's used, then the reserve) and each
+ * takes the cells its running total rounds to, so a segment never loses a cell to rounding next door,
+ * and anything above zero gets at least one cell. The rest of `span` is free.
+ */
+export function cellPlan(segments: ContextSegment[], span: number, cellTokens: number): CellSlot[] {
+  const step = Math.max(1, cellTokens);
+  const count = Math.max(1, Math.ceil(span / step));
+  const out: CellSlot[] = Array.from({ length: count }, () => ({ id: null, reserve: false }));
+  const ordered = [...segments.filter((s) => !isReserve(s)), ...segments.filter(isReserve)];
+  let at = 0;
+  let cell = 0;
+  for (const s of ordered) {
+    const t = segTokens(s);
+    if (!t) continue;
+    at += t;
+    const end = Math.max(cell + 1, Math.round(at / step));
+    for (; cell < end && cell < count; cell++) out[cell] = { id: s.id, reserve: isReserve(s) };
+  }
   return out;
 }

@@ -1,3 +1,4 @@
+/** @registry part-of="agent-graph" */
 /** Geometry for links: orthogonal routes with rounded corners, and walking along them. */
 
 export type Pt = { x: number; y: number };

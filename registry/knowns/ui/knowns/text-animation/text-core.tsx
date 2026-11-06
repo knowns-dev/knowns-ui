@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="text-animation-core" type="ui" title="Text animation core" description="Shared pieces for text animations: accessible shell, motion gate, caret." */
 
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

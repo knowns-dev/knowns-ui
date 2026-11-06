@@ -202,7 +202,9 @@ function inspect(dir, files) {
   const css = fs.existsSync(path.join(dir, "app/globals.css")) ? fs.readFileSync(path.join(dir, "app/globals.css"), "utf8") : "";
   const keyframes = new Set();
   for (const s of sources) for (const m of s.text.matchAll(/animate-\[(kn-[a-z-]+)|animation:\s*["'`]?(kn-[a-z-]+)/g)) keyframes.add(m[1] ?? m[2]);
-  const missingCss = [...keyframes].filter((k) => !css.includes(`@keyframes ${k}`));
+  // Keyframes count as shipped when globals.css has them (the item's `css`) or an installed source defines
+  // them itself (e.g. a hoisted <style> in the component, as command-menu does).
+  const missingCss = [...keyframes].filter((k) => !css.includes(`@keyframes ${k}`) && !sources.some((s) => s.text.includes(`@keyframes ${k}`)));
   const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
   const have = new Set([...installed, ...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})]);
   const bare = new Set();

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="chat-composer" type="ui" title="Chat composer" description="Agent input: autosizing text, attachments, model and permission-mode menus, connected apps, working folder, dictation, send and stop." */
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
@@ -86,6 +87,8 @@ export interface ChatComposerProps {
   /** Lines before the text scrolls. Default 8. */
   maxRows?: number;
   disabled?: boolean;
+  /** Its own card (border, radius, shadow, 640px max). false: flush, for a panel that already has one. Default true. */
+  frame?: boolean;
   className?: string;
 }
 
@@ -239,6 +242,7 @@ export function ChatComposer({
   footer,
   maxRows = 8,
   disabled = false,
+  frame = true,
   className,
 }: ChatComposerProps) {
   const [text, setText] = useControllable(value, defaultValue, onValueChange);
@@ -429,11 +433,14 @@ export function ChatComposer({
       onKeyDown={onRootKey}
       aria-disabled={disabled || undefined}
       className={cn(
-        "@container w-full max-w-[640px] overflow-hidden rounded-2xl bg-card text-foreground",
-        "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
-        "transition-[box-shadow] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
-        "has-[textarea:focus-visible]:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_70%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_14%,transparent),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
-        "dark:bg-[color-mix(in_srgb,var(--muted)_30%,var(--card))]",
+        "@container w-full text-foreground",
+        ...(frame ? [
+          "max-w-[640px] overflow-hidden rounded-2xl bg-card",
+          "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
+          "transition-[box-shadow] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
+          "has-[textarea:focus-visible]:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_70%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_14%,transparent),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
+          "dark:bg-[color-mix(in_srgb,var(--muted)_30%,var(--card))]",
+        ] : []),
         disabled && "opacity-60",
         className,
       )}

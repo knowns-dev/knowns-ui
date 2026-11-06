@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="dropdown" type="ui" title="Dropdown" description="Ready-made menus on Menu: account, row actions and pickers with avatar, toggle, link and badge rows." */
 
 import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

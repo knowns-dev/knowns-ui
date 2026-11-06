@@ -1,3 +1,4 @@
+/** @registry part-of="agent-graph" */
 /** Fixed-frame geometry: fit the graph into the frame, keeping clear of the zoom controls. Pure. */
 
 export type Rect = { x0: number; y0: number; x1: number; y1: number };

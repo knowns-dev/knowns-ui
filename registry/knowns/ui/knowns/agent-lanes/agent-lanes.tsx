@@ -1,10 +1,12 @@
 "use client";
+/** @registry name="agent-lanes" type="ui" title="Agent lanes" description="Where every agent is right now: a lane per agent, tasks growing into now, hand-offs and approvals on the block." */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Actor, Approval, ApprovalDecision, Span, Task } from "@/registry/knowns/lib/knowns/types";
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
 import { actorColors, rootAgent } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
+import { localRect } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
 
 export interface AgentLanesProps {
@@ -202,17 +204,19 @@ export function AgentLanes({
 
   /* Popover */
   const openTask = (t: Task, el: HTMLElement) => {
-    const body = bodyRef.current?.getBoundingClientRect();
-    const clip = el.parentElement?.parentElement?.getBoundingClientRect();
-    const box = el.getBoundingClientRect();
-    if (!body) return;
+    // All in the body's own layout px (localRect), so the popover lands right under CSS zoom too.
+    const bodyEl = bodyRef.current;
+    if (!bodyEl) return;
+    const clipEl = el.parentElement?.parentElement;
+    const clip = clipEl ? localRect(clipEl, bodyEl) : null;
+    const box = localRect(el, bodyEl);
     const left = Math.max(box.left, clip?.left ?? box.left);
     const right = Math.min(box.right, clip?.right ?? box.right);
     const half = 150;
-    const x = Math.min(Math.max((left + right) / 2 - body.left, half + 8), body.width - half - 8);
-    const below = box.top - body.top < 220;
+    const x = Math.min(Math.max((left + right) / 2, half + 8), bodyEl.offsetWidth - half - 8);
+    const below = box.top < 220;
     freeze();
-    setOpen({ id: t.id, x, y: below ? box.bottom - body.top + 8 : box.top - body.top - 8, below });
+    setOpen({ id: t.id, x, y: below ? box.bottom + 8 : box.top - 8, below });
     onTaskSelect?.(t);
   };
   const close = () => {
@@ -549,7 +553,7 @@ export function AgentLanes({
                   <>
                     <p className="mt-3 text-[13px] font-medium">{approval.title}</p>
                     {approval.detail && (
-                      <pre className="mt-2 max-h-32 overflow-auto rounded-lg border bg-muted/40 px-2.5 py-2 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap">
+                      <pre className="kn-scroll mt-2 max-h-32 overflow-auto rounded-lg border bg-muted/40 px-2.5 py-2 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap">
                         {approval.detail}
                       </pre>
                     )}

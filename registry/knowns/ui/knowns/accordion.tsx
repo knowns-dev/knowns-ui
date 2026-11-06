@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="accordion" type="ui" title="Accordion" description="A stack of collapsible sections. One open, or several, with a full keyboard path." */
 
 import { createContext, useContext, useId, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

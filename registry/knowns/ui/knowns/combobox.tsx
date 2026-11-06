@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="combobox" type="ui" title="Combobox" description="Select with icons, avatars, status dots, supporting text, groups, search, multiple choice and a tags mode. Opens as a popover, a dialog, or a bottom sheet on phones." */
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
@@ -20,6 +21,8 @@ export interface ComboboxOption {
   supportingText?: string;
   /** Second, muted line under the label. */
   description?: string;
+  /** Extra words that match the search but are not shown (a full name, a code, aliases). */
+  keywords?: string;
   /** 16px leading glyph. */
   icon?: ReactNode;
   /** Leading avatar: an image URL (rendered with Avatar) or any element. Wins over `dot` and `icon`. */
@@ -88,12 +91,13 @@ export type ComboboxProps = ComboboxSingleProps | ComboboxMultipleProps;
 
 /* ── Pure helpers (exported for tests) ── */
 
-const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/đ/g, "d");
 
-/** Options whose label or supporting text contains `query` (case- and accent-insensitive). Empty query keeps everything. */
-export function filterOptions<T extends Pick<ComboboxOption, "label"> & { supportingText?: string }>(options: T[], query: string): T[] {
+/** Options whose label, supporting text or keywords contain `query` (case- and accent-insensitive). Empty query keeps everything. */
+export function filterOptions<T extends Pick<ComboboxOption, "label"> & { supportingText?: string; keywords?: string }>(options: T[], query: string): T[] {
   const q = fold(query.trim());
-  return q ? options.filter((o) => fold(o.label).includes(q) || (o.supportingText !== undefined && fold(o.supportingText).includes(q))) : options;
+  const has = (s?: string) => s !== undefined && fold(s).includes(q);
+  return q ? options.filter((o) => fold(o.label).includes(q) || has(o.supportingText) || has(o.keywords)) : options;
 }
 
 /** Bucket options by `group`, in order of first appearance; ungrouped options form a leading group with no header. */

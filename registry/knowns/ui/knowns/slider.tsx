@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="slider" type="ui" title="Slider" description="Single value or range slider with steps, marks, a value bubble and full keyboard support." */
 
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

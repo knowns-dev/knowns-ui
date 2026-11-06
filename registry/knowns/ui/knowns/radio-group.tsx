@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="radio-group" type="ui" title="Radio group" description="One choice from a few options; arrow keys move and select; card variant." */
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

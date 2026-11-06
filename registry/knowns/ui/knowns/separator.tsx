@@ -1,3 +1,4 @@
+/** @registry name="separator" type="ui" title="Separator" description="Thin divider." */
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 /** Thin divider. Decorative by default; pass `decorative={false}` for a semantic separator. */

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="shimmer-text" type="ui" title="Shimmer text" description="A soft bright band sweeping through in-progress labels like Thinking…" */
 
 import { useRef, type CSSProperties } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

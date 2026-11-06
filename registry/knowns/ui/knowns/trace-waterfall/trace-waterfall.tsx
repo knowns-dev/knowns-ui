@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="trace-waterfall" type="ui" title="Trace waterfall" description="Every call of a run on one time axis: nested by caller, live bars, inline input/output/error, filters, search, brush zoom, critical path and virtualised rows." */
 
 import { useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
@@ -103,7 +104,7 @@ function Block({ label, value, tone }: { label: string; value: unknown; tone?: "
       <span className={cn("text-[11px] font-medium tracking-wide uppercase", tone === "error" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>{label}</span>
       <pre
         className={cn(
-          "max-h-40 overflow-auto rounded-[8px] px-2.5 py-2 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words",
+          "kn-scroll max-h-40 overflow-auto rounded-[8px] px-2.5 py-2 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words",
           tone === "error" ? "bg-red-500/[0.06] text-red-700 dark:text-red-300" : "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
         )}
       >
@@ -718,7 +719,7 @@ export function TraceWaterfall({
           setCursor(f >= 0 && f <= 1 ? f : null);
         }}
         onPointerLeave={() => setCursor(null)}
-        className="relative overflow-y-auto overscroll-contain rounded-b-2xl [scrollbar-width:thin] [--label-w:11rem] @[640px]:[--label-w:19rem]"
+        className="kn-scroll kn-scroll-fade-x relative overflow-y-auto overscroll-contain rounded-b-2xl [--label-w:11rem] @[640px]:[--label-w:19rem]"
         style={{ maxHeight }}
       >
         {shown.length === 0 ? (

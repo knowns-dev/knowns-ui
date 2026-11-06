@@ -1,3 +1,4 @@
+/** @registry part-of="agent-graph" */
 import type { Actor } from "@/registry/knowns/lib/knowns/types";
 import { rootAgent } from "@/registry/knowns/lib/knowns/status";
 

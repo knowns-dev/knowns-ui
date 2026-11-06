@@ -1,3 +1,4 @@
+/** @registry name="spinner" type="ui" title="Spinner" description="Small indeterminate spinner." */
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 /** Small indeterminate spinner. Inherits the text colour and size from its parent. */

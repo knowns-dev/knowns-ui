@@ -1,6 +1,7 @@
+/** @registry part-of="knowns-icons" */
 import type { ReactNode } from "react";
 import { LOGO } from "./model-icons";
-import { TOOL_SVGS } from "./tool-icons.data";
+import { BRAND_MARK_SVGS, TOOL_SVGS } from "./tool-icons.data";
 
 /** Tool name pattern → brand logo key (logos from @iconify-json/logos, CC0). */
 const BRANDS: [RegExp, string][] = [
@@ -79,4 +80,38 @@ export function toolIcon(name?: string): ReactNode | null {
   // Trusted, generated SVG markup.
   if (brand) return <span className={LOGO} dangerouslySetInnerHTML={{ __html: TOOL_SVGS[brand[1]] }} />;
   return GENERIC.find(([re]) => re.test(name))?.[1] ?? null;
+}
+
+/** Brand logos that are wordmarks, not square marks: unreadable in a 16px box, so show the name instead. */
+const WORDMARKS = new Set(["stripe", "hubspot"]);
+
+/** Like toolIcon, but null for wordmark logos, which do not read at icon size (16px). */
+export function toolMark(name?: string): ReactNode | null {
+  if (!name) return null;
+  const brand = BRANDS.find(([re]) => re.test(name));
+  if (brand && WORDMARKS.has(brand[1])) return null;
+  return toolIcon(name);
+}
+
+/** Product name pattern → single-colour mark key (simple-icons, CC0). */
+const MARKS: [RegExp, string][] = [
+  [/claude|anthropic/i, "claude"],
+  [/openai|\bgpt/i, "openai"],
+  [/vercel/i, "vercel"],
+  [/next\.?js/i, "nextdotjs"],
+  [/\breact\b/i, "react"],
+  [/\bvite\b/i, "vite"],
+  [/tailwind/i, "tailwindcss"],
+  [/shadcn/i, "shadcnui"],
+];
+
+/**
+ * A single-colour brand mark that follows the text colour, for a product named next to it (e.g. a
+ * "Works with" row), or null if there is none. Marks identify the product only; see LICENSES.md.
+ */
+export function brandMark(name?: string): ReactNode | null {
+  if (!name) return null;
+  const hit = MARKS.find(([re]) => re.test(name));
+  // Trusted, generated SVG markup.
+  return hit ? <span className={LOGO} dangerouslySetInnerHTML={{ __html: BRAND_MARK_SVGS[hit[1]] }} /> : null;
 }

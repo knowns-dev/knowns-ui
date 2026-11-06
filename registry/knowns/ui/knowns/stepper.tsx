@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="stepper" type="ui" title="Stepper" description="Horizontal or vertical steps with done, current, upcoming and error states, optional descriptions and clickable completed steps." */
 
 import type { ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

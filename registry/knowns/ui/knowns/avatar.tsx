@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="avatar" type="ui" title="Avatar" description="Image, logo or initials with status dot, badge and verified mark; AvatarGroup with +N and invite; AvatarLabel with name and supporting text." */
 
 import { Children, cloneElement, isValidElement, useState, type ReactElement, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
@@ -14,6 +15,8 @@ export interface AvatarProps {
   src?: string;
   /** Logo or glyph shown instead of initials. */
   icon?: ReactNode;
+  /** Letters to show instead of the ones taken from `label`, e.g. one letter for a workspace. */
+  initials?: string;
   size?: AvatarSize;
   shape?: "square" | "circle";
   /** Tint for glyphs and initials, e.g. an agent colour. */
@@ -120,10 +123,16 @@ const CheckGlyph = () => (
   </svg>
 );
 
+/** Whether the photo covers the avatar: it has a src that loaded and did not fail. The fallback hides then. */
+export function photoShown(src: string | undefined, loaded: string | null, failed: string | null): boolean {
+  return !!src && loaded === src && failed !== src;
+}
+
 export function Avatar({
   label,
   src,
   icon,
+  initials: letters,
   size = "md",
   shape = "square",
   hue,
@@ -138,7 +147,7 @@ export function Avatar({
   const [failed, setFailed] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<string | null>(null);
   const showImg = !!src && failed !== src;
-  const text = initials(label);
+  const text = letters ?? initials(label);
   const circle = shape === "circle";
   const corner = badge ?? (verified ? <CheckGlyph /> : null);
 
@@ -158,16 +167,26 @@ export function Avatar({
           ring && ringShadow,
         )}
       >
-        {/* The fallback sits underneath, so a slow photo fades in over it instead of popping. */}
-        {icon ? (
-          <span className="grid size-[62%] place-items-center [&>*]:size-full [&>svg]:size-full">{icon}</span>
-        ) : text ? (
-          <span className="leading-none tracking-[0.02em]">{text}</span>
-        ) : (
-          <span className="grid size-[58%] place-items-center opacity-80 [&>svg]:size-full">
-            <PersonGlyph />
-          </span>
-        )}
+        {/* The fallback shows until the photo has loaded, then fades out as the photo fades in (no pop, and
+            no letters left showing through a transparent or letterboxed photo). */}
+        <span
+          aria-hidden="true"
+          data-avatar-fallback=""
+          className={cn(
+            "absolute inset-0 grid place-items-center transition-opacity duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+            photoShown(src, loaded, failed) && "opacity-0",
+          )}
+        >
+          {icon ? (
+            <span className="grid size-[62%] place-items-center [&>*]:size-full [&>svg]:size-full">{icon}</span>
+          ) : text ? (
+            <span className="leading-none tracking-[0.02em]">{text}</span>
+          ) : (
+            <span className="grid size-[58%] place-items-center opacity-80 [&>svg]:size-full">
+              <PersonGlyph />
+            </span>
+          )}
+        </span>
         {showImg && (
           <img
             src={src}
@@ -180,7 +199,7 @@ export function Avatar({
             onLoad={() => setLoaded(src)}
             onError={() => setFailed(src)}
             className={cn(
-              "absolute inset-0 size-full object-cover transition-opacity duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+              "absolute inset-0 size-full bg-background object-cover transition-opacity duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
               loaded === src ? "opacity-100" : "opacity-0",
             )}
           />

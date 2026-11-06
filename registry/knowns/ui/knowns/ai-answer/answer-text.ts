@@ -1,3 +1,4 @@
+/** @registry part-of="ai-answer" */
 /**
  * A small, forgiving parser for model answers: paragraphs (blank lines), "- " lists,
  * **bold**, `code` and citations like [1] or [1, 3]. It copes with half-streamed text:

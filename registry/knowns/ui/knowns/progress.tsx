@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="progress" type="ui" title="Progress" description="Progress bar and ring, determinate or indeterminate." */
 
 import { useId, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

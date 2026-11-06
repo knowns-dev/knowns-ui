@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="popover" type="ui" title="Popover" description="Floating panel that closes on Escape or an outside click and returns focus." */
 
 import { cloneElement, useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
@@ -31,7 +32,7 @@ export function Popover({
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  side?: "top" | "bottom";
+  side?: "top" | "bottom" | "left" | "right";
   align?: "start" | "center" | "end";
   className?: string;
   "aria-label"?: string;

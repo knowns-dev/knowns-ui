@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="button" type="ui" title="Button" description="Primary, secondary, ghost and destructive buttons with icons, three sizes and a loading state that stays focusable." */
 
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode, Ref } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";

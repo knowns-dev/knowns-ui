@@ -1,6 +1,8 @@
 "use client";
+/** @registry name="agent-fleet" type="ui" title="Agent fleet" description="Many agents at a glance: a row (or card) per main agent with model, task, state, spend and clock, totals on top, and a sub-agent tree that unfolds under it with approve and retry right in it." */
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -9,14 +11,17 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type FocusEvent,
   type KeyboardEvent,
+  type MouseEvent,
+  type CSSProperties,
   type ReactNode,
   type SyntheticEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { cn, focusRing, localRect } from "@/registry/knowns/lib/knowns/utils";
 import { modelIcon } from "@/registry/knowns/lib/knowns/icons/model-icons";
-import { toolIcon } from "@/registry/knowns/lib/knowns/icons/tool-icons";
+import { toolMark } from "@/registry/knowns/lib/knowns/icons/tool-icons";
 import { formatUsd } from "@/registry/knowns/lib/knowns/status";
 import type { AgentRun } from "@/registry/knowns/lib/knowns/run";
 import type { AgentSnapshot } from "@/registry/knowns/lib/knowns/types";
@@ -29,18 +34,20 @@ import {
   FLEET_LABEL,
   belowPoints,
   depthMap,
+  dropPoints,
   elapsed,
   findPath,
   fleetFromSnapshot,
   fleetTotals,
   formatDuration,
+  fleetColumns,
   hiddenStats,
   inlineExpanded,
   mainSummary,
   roundedPath,
-  sidePoints,
+  rowEnd,
   treeKey,
-  treeOffset,
+  treeLeft,
   treeSpend,
   visibleRows,
   walk,
@@ -74,20 +81,29 @@ export interface AgentFleetProps {
   now?: number;
   formatCost?: (usd: number) => string;
   title?: ReactNode;
+  /** "compact" (default): 14px titles, 12-16px padding, 3-4 cards a row on a wide page. "comfortable": larger cards. */
+  density?: FleetDensity;
+  /**
+   * "list" (default): one agent per row in a single column; opening a row unfolds its sub-agent tree
+   * right under it. "grid": cards side by side, the open card's tree in a row of its own.
+   */
+  layout?: FleetLayout;
   className?: string;
 }
+
+export type FleetLayout = "list" | "grid";
+
+export type FleetDensity = "compact" | "comfortable";
 
 /* ── Tokens ── */
 
 const EASE = "cubic-bezier(.22,1,.36,1)";
-/** Container width from which the tree sits beside the cards. */
-const WIDE = 880;
 /** Indent per nesting level. */
-const NEST = 64;
-/** Indent of the tree under its card in the narrow layout. */
-const NARROW_INDENT = 56;
-/** Gap between the main column and the tree: room for the connectors. */
-const COL_GAP = 72;
+const NEST = 56;
+/** Indent of the tree from the left edge of its main card. */
+const TREE_INDENT = 48;
+/** Gap between cards in the grid. */
+const GAP = 12;
 /** Levels shown inline under the panel's top (children + grandchildren); deeper ones collapse into a chip. */
 const INLINE = 2;
 /** "Expand all" shows this many levels. */
@@ -95,12 +111,72 @@ const EXPAND_MAX = 4;
 /** Below this viewport width, tasks open as a bottom sheet instead of a popover. */
 const SHEET_BELOW = 640;
 
+/** Sizes per density. `min` / `max` bound a card's width in the grid; `sub` / `subMin` size the sub-agent cards. */
+const DENSITY = {
+  compact: {
+    min: 248,
+    max: 480,
+    sub: 360,
+    subMin: 264,
+    pad: "p-3.5",
+    gap: "gap-2.5",
+    logo: "size-8 rounded-lg [&>*]:size-4",
+    name: "text-[14px] leading-5",
+    model: "text-[12.5px] leading-[18px]",
+    pill: "h-5.5 gap-1 px-1.5 text-[12px] [&_svg]:size-3",
+    task: "text-[13px]",
+    row: "h-6",
+    foot: "text-[12.5px]",
+    chip: "h-6",
+  },
+  comfortable: {
+    min: 320,
+    max: 560,
+    sub: 460,
+    subMin: 300,
+    pad: "p-5",
+    gap: "gap-3.5",
+    logo: "size-10 rounded-xl [&>*]:size-5",
+    name: "text-[16px] leading-6",
+    model: "text-[13.5px] leading-5",
+    pill: "h-6.5 gap-1.5 px-2 text-[13px] [&_svg]:size-3.5",
+    task: "text-[14.5px]",
+    row: "h-7",
+    foot: "text-[13.5px]",
+    chip: "h-7",
+  },
+} as const;
+type Sizes = (typeof DENSITY)[FleetDensity];
+
 /* Quiet surface: faint hairline, a thin inner top light, a deeper card in dark mode. */
 const CARD = cn(
-  "relative rounded-2xl border [border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-card",
+  "relative rounded-xl border [border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-card",
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent),0_1px_2px_rgb(0_0_0/0.04)]",
   "dark:[background:color-mix(in_srgb,var(--card)_70%,#000)] dark:shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_7%,transparent),0_8px_20px_-12px_rgb(0_0_0/0.5)]",
 );
+/* List layout: an opaque surface colour and guide colour, so overlapping guide segments never darken. */
+const LIST_SURFACE = "[--fleet-bg:var(--card)] dark:[--fleet-bg:color-mix(in_srgb,var(--card)_70%,#000)] [--fleet-guide:color-mix(in_srgb,var(--foreground)_18%,var(--fleet-bg))]";
+/**
+ * A tree item in the list: a guide segment down its left edge and an elbow into its row (20px down: the
+ * row's 8px padding plus half its 24px mark). The segment reaches up by --fleet-up, far enough to meet the
+ * parent's mark at any width, and the last item's stops at its elbow. Plain CSS in the item's own box:
+ * nothing is measured, so zoom and transforms can't move it.
+ */
+const GUIDE_ITEM =
+  "relative pl-6 before:absolute before:left-0 before:top-[calc(-1*var(--fleet-up))] before:h-[calc(100%+var(--fleet-up))] before:w-px before:bg-[var(--fleet-guide)] last:before:h-[calc(var(--fleet-up)+20px)] after:absolute after:left-0 after:top-5 after:h-px after:w-5 after:bg-[var(--fleet-guide)]";
+/** The trunk past a breadcrumb or notice above the tree (no elbow; reaches across the 10px gap below). */
+const GUIDE_TRUNK = "relative pl-6 before:absolute before:left-0 before:top-[calc(-1*var(--fleet-up))] before:h-[calc(100%+var(--fleet-up)+10px)] before:w-px before:bg-[var(--fleet-guide)]";
+/*
+ * List columns, shared by main and sub-rows: mark, name, task, then status 6.25rem, needs you 7.5rem,
+ * spend 4.5rem, clock 3.5rem against the same right edge. A sub-row's name column gives up its indent.
+ */
+/** Where the task column starts in a main row: 16px padding + 32px mark + 12 + 11rem name + 12. */
+const LIST_TASK_X = 16 + 32 + 12 + 176 + 12;
+/** A first-level sub-row's content edge (tree indent 32 + item 24 + row padding 8), and each level deeper (20 + 24). */
+const SUB_LEFT = 64;
+const SUB_STEP = 44;
+const ROW_HOVER = "transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)]";
+
 const WIRE = "[--fleet-wire:rgb(59_110_230/0.6)] dark:[--fleet-wire:rgb(120_156_255/0.72)] [--fleet-head:rgb(59_110_230)] dark:[--fleet-head:rgb(190_210_255)]";
 
 const PILL: Record<FleetState, string> = {
@@ -227,21 +303,24 @@ const SUMMARY_ICON: Record<SummaryTone, () => ReactNode> = { waiting: Clock, fai
 
 /* ── Card parts ── */
 
-function Logo({ agent }: { agent: FleetAgent }) {
+function Logo({ agent, z, size }: { agent: FleetAgent; z: Sizes; size?: string }) {
   return (
     <span
       aria-hidden
-      className="grid size-10 flex-none place-items-center rounded-xl border [border-color:color-mix(in_srgb,var(--foreground)_7%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] text-muted-foreground [&>*]:size-5 [&_svg]:size-full"
+      className={cn(
+        "grid flex-none place-items-center border [border-color:color-mix(in_srgb,var(--foreground)_7%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] text-muted-foreground [&_svg]:size-full",
+        size ?? z.logo,
+      )}
     >
       {agent.icon ?? modelIcon(agent.model ?? agent.name) ?? <SparkGlyph />}
     </span>
   );
 }
 
-function Pill({ state }: { state: FleetState }) {
+function Pill({ state, z }: { state: FleetState; z: Sizes }) {
   const Icon = PILL_ICON[state];
   return (
-    <span className={cn("inline-flex h-6.5 flex-none items-center gap-1.5 rounded-lg px-2 text-[13px] font-medium whitespace-nowrap [&_svg]:size-3.5", PILL[state])}>
+    <span className={cn("inline-flex flex-none items-center rounded-md font-medium whitespace-nowrap", z.pill, PILL[state])}>
       <Icon />
       {FLEET_LABEL[state]}
     </span>
@@ -253,26 +332,34 @@ function ToolTile({ tool }: { tool?: string }) {
     <span
       aria-hidden
       title={tool}
-      className="grid size-6 flex-none place-items-center rounded-md border [border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-card text-muted-foreground [&>*]:size-3.5 [&_svg]:size-full dark:[background:color-mix(in_srgb,var(--card)_80%,#000)]"
+      className="grid size-6 flex-none place-items-center rounded-md border [border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-card text-muted-foreground [&>*]:size-4 [&_svg]:size-full dark:[background:color-mix(in_srgb,var(--card)_80%,#000)]"
     >
-      {(tool && toolIcon(tool)) ?? <TaskGlyph />}
+      {(tool && toolMark(tool)) ?? <TaskGlyph />}
     </span>
   );
 }
 
 /** A joined chip of tool logos. */
-function ToolChip({ tools, max = 3 }: { tools: string[]; max?: number }) {
+function ToolChip({ tools, max = 3, z }: { tools: string[]; max?: number; z: Sizes }) {
   if (!tools.length) return null;
   return (
     <span
       aria-label={`Tools: ${tools.join(", ")}`}
-      className="inline-flex h-7 flex-none items-center gap-1 rounded-lg border [border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-1.5"
+      className={cn("inline-flex flex-none items-center gap-1 rounded-md border [border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-1", z.chip)}
     >
-      {tools.slice(0, max).map((t) => (
-        <span key={t} aria-hidden title={t} className="grid size-4 place-items-center text-muted-foreground [&>*]:size-full [&_svg]:size-full">
-          {toolIcon(t) ?? <span className="text-[9px] font-semibold">{t[0]}</span>}
-        </span>
-      ))}
+      {tools.slice(0, max).map((t) => {
+        const mark = toolMark(t);
+        // A 16px mark, or the name when there is no square mark (wordmarks like Stripe, unknown tools).
+        return mark ? (
+          <span key={t} aria-hidden title={t} className="grid size-4 flex-none place-items-center text-muted-foreground [&>*]:size-full [&_svg]:size-full">
+            {mark}
+          </span>
+        ) : (
+          <span key={t} aria-hidden title={t} className="max-w-[72px] truncate px-0.5 text-[11.5px] font-medium text-muted-foreground">
+            {t}
+          </span>
+        );
+      })}
       {tools.length > max && (
         <span aria-hidden className="pl-0.5 text-[11px] text-muted-foreground tabular-nums">
           +{tools.length - max}
@@ -282,29 +369,30 @@ function ToolChip({ tools, max = 3 }: { tools: string[]; max?: number }) {
   );
 }
 
+/** What an agent is on: its error, the question it's waiting on, or its task. */
+const taskOf = (agent: FleetAgent) =>
+  agent.state === "failed" && agent.error ? agent.error : agent.state === "waiting" && agent.request ? agent.request.title : (agent.task ?? (agent.state === "queued" ? "Waiting to start" : "No current task"));
+
 /** Same anatomy for main and sub-agents: logo, name + model, pill · tools + task · footer. */
-function CardBody({ agent, tools, footerLeft, footerRight }: { agent: FleetAgent; tools: string[]; footerLeft: ReactNode; footerRight: ReactNode }) {
-  const task =
-    agent.state === "failed" && agent.error
-      ? agent.error
-      : agent.state === "waiting" && agent.request
-        ? agent.request.title
-        : (agent.task ?? (agent.state === "queued" ? "Waiting to start" : "No current task"));
+function CardBody({ agent, tools, footerLeft, footerRight, z }: { agent: FleetAgent; tools: string[]; footerLeft: ReactNode; footerRight: ReactNode; z: Sizes }) {
+  const task = taskOf(agent);
   return (
-    <span className="flex min-w-0 flex-col gap-3.5">
-      <span data-anchor="title" className="flex min-w-0 items-start gap-3">
-        <Logo agent={agent} />
+    <span className={cn("flex min-w-0 flex-col", z.gap)}>
+      <span data-anchor="title" className="flex min-w-0 items-start gap-2.5">
+        <Logo agent={agent} z={z} />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[16px] leading-6 font-semibold tracking-[-0.005em] text-foreground">{agent.name}</span>
-          <span className="truncate text-[13.5px] leading-5 text-muted-foreground">{agent.model ?? "Agent"}</span>
+          <span className={cn("truncate font-semibold text-foreground", z.name)}>{agent.name}</span>
+          <span className={cn("truncate text-muted-foreground", z.model)}>{agent.model ?? "Agent"}</span>
         </span>
-        <Pill state={agent.state} />
+        <Pill state={agent.state} z={z} />
       </span>
-      <span data-anchor="task" className="flex h-7 min-w-0 items-center gap-2.5">
-        <ToolChip tools={tools} />
-        <span className={cn("min-w-0 truncate text-[14.5px]", agent.state === "failed" ? "text-red-700 dark:text-red-300" : "text-foreground/80")}>{task}</span>
+      <span data-anchor="task" className={cn("flex min-w-0 items-center gap-2", z.row)}>
+        <ToolChip tools={tools} z={z} />
+        <span className={cn("min-w-0 truncate", z.task, agent.state === "failed" ? "text-red-700 dark:text-red-300" : "text-foreground/80")} title={task}>
+          {task}
+        </span>
       </span>
-      <span className="flex h-7 min-w-0 items-center justify-between gap-3 text-[13.5px] tabular-nums">
+      <span className={cn("flex min-w-0 items-center justify-between gap-3 tabular-nums", z.row, z.foot)}>
         {footerLeft}
         {footerRight}
       </span>
@@ -530,8 +618,12 @@ export function AgentFleet({
   now: nowProp,
   formatCost = formatUsd,
   title = "Fleet",
+  density = "compact",
+  layout = "list",
   className,
 }: AgentFleetProps) {
+  const list = layout === "list";
+  const z = DENSITY[density];
   const snaps = useRunSnapshots(runs);
   const fleet = useMemo(() => {
     const fromRuns = snaps.map((s, i) => fleetFromSnapshot(s, runs?.[i], `r${i}:`)).filter((a): a is FleetAgent => !!a);
@@ -547,17 +639,19 @@ export function AgentFleet({
   const treeId = useId();
   const labelId = useId();
 
-  /* Layout: tree beside the cards from WIDE px. */
+  /* Layout: cards in an auto-fill grid; the open card's tree gets its own row right under that card's row. */
   const root = useRef<HTMLElement>(null);
-  const [wide, setWide] = useState(true);
+  const [width, setWidth] = useState(0);
   useLayoutEffect(() => {
     const el = root.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWide(el.clientWidth >= WIDE));
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
     ro.observe(el);
-    setWide(el.clientWidth >= WIDE);
+    setWidth(el.clientWidth);
     return () => ro.disconnect();
   }, []);
+  // One column count for the CSS grid and for where the tree row goes, so they always agree.
+  const cols = width ? fleetColumns(width, fleet.length, z.min, z.max, GAP) : 1;
 
   /* What the panel shows: `shown` (lags openId by the exit animation), drilled `path`, expand-all. */
   const [shownId, setShownId] = useState<string | null>(openId);
@@ -685,10 +779,7 @@ export function AgentFleet({
   /* ── Measure connectors from the card rects ── */
 
   const wrap = useRef<HTMLDivElement>(null);
-  const mainCol = useRef<HTMLUListElement>(null);
-  /** Offset the last revealed tree sat at, so the next one can glide from there. */
-  const lastPad = useRef<number | null>(null);
-  const [geo, setGeo] = useState<{ key: string; for: string; wires: Wire[]; dots: Dot[]; pad: number }>({ key: "", for: "", wires: [], dots: [], pad: 0 });
+  const [geo, setGeo] = useState<{ key: string; for: string; wires: Wire[]; dots: Dot[]; left: number }>({ key: "", for: "", wires: [], dots: [], left: 0 });
   const [, bump] = useState(0);
   useLayoutEffect(() => {
     const w = wrap.current;
@@ -699,59 +790,56 @@ export function AgentFleet({
   }, [fleet.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const w = wrap.current;
-    if (!w || !shown || !panelRoot) {
-      if (geo.key) setGeo({ key: "", for: "", wires: [], dots: [], pad: 0 });
+    if (!w || !shown || !panelRoot || list) {
+      if (geo.key) setGeo({ key: "", for: "", wires: [], dots: [], left: 0 });
       return;
     }
-    const W = w.getBoundingClientRect();
+    // Everything in the wrapper's layout px (what the SVG draws in), so CSS zoom or a scaled parent can't shift the lines.
+    const wrapW = w.offsetWidth;
     // The tree column may be mid-slide (a transform): measure where its cards will settle.
     const col = treeCol.current;
     const t = col ? getComputedStyle(col).transform : "none";
     const slide = t && t !== "none" ? new DOMMatrixReadOnly(t).f : 0;
     const dy = (el: Element) => (slide && col?.contains(el) ? slide : 0);
     const box = (el: Element) => {
-      const r = el.getBoundingClientRect();
+      const r = localRect(el, w);
       const o = dy(el);
-      return { left: r.left - W.left, right: r.right - W.left, top: r.top - W.top - o, bottom: r.bottom - W.top - o };
+      return { left: r.left, right: r.right, top: r.top - o, bottom: r.bottom - o };
     };
     const midY = (card: Element, which: "title" | "task") => {
       const a = card.querySelector(`[data-anchor="${which}"]`) ?? card;
-      const r = a.getBoundingClientRect();
-      return r.top + r.height / 2 - W.top - dy(card);
+      const r = localRect(a, w);
+      return r.top + r.height / 2 - dy(card);
     };
     const wires: Wire[] = [];
     const dots: Dot[] = [];
     const mainEl = w.querySelector(`[data-fleet-card="${CSS.escape(shown.id)}"]`);
-    // Wide: centre the tree on the open card's dot, clamped to the main column.
-    let pad = 0;
-    if (wide && mainEl && col && mainCol.current) {
-      const treeH = col.offsetHeight - (parseFloat(col.style.paddingTop) || 0);
-      pad = treeOffset(midY(mainEl, "task"), treeH, mainCol.current.offsetHeight);
-    }
+    // The tree sits under the open card, indented from it, pulled in from the right edge so it fits.
+    const left = mainEl ? treeLeft(box(mainEl).left, wrapW, z.sub, TREE_INDENT) : 0;
+    // A dot on the parent's bottom edge, under its logo.
+    const logoX = density === "compact" ? 30 : 40;
 
-    const group = (parent: FleetAgent, kids: FleetAgent[], parentEl: Element, side: boolean) => {
+    const group = (parent: FleetAgent, kids: FleetAgent[], parentEl: Element, top: boolean) => {
       const kidEls = kids.map((k) => w.querySelector(`[data-fleet-node="${CSS.escape(k.id)}"]`));
-      const firstEl = kidEls.find(Boolean);
-      if (!firstEl) return; // collapsed: nothing drawn below
+      if (!kidEls.some(Boolean)) return; // collapsed: nothing drawn below
       const P = box(parentEl);
-      // Beside: a dot on the right edge at the task row. Below: a dot on the bottom edge under the logo.
-      const from: Pt = side ? { x: P.right, y: midY(parentEl, "task") } : { x: P.left + 40, y: P.bottom };
-      const trunkX = Math.round((P.right + box(firstEl).left) / 2);
+      const from: Pt = { x: P.left + logoX, y: P.bottom };
       dots.push({ id: parent.id, ...from });
       kids.forEach((k, i) => {
         const el = kidEls[i];
         if (!el) return;
         const C = box(el);
         const to: Pt = { x: C.left, y: midY(el, "title") };
-        const pts = side ? sidePoints(from, trunkX, to) : belowPoints(from, to);
+        // From a main card the wire may have to step left in the gap under the card's row.
+        const pts = top ? dropPoints(from, to, P.bottom + 10) : belowPoints(from, to);
         wires.push({ id: k.id, parent: parent.id, d: roundedPath(pts, 12), len: lengthOf(pts), running: k.state === "running" });
         group(k, k.children ?? [], el, false);
       });
     };
     // Drilled: the main card connects to the panel's top card, which connects to its own children.
-    if (mainEl) group(shown, drilled ? [panelRoot] : (shown.children ?? []), mainEl, wide);
-    const key = JSON.stringify([revealKey, pad, wires.map((x) => [x.id, x.d, x.running]), dots]);
-    if (key !== geo.key) setGeo({ key, for: revealKey, wires, dots, pad });
+    if (mainEl) group(shown, drilled ? [panelRoot] : (shown.children ?? []), mainEl, true);
+    const key = JSON.stringify([revealKey, left, wires.map((x) => [x.id, x.d, x.running]), dots]);
+    if (key !== geo.key) setGeo({ key, for: revealKey, wires, dots, left });
   });
 
   /* ── Reveal: the line grows from the parent's dot into each child; the child arrives with it ── */
@@ -760,7 +848,24 @@ export function AgentFleet({
   useLayoutEffect(() => {
     if (!shown || !treeCol.current) {
       revealed.current = null;
-      lastPad.current = null; // closed: the next tree doesn't glide from a stale spot
+      return;
+    }
+    if (list) {
+      // The guides are part of each row, so the tree simply arrives: a short fade, rows staggered.
+      if (revealed.current === revealKey) return;
+      revealed.current = revealKey;
+      cancelAnims();
+      const col = treeCol.current;
+      const from = enterFrom.current;
+      enterFrom.current = null;
+      const go = (el: Element, k: Keyframe[], o: KeyframeAnimationOptions) => anims.current.push(el.animate(k, { easing: EASE, fill: "both", ...o }));
+      if (reduced) {
+        go(col, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+        return;
+      }
+      const sx = from ? (from === "right" ? 14 : -14) : 0;
+      go(col, [{ opacity: 0, transform: `translate(${sx}px, ${sx ? 0 : -4}px)` }, { opacity: 1, transform: "none" }], { duration: 240 });
+      col.querySelectorAll("[data-fleet-node]").forEach((el, i) => i < 10 && go(el, [{ opacity: 0, transform: "translateX(-6px)" }, { opacity: 1, transform: "none" }], { duration: 240, delay: 40 + i * 35 }));
       return;
     }
     const hasKids = drilled || !!shown.children?.length;
@@ -775,17 +880,13 @@ export function AgentFleet({
     const from = enterFrom.current;
     enterFrom.current = null;
     if (reduced) {
-      lastPad.current = wide ? geo.pad : null;
       run(col, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
       run(s, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
       return;
     }
     // Drilling: the new level slides in from its side while its connectors draw.
-    // Switching cards: glide from where the previous tree sat (transform only, no jump).
-    const shiftY = wide && lastPad.current !== null ? lastPad.current - geo.pad : 0;
-    lastPad.current = wide ? geo.pad : null;
     const sx = from ? (from === "right" ? 18 : -18) : 0;
-    if (sx || shiftY) run(col, [{ transform: `translate(${sx}px, ${shiftY}px)` }, { transform: "none" }], { duration: shiftY ? 340 : 280 });
+    if (sx) run(col, [{ transform: `translateX(${sx}px)` }, { transform: "none" }], { duration: 280 });
     col.querySelectorAll("[data-fleet-plain]").forEach((el) => run(el, [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 260 }));
 
     const SPEED = 1.5; // px per ms
@@ -987,30 +1088,94 @@ export function AgentFleet({
         · {hidden.waiting ? `${hidden.waiting} ${hidden.waiting === 1 ? "needs" : "need"} you below` : `${hidden.failed} failed below`}
       </span>
     );
+    const item = {
+      role: "treeitem",
+      "data-tree-id": a.id,
+      "aria-level": depths.get(a.id) ?? 1,
+      "aria-expanded": kids.length ? !collapsed : undefined,
+      "aria-selected": a.id === activeId,
+      "aria-label": `${a.name}, ${FLEET_LABEL[a.state]}${a.task ? `, ${a.task}` : ""}${tasks ? `, ${tasks} ${tasks === 1 ? "task" : "tasks"}` : ""}${hidden ? `, ${hidden.count} sub-agents collapsed` : ""}`,
+      tabIndex: a.id === rows[active]?.agent.id ? 0 : -1,
+      onFocus: (e: FocusEvent<HTMLDivElement>) => e.target === e.currentTarget && setActiveId(a.id),
+    } as const;
+    const open = (e: MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      setActiveId(a.id);
+      toggleTasks(a, e.currentTarget);
+    };
+    if (list) {
+      const task = taskOf(a);
+      // The chip, Answer or Retry / Dismiss: too wide to share the narrow row's second line ("n tasks" fits).
+      const wide = !!chip || (!!action && (a.state === "waiting" || a.state === "failed"));
+      // The name column gives up this level's indent, so the task and the numbers line up with the main rows.
+      const level = (depths.get(a.id) ?? 1) - (panelRoot ? (depths.get(panelRoot.id) ?? 0) : 0) + (drilled ? 1 : 0);
+      const nameW = Math.max(64, LIST_TASK_X - SUB_LEFT - (level - 1) * SUB_STEP - 24 - 12 - 12);
+      return (
+        <div key={a.id} {...item} className={cn(GUIDE_ITEM, "flex flex-col outline-none [&:focus-visible>[data-card]]:outline-2 [&:focus-visible>[data-card]]:-outline-offset-2 [&:focus-visible>[data-card]]:outline-ring")}>
+          {/* Narrow: name and status, then task and spend. Wide: one line on the main rows' columns. */}
+          <div
+            data-card
+            data-fleet-node={a.id}
+            onClick={open}
+            style={{ "--fleet-name": `${nameW}px` } as CSSProperties}
+            className={cn(
+              "relative z-[1] grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-lg px-2 py-2",
+              // Mid widths (a docs column) leave out the clock and put needs-you under the task, so the task keeps room.
+              "@[520px]:grid-cols-[auto_var(--fleet-name)_minmax(0,1fr)_6.25rem_4.5rem] @[820px]:grid-cols-[auto_var(--fleet-name)_minmax(0,1fr)_6.25rem_7.5rem_4.5rem_3.5rem]",
+              ROW_HOVER,
+              selected && "bg-[color-mix(in_srgb,var(--fleet-wire)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--fleet-wire)_12%,transparent)]",
+            )}
+          >
+            <span className="row-span-2 self-start rounded-md bg-[var(--fleet-bg)] @[520px]:row-span-1">
+              <Logo agent={a} z={z} size="size-6 rounded-md [&>*]:size-3.5" />
+            </span>
+            <span className="col-start-2 row-start-1 flex min-w-0 items-baseline gap-1.5">
+              {/* The model gives way first, so the name keeps its room. */}
+              <span title={a.name} className="max-w-full flex-none truncate text-[13.5px] font-semibold text-foreground">
+                {a.name}
+              </span>
+              <span className="hidden min-w-0 truncate text-[12px] text-muted-foreground @[360px]:inline">{a.model ?? "Agent"}</span>
+            </span>
+            <span
+              title={task}
+              className={cn("col-start-2 row-start-2 min-w-0 truncate text-[13px] @[520px]:col-start-3 @[520px]:row-start-1", a.state === "failed" ? "text-red-700 dark:text-red-300" : "text-foreground/75")}
+            >
+              {task}
+            </span>
+            <span className="col-start-3 row-start-1 justify-self-end @[520px]:col-start-4 @[520px]:justify-self-start">
+              <Pill state={a.state} z={DENSITY.compact} />
+            </span>
+            {/* The needs-you column: the chip, Answer, Retry / Dismiss or "n tasks". Narrow: a line of its own (n tasks is left out: the row itself opens them). */}
+            {(chip || action) && (
+              <span className={cn("items-center gap-1.5 @[520px]:col-span-1 @[520px]:col-start-3 @[520px]:row-start-2 @[520px]:flex @[520px]:pt-0 @[820px]:col-start-5 @[820px]:row-start-1", wide ? "col-span-2 col-start-2 row-start-3 flex pt-1" : "hidden")}>
+                {chip}
+                {action}
+              </span>
+            )}
+            <span className="col-start-3 row-start-2 text-right text-[13px] font-medium text-foreground tabular-nums @[520px]:col-start-5 @[520px]:row-start-1 @[820px]:col-start-6">{formatCost(a.spend ?? 0)}</span>
+            <span className="hidden text-right text-[12.5px] text-muted-foreground tabular-nums @[820px]:col-start-7 @[820px]:row-start-1 @[820px]:block">{time}</span>
+          </div>
+          {kids.length > 0 && !collapsed && (
+            // The next level's guides hang from this row's mark: 8px padding + half the 24px mark.
+            // Reach: 30px when the row is one line; 51px meets the mark under a two- or three-line narrow row.
+            <div role="group" className={cn("ml-5 flex flex-col [--fleet-up:51px]", chip || action ? "@[820px]:[--fleet-up:30px]" : "@[520px]:[--fleet-up:30px]")}>
+              {kids.map(subCard)}
+            </div>
+          )}
+        </div>
+      );
+    }
     return (
-      <div
-        key={a.id}
-        role="treeitem"
-        data-tree-id={a.id}
-        aria-level={depths.get(a.id) ?? 1}
-        aria-expanded={kids.length ? !collapsed : undefined}
-        aria-selected={a.id === activeId}
-        aria-label={`${a.name}, ${FLEET_LABEL[a.state]}${a.task ? `, ${a.task}` : ""}${tasks ? `, ${tasks} ${tasks === 1 ? "task" : "tasks"}` : ""}${hidden ? `, ${hidden.count} sub-agents collapsed` : ""}`}
-        tabIndex={a.id === rows[active]?.agent.id ? 0 : -1}
-        onFocus={(e) => e.target === e.currentTarget && setActiveId(a.id)}
-        className="flex flex-col gap-3 outline-none [&:focus-visible>[data-card]]:outline-2 [&:focus-visible>[data-card]]:outline-offset-2 [&:focus-visible>[data-card]]:outline-ring"
-      >
+      <div key={a.id} {...item} className="flex flex-col gap-2.5 outline-none [&:focus-visible>[data-card]]:outline-2 [&:focus-visible>[data-card]]:outline-offset-2 [&:focus-visible>[data-card]]:outline-ring">
         <div
           data-card
           data-fleet-node={a.id}
-          onClick={(e) => {
-            e.stopPropagation();
-            setActiveId(a.id);
-            toggleTasks(a, e.currentTarget);
-          }}
+          onClick={open}
+          style={{ maxWidth: z.sub, minWidth: z.subMin }}
           className={cn(
             CARD,
-            "w-full max-w-[460px] min-w-[300px] cursor-pointer p-5 transition-[border-color,outline-color] duration-200 hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
+            "w-full cursor-pointer transition-[border-color,outline-color] duration-200 hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
+            z.pad,
             // Selected (its Tasks are open): a soft accent ring, set off from the card.
             selected && "outline-2 outline-offset-[3px] [outline-color:var(--fleet-wire)]",
           )}
@@ -1018,9 +1183,10 @@ export function AgentFleet({
           <span
             data-contact
             aria-hidden
-            className="pointer-events-none absolute inset-y-4 -left-px w-8 rounded-l-2xl bg-[radial-gradient(closest-side_at_0_50%,color-mix(in_srgb,var(--fleet-head)_45%,transparent),transparent)] opacity-0"
+            className="pointer-events-none absolute inset-y-3 -left-px w-8 rounded-l-xl bg-[radial-gradient(closest-side_at_0_50%,color-mix(in_srgb,var(--fleet-head)_45%,transparent),transparent)] opacity-0"
           />
           <CardBody
+            z={z}
             agent={a}
             tools={a.tools ?? []}
             footerLeft={
@@ -1042,7 +1208,7 @@ export function AgentFleet({
           />
         </div>
         {kids.length > 0 && !collapsed && (
-          <div role="group" className="flex flex-col gap-3" style={{ marginLeft: NEST }}>
+          <div role="group" className="flex flex-col gap-2.5" style={{ marginLeft: NEST }}>
             {kids.map(subCard)}
           </div>
         )}
@@ -1052,10 +1218,14 @@ export function AgentFleet({
 
   const notice =
     panelRoot && ((panelRoot.state === "waiting" && panelRoot.request && !drilled) || (panelRoot.state === "failed" && resolve && !drilled)) ? (
-      <div data-fleet-plain className={cn(CARD, "flex max-w-[460px] flex-wrap items-center gap-3 px-5 py-4")}>
+      <div
+        data-fleet-plain
+        style={list ? undefined : { maxWidth: z.sub }}
+        className={cn(list ? "rounded-lg bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]" : CARD, "flex flex-wrap items-center gap-3 px-4 py-3")}
+      >
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[14px] font-medium text-foreground">{panelRoot.state === "waiting" ? panelRoot.request!.title : `${panelRoot.name} failed`}</span>
-          <span className="truncate text-[13px] text-muted-foreground">
+          <span className="text-[13.5px] font-medium text-foreground">{panelRoot.state === "waiting" ? panelRoot.request!.title : `${panelRoot.name} failed`}</span>
+          <span className="truncate text-[12.5px] text-muted-foreground">
             {panelRoot.state === "waiting" ? (panelRoot.request!.detail ?? `${panelRoot.name} is waiting for you`) : (panelRoot.error ?? "")}
           </span>
         </span>
@@ -1078,10 +1248,10 @@ export function AgentFleet({
 
   const panelHead =
     shown && (drilled || deepest > INLINE || expandAll) ? (
-      <div data-fleet-plain className="flex min-h-8 max-w-[460px] flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <div data-fleet-plain style={list ? undefined : { maxWidth: z.sub }} className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-1">
         {drilled ? (
           <nav aria-label="Sub-agent path" className="min-w-0">
-            <ol className="flex min-w-0 flex-wrap items-center gap-1 text-[13.5px]">
+            <ol className="flex min-w-0 flex-wrap items-center gap-1 text-[13px]">
               {[shown, ...trail.slice(1)].map((a, i, all) => {
                 const last = i === all.length - 1;
                 return (
@@ -1129,24 +1299,90 @@ export function AgentFleet({
       </div>
     ) : null;
 
+  const trunk = (n: ReactNode) => (n && list ? <div className={GUIDE_TRUNK}>{n}</div> : n);
   const treeColumn = shown && panelRoot && (
-    <div ref={treeCol} id={treeId} className="flex min-w-0 flex-col gap-3" style={wide ? { paddingTop: geo.pad } : { marginLeft: NARROW_INDENT }}>
-      {panelHead}
-      {notice}
+    <div
+      ref={treeCol}
+      id={treeId}
+      // List: the guides hang from the row's mark (16px padding + half the 32px mark), reaching up past the row's own padding.
+      className={cn("flex min-w-0 flex-col gap-2.5", list && "mr-2 mb-3 ml-8 [--fleet-up:28px]")}
+      style={list ? undefined : { marginLeft: geo.left }}
+    >
+      {trunk(panelHead)}
+      {trunk(notice)}
       {drilled || panelRoot.children?.length ? (
-        <div ref={tree} role="tree" aria-labelledby={labelId} onKeyDown={onTreeKey} className="flex flex-col gap-3">
+        <div ref={tree} role="tree" aria-labelledby={labelId} onKeyDown={onTreeKey} className={cn("flex flex-col", !list && "gap-2.5")}>
           <span id={labelId} className="sr-only">
             {panelRoot.name}: sub-agents
           </span>
           {drilled ? subCard(panelRoot) : panelRoot.children!.map(subCard)}
         </div>
       ) : (
-        <p data-fleet-plain className="max-w-[460px] px-1 py-2 text-[13.5px] text-muted-foreground">
-          {shown.name} has no sub-agents yet.
-        </p>
+        <div className={cn(list && GUIDE_ITEM)}>
+          <p data-fleet-plain style={list ? undefined : { maxWidth: z.sub }} className="px-1 py-2 text-[13px] text-muted-foreground">
+            {shown.name} has no sub-agents yet.
+          </p>
+        </div>
       )}
     </div>
   );
+
+  /** List: one row per main agent. The numbers sit in fixed, right-aligned columns so the rows line up. */
+  const mainRow = (a: FleetAgent) => {
+    const isOpen = a.id === openId;
+    const needs = walk(a).filter((x) => x.state === "waiting").length;
+    const task = taskOf(a);
+    return (
+      <button
+        type="button"
+        data-fleet-card={a.id}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? treeId : undefined}
+        onClick={() => toggle(a)}
+        className={cn(
+          "relative z-[1] grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 px-4 py-3 text-left",
+          "@[520px]:grid-cols-[auto_11rem_minmax(0,1fr)_6.25rem_4.5rem] @[820px]:grid-cols-[auto_11rem_minmax(0,1fr)_6.25rem_7.5rem_4.5rem_3.5rem] @[820px]:gap-y-0",
+          ROW_HOVER,
+          isOpen && "bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)]",
+          focusRing,
+          "focus-visible:-outline-offset-2",
+        )}
+      >
+        <span className="row-span-2 rounded-lg bg-[var(--fleet-bg)] @[520px]:row-span-1">
+          <Logo agent={a} z={z} size="size-8 rounded-lg [&>*]:size-4" />
+        </span>
+        <span className="col-start-2 row-start-1 flex min-w-0 items-baseline gap-1.5 @[520px]:flex-col @[520px]:items-start @[520px]:gap-0">
+          <span className="max-w-full truncate text-[14px] leading-5 font-semibold text-foreground">{a.name}</span>
+          <span className="hidden max-w-full truncate text-[12.5px] leading-[18px] text-muted-foreground @[360px]:inline @[520px]:block">{a.model ?? "Agent"}</span>
+        </span>
+        <span
+          title={task}
+          className={cn("col-start-2 row-start-2 min-w-0 truncate text-[13px] @[520px]:col-start-3 @[520px]:row-start-1 @[520px]:text-[13.5px]", a.state === "failed" ? "text-red-700 dark:text-red-300" : "text-foreground/75")}
+        >
+          {task}
+        </span>
+        <span className="col-start-3 row-start-1 justify-self-end @[520px]:col-start-4 @[520px]:justify-self-start">
+          <Pill state={a.state} z={DENSITY.compact} />
+        </span>
+        <span className={cn("hidden text-[12.5px] whitespace-nowrap text-amber-700 tabular-nums dark:text-amber-300", needs ? "@[520px]:col-start-3 @[520px]:row-start-2 @[520px]:block" : "@[820px]:block", "@[820px]:col-start-5 @[820px]:row-start-1")}>
+          {needs ? `${needs} ${needs === 1 ? "needs" : "need"} you` : ""}
+        </span>
+        <span className="col-start-3 row-start-2 text-right text-[13px] font-medium text-foreground tabular-nums @[520px]:col-start-5 @[520px]:row-start-1 @[820px]:col-start-6">{formatCost(treeSpend(a))}</span>
+        <span className="hidden text-right text-[12.5px] text-muted-foreground tabular-nums @[820px]:col-start-7 @[820px]:row-start-1 @[820px]:block">{formatDuration(elapsed(a, now))}</span>
+      </button>
+    );
+  };
+  /** Up / Down / Home / End move between rows; Enter or Space (the button's own) opens one. */
+  const onListKey = (e: KeyboardEvent<HTMLUListElement>) => {
+    const t = e.target as HTMLElement;
+    if (!t.hasAttribute("data-fleet-card")) return;
+    const all = [...e.currentTarget.querySelectorAll<HTMLElement>("[data-fleet-card]")];
+    const i = all.indexOf(t);
+    const j = e.key === "ArrowDown" ? i + 1 : e.key === "ArrowUp" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? all.length - 1 : -2;
+    if (j === -2 || !all[j]) return;
+    e.preventDefault();
+    all[j].focus();
+  };
 
   const mainCard = (a: FleetAgent) => {
     const isOpen = a.id === openId;
@@ -1162,7 +1398,8 @@ export function AgentFleet({
         onClick={() => toggle(a)}
         className={cn(
           CARD,
-          "block w-full cursor-pointer p-5 text-left",
+          "block w-full cursor-pointer text-left",
+          z.pad,
           "transition-[opacity,border-color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
           "hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
           isOpen && "[border-color:color-mix(in_srgb,var(--foreground)_20%,transparent)]",
@@ -1171,10 +1408,11 @@ export function AgentFleet({
         )}
       >
         <CardBody
+          z={z}
           agent={a}
           tools={mainTools(a)}
           footerLeft={
-            <span className={cn("flex min-w-0 items-center gap-2 [&_svg]:size-4 [&_svg]:flex-none", SUMMARY_TEXT[sum.tone])}>
+            <span className={cn("flex min-w-0 items-center gap-1.5 [&_svg]:size-3.5 [&_svg]:flex-none", SUMMARY_TEXT[sum.tone])}>
               <Icon />
               <span className="truncate">{sum.text}</span>
             </span>
@@ -1186,17 +1424,18 @@ export function AgentFleet({
   };
 
   const subs = totals.agents - fleet.length;
+  const shownIndex = shown ? fleet.findIndex((a) => a.id === shown.id) : -1;
 
   return (
-    <section ref={root} aria-label={typeof title === "string" ? title : "Agent fleet"} className={cn("flex min-w-0 flex-col gap-5", WIRE, className)}>
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1">
-        <h2 className="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
+    <section ref={root} aria-label={typeof title === "string" ? title : "Agent fleet"} className={cn("flex min-w-0 flex-col gap-4", WIRE, className)}>
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-0.5">
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           <span className="grid size-4 place-items-center text-[var(--fleet-head)] [&_svg]:size-full">
             <Sparkle />
           </span>
           {title}
         </h2>
-        <p className="flex flex-wrap items-baseline gap-x-4 text-[14px] text-muted-foreground tabular-nums">
+        <p className="flex flex-wrap items-baseline gap-x-4 text-[13px] text-muted-foreground tabular-nums">
           <span>
             {fleet.length} {fleet.length === 1 ? "agent" : "agents"} / {subs} sub-agents
           </span>
@@ -1210,30 +1449,30 @@ export function AgentFleet({
       </header>
 
       {fleet.length === 0 ? (
-        <p className={cn(CARD, "px-5 py-10 text-center text-[14px] text-muted-foreground")}>No agents yet.</p>
+        <p className={cn(CARD, "px-5 py-10 text-center text-[13.5px] text-muted-foreground")}>No agents yet.</p>
+      ) : list ? (
+        <div ref={wrap} className={cn(CARD, LIST_SURFACE, "@container overflow-hidden")}>
+          <ul aria-label="Agents" onKeyDown={onListKey} className="divide-y [&>li]:[border-color:color-mix(in_srgb,var(--foreground)_7%,transparent)]">
+            {fleet.map((a) => (
+              <li key={a.id} className="flex min-w-0 flex-col">
+                {mainRow(a)}
+                {shown?.id === a.id && treeColumn}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : (
         // Scrolls sideways only when "Expand all" goes deeper than the room there is.
         <div className="-m-2 overflow-x-auto p-2">
           <div ref={wrap} className="relative min-w-full">
-            {wide ? (
-              <div className="grid items-start" style={{ gridTemplateColumns: "minmax(0, 380px) minmax(0, 1fr)", columnGap: COL_GAP }}>
-                <ul ref={mainCol} className="flex flex-col gap-3" aria-label="Agents">
-                  {fleet.map((a) => (
-                    <li key={a.id}>{mainCard(a)}</li>
-                  ))}
-                </ul>
-                <div className="min-w-0">{treeColumn}</div>
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-3" aria-label="Agents">
-                {fleet.map((a) => (
-                  <li key={a.id} className="flex flex-col gap-3">
-                    {mainCard(a)}
-                    {a.id === shownId && treeColumn}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul aria-label="Agents" className="grid items-start" style={{ gridTemplateColumns: width ? `repeat(${cols}, minmax(0, 1fr))` : `repeat(auto-fill, minmax(min(${z.min}px, 100%), 1fr))`, gap: GAP }}>
+              {fleet.map((a, i) => (
+                <Fragment key={a.id}>
+                  <li className="min-w-0">{mainCard(a)}</li>
+                  {shownIndex >= 0 && i === rowEnd(shownIndex, cols, fleet.length) && <li className="col-span-full min-w-0 pt-2 pb-1">{treeColumn}</li>}
+                </Fragment>
+              ))}
+            </ul>
 
             {/* Connectors, measured from the cards; they only cross the gaps and touch card edges. */}
             <svg ref={svg} aria-hidden className="pointer-events-none absolute inset-0 size-full overflow-visible">

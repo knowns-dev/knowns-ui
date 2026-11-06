@@ -1,3 +1,4 @@
+/** @registry part-of="agent-graph" */
 import type { Pt } from "./routing";
 import type { Tree } from "./tree";
 

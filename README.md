@@ -7,14 +7,10 @@
 
 # Knowns UI
 
-React components for products built on AI agents.<br>
-Live views of what your agents are doing, chat building blocks, and the everyday components around them.
+The UI kit for AI products.<br>
+Agent views and chat, app screens, marketing sections and backgrounds. React and Tailwind, copied into your repo with the shadcn CLI.
 
-<a href="LICENSE"><img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
-<a href="https://ui.shadcn.com/docs/registry"><img alt="shadcn: registry" src="https://img.shields.io/badge/shadcn-registry-black"></a>
-<a href="https://ui.knowns.dev/docs/introduction"><img alt="components: 52" src="https://img.shields.io/badge/components-52-6366f1"></a>
-
-[Docs](https://ui.knowns.dev/docs/introduction) · [Components](https://ui.knowns.dev/docs/group/components) · [Pro](https://ui.knowns.dev/pricing)
+[Docs](https://ui.knowns.dev/docs/introduction) · [Components](https://ui.knowns.dev/components) · [Blocks](https://ui.knowns.dev/blocks) · [Pricing](https://ui.knowns.dev/pricing)
 
 </div>
 
@@ -66,147 +62,15 @@ npx shadcn@latest add @knowns-ui/agent-graph
 
 Registry dependencies (the core types, the run store, icons) come along automatically.
 
-## Gallery
+## What's in Free
 
-<table>
-<tr>
-<td width="50%" valign="top">
-<a href="https://ui.knowns.dev/docs/agent-graph">
+- **Agent views:** graph, lanes, trace waterfall, context window, tool calls, approvals, plans, monitors, fleets, handoffs and cursors.
+- **Chat:** composer, message actions, thinking state, token stream and AI answers.
+- **Base components:** actions, forms, overlays, navigation, data display and feedback.
+- **Page blocks:** hero and marketing sections, site header and footer, sidebar, app shell, auth, settings, blog, docs and error pages.
+- **Motion:** backgrounds, text animation and illustrations.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/agent-graph-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/agent-graph-light.webp">
-  <img alt="Agent Graph: Agents and tools as a live graph" src=".github/assets/agent-graph-light.webp" width="100%">
-</picture>
-
-</a>
-<br><b><a href="https://ui.knowns.dev/docs/agent-graph">Agent Graph</a></b><br>Agents and tools as a live graph
-</td>
-<td width="50%" valign="top">
-<a href="https://ui.knowns.dev/docs/trace-waterfall">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/trace-waterfall-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/trace-waterfall-light.webp">
-  <img alt="Trace Waterfall: Every call on a timeline" src=".github/assets/trace-waterfall-light.webp" width="100%">
-</picture>
-
-</a>
-<br><b><a href="https://ui.knowns.dev/docs/trace-waterfall">Trace Waterfall</a></b><br>Every call on a timeline
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<a href="https://ui.knowns.dev/docs/agent-cursors">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/agent-cursors-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/agent-cursors-light.webp">
-  <img alt="Agent Cursors: Agents editing the page with you" src=".github/assets/agent-cursors-light.webp" width="100%">
-</picture>
-
-</a>
-<br><b><a href="https://ui.knowns.dev/docs/agent-cursors">Agent Cursors</a></b><br>Agents editing the page with you
-</td>
-<td width="50%" valign="top">
-<a href="https://ui.knowns.dev/docs/ai-answer">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/ai-answer-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/ai-answer-light.webp">
-  <img alt="AI Answer: Streamed answers with sources and citations" src=".github/assets/ai-answer-light.webp" width="100%">
-</picture>
-
-</a>
-<br><b><a href="https://ui.knowns.dev/docs/ai-answer">AI Answer</a></b><br>Streamed answers with sources and citations
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<a href="https://ui.knowns.dev/docs/thinking-state">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/thinking-state-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/thinking-state-light.webp">
-  <img alt="Thinking State: What happens before the answer" src=".github/assets/thinking-state-light.webp" width="100%">
-</picture>
-
-</a>
-<br><b><a href="https://ui.knowns.dev/docs/thinking-state">Thinking State</a></b><br>What happens before the answer
-</td>
-<td width="50%" valign="top">
-<a href="https://ui.knowns.dev/docs/agent-fleet">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/agent-fleet-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/agent-fleet-light.webp">
-  <img alt="Agent Fleet: Every agent you run, and what needs you" src=".github/assets/agent-fleet-light.webp" width="100%">
-</picture>
-
-</a>
-<br><b><a href="https://ui.knowns.dev/docs/agent-fleet">Agent Fleet</a></b><br>Every agent you run, and what needs you
-</td>
-</tr>
-</table>
-
-## Components (52)
-
-| Component | Install |
-| --- | --- |
-| [Accordion](https://ui.knowns.dev/docs/accordion) | `https://ui.knowns.dev/r/accordion.json` |
-| [Agent Cursors](https://ui.knowns.dev/docs/agent-cursors) | `https://ui.knowns.dev/r/agent-cursors.json` |
-| [Agent Fleet](https://ui.knowns.dev/docs/agent-fleet) | `https://ui.knowns.dev/r/agent-fleet.json` |
-| [Agent Graph](https://ui.knowns.dev/docs/agent-graph) | `https://ui.knowns.dev/r/agent-graph.json` |
-| [Agent Handoff](https://ui.knowns.dev/docs/agent-handoff) | `https://ui.knowns.dev/r/agent-handoff.json` |
-| [Agent Lanes](https://ui.knowns.dev/docs/agent-lanes) | `https://ui.knowns.dev/r/agent-lanes.json` |
-| [Agent Monitor](https://ui.knowns.dev/docs/agent-monitor) | `https://ui.knowns.dev/r/agent-monitor.json` |
-| [AI Answer](https://ui.knowns.dev/docs/ai-answer) | `https://ui.knowns.dev/r/ai-answer.json` |
-| [Approval Prompt](https://ui.knowns.dev/docs/approval-prompt) | `https://ui.knowns.dev/r/approval-prompt.json` |
-| [Avatar](https://ui.knowns.dev/docs/avatar) | `https://ui.knowns.dev/r/avatar.json` |
-| [Badge](https://ui.knowns.dev/docs/badge) | `https://ui.knowns.dev/r/badge.json` |
-| [Breadcrumb](https://ui.knowns.dev/docs/breadcrumb) | `https://ui.knowns.dev/r/breadcrumb.json` |
-| [Button](https://ui.knowns.dev/docs/button) | `https://ui.knowns.dev/r/button.json` |
-| [Card](https://ui.knowns.dev/docs/card) | `https://ui.knowns.dev/r/card.json` |
-| [Chat Composer](https://ui.knowns.dev/docs/chat-composer) | `https://ui.knowns.dev/r/chat-composer.json` |
-| [Checkbox](https://ui.knowns.dev/docs/checkbox) | `https://ui.knowns.dev/r/checkbox.json` |
-| [Combobox](https://ui.knowns.dev/docs/combobox) | `https://ui.knowns.dev/r/combobox.json` |
-| [Command Menu](https://ui.knowns.dev/docs/command-menu) | `https://ui.knowns.dev/r/command-menu.json` |
-| [Context Window](https://ui.knowns.dev/docs/context-window) | `https://ui.knowns.dev/r/context-window.json` |
-| [Data Table](https://ui.knowns.dev/docs/data-table) | `https://ui.knowns.dev/r/data-table.json` |
-| [Date Range Picker](https://ui.knowns.dev/docs/date-range-picker) | `https://ui.knowns.dev/r/date-range-picker.json` |
-| [Dialog](https://ui.knowns.dev/docs/dialog) | `https://ui.knowns.dev/r/dialog.json` |
-| [Dot Spotlight](https://ui.knowns.dev/docs/dot-spotlight) | `https://ui.knowns.dev/r/dot-spotlight.json` |
-| [Dropdown](https://ui.knowns.dev/docs/dropdown) | `https://ui.knowns.dev/r/dropdown.json` |
-| [Empty States](https://ui.knowns.dev/docs/empty-states) | `https://ui.knowns.dev/r/empty-states.json` |
-| [File Drop](https://ui.knowns.dev/docs/file-drop) | `https://ui.knowns.dev/r/file-drop.json` |
-| [Input](https://ui.knowns.dev/docs/input) | `https://ui.knowns.dev/r/input.json` |
-| [Kbd](https://ui.knowns.dev/docs/kbd) | `https://ui.knowns.dev/r/kbd.json` |
-| [Menu](https://ui.knowns.dev/docs/menu) | `https://ui.knowns.dev/r/menu.json` |
-| [OTP Input](https://ui.knowns.dev/docs/otp-input) | `https://ui.knowns.dev/r/otp-input.json` |
-| [Pagination](https://ui.knowns.dev/docs/pagination) | `https://ui.knowns.dev/r/pagination.json` |
-| [Popover](https://ui.knowns.dev/docs/popover) | `https://ui.knowns.dev/r/popover.json` |
-| [Progress](https://ui.knowns.dev/docs/progress) | `https://ui.knowns.dev/r/progress.json` |
-| [Radio Group](https://ui.knowns.dev/docs/radio-group) | `https://ui.knowns.dev/r/radio-group.json` |
-| [Segmented Control](https://ui.knowns.dev/docs/segmented-control) | `https://ui.knowns.dev/r/segmented-control.json` |
-| [Select](https://ui.knowns.dev/docs/select) | `https://ui.knowns.dev/r/select.json` |
-| [Separator](https://ui.knowns.dev/docs/separator) | `https://ui.knowns.dev/r/separator.json` |
-| [Shimmer Text](https://ui.knowns.dev/docs/shimmer-text) | `https://ui.knowns.dev/r/shimmer-text.json` |
-| [Skeleton](https://ui.knowns.dev/docs/skeleton) | `https://ui.knowns.dev/r/skeleton.json` |
-| [Slider](https://ui.knowns.dev/docs/slider) | `https://ui.knowns.dev/r/slider.json` |
-| [Spinner](https://ui.knowns.dev/docs/spinner) | `https://ui.knowns.dev/r/spinner.json` |
-| [Status Dot](https://ui.knowns.dev/docs/status-dot) | `https://ui.knowns.dev/r/status-dot.json` |
-| [Stepper](https://ui.knowns.dev/docs/stepper) | `https://ui.knowns.dev/r/stepper.json` |
-| [Switch](https://ui.knowns.dev/docs/switch) | `https://ui.knowns.dev/r/switch.json` |
-| [Tabs](https://ui.knowns.dev/docs/tabs) | `https://ui.knowns.dev/r/tabs.json` |
-| [Tag](https://ui.knowns.dev/docs/tag) | `https://ui.knowns.dev/r/tag.json` |
-| [Thinking State](https://ui.knowns.dev/docs/thinking-state) | `https://ui.knowns.dev/r/thinking-state.json` |
-| [Toast](https://ui.knowns.dev/docs/toast) | `https://ui.knowns.dev/r/toast.json` |
-| [Toggle Group](https://ui.knowns.dev/docs/toggle-group) | `https://ui.knowns.dev/r/toggle-group.json` |
-| [Tool Call Card](https://ui.knowns.dev/docs/tool-call-card) | `https://ui.knowns.dev/r/tool-call-card.json` |
-| [Tooltip](https://ui.knowns.dev/docs/tooltip) | `https://ui.knowns.dev/r/tooltip.json` |
-| [Trace Waterfall](https://ui.knowns.dev/docs/trace-waterfall) | `https://ui.knowns.dev/r/trace-waterfall.json` |
-
-Shared code installed with them: `knowns-core`, `knowns-icons`, `knowns-floating`, `illustrations-core`, `text-animation-core`, `backgrounds-core`.
+Browse them all, with live examples and the install command for each: [Components](https://ui.knowns.dev/components) · [Blocks](https://ui.knowns.dev/blocks).
 
 ## Pro
 
@@ -221,6 +85,10 @@ Shared code installed with them: `knowns-core`, `knowns-icons`, `knowns-floating
 
 Connect your coding agent to the Knowns UI MCP server (`https://ui.knowns.dev/mcp`), point it at one component's JSON (`https://ui.knowns.dev/r/<name>.json`), or give it the docs as text (`https://ui.knowns.dev/llms.txt`). Setup for Claude Code, Cursor, VS Code and Codex: https://ui.knowns.dev/docs/ai-and-mcp
 
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how changes flow back into a release.
+
 ## Develop
 
 ```bash
@@ -230,4 +98,8 @@ bun run check   # installs every item into a fresh Next.js app and type-checks i
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Third-party logos in `registry/knowns/lib/knowns/icons` keep their own terms; see the LICENSES.md there.
+MIT for the code. See [LICENSE](LICENSE).
+
+## Trademarks
+
+The model and tool logos in `registry/knowns/lib/knowns/icons` are trademarks of their owners. They are not covered by the MIT license, are here only to identify those products, and may not be used commercially or to suggest endorsement. Sources and terms: [LICENSES.md](registry/knowns/lib/knowns/icons/LICENSES.md).

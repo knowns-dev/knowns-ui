@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="dot-spotlight" type="block" title="Dot Spotlight" description="A quiet dot grid with a soft light that follows the pointer and lifts the dots under it. CSS only." */
 
 import { useEffect, useRef } from "react";
 import { useLive } from "@/registry/knowns/ui/knowns/illustrations/use-in-view";

@@ -1,3 +1,4 @@
+/** @registry part-of="agent-monitor" */
 import type { AgentSnapshot, Span, Task } from "@/registry/knowns/lib/knowns/types";
 
 /** running · paused · waiting (needs you) · finished · failed · idle (nothing to do yet). */

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="agent-handoff" type="ui" title="Agent handoff" description="A relay of agents: who handed what to whom, with the context passed along, lost items, a light along the rail on each new hand-off, and forward reassignment by drag or keyboard." */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import type { AgentRun } from "@/registry/knowns/lib/knowns/run";
@@ -7,7 +8,7 @@ import { useAgentSnapshot } from "@/registry/knowns/lib/knowns/run";
 import type { Actor, Approval, Span, Task } from "@/registry/knowns/lib/knowns/types";
 import { formatUsd } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
-import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { cn, focusRing, localRect } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
 import { Spinner } from "../spinner";
 import { Tooltip } from "../tooltip";
@@ -380,14 +381,15 @@ export function AgentHandoff({
   const measure = useCallback(() => {
     const w = wrap.current;
     if (!w) return;
-    const box = w.getBoundingClientRect();
+    // Layout px (what the SVG draws in), not screen px, so the lines stay put under CSS zoom.
+    const box = { width: w.offsetWidth, height: w.offsetHeight };
     setSize((s) => (s.w === box.width && s.h === box.height ? s : { w: box.width, h: box.height }));
     // Stacked layout (narrow container): no connectors.
     if ((root.current?.clientWidth ?? 0) < 760) return setWires((x) => (x.length ? [] : x));
     const at = (el?: HTMLElement) => {
       if (!el) return undefined;
-      const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2 - box.left, y: r.top + r.height / 2 - box.top };
+      const r = localRect(el, w);
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     };
     const next: Wire[] = [];
     for (let i = 0; i < order.length - 1; i++) {

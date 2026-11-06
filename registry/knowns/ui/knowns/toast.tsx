@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="toast" type="ui" title="Toast" description="Notifications with ToastProvider and useToast()." */
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="tabs" type="ui" title="Tabs" description="Tabs in underline, pill and button styles, horizontal or vertical, with icons, counts, overflow scrolling and a sliding indicator." */
 
 import {
   createContext,

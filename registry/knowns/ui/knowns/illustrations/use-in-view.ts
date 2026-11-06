@@ -1,4 +1,5 @@
 "use client";
+/** @registry part-of="illustrations-core" */
 
 import { useEffect, useState, useSyncExternalStore, type RefObject } from "react";
 

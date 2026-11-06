@@ -1,3 +1,4 @@
+/** @registry part-of="thinking-state" */
 /* Pure helpers for ThinkingState (no React), exported for tests. */
 
 export type ThinkingStatus = "thinking" | "done" | "stopped" | "failed";

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="toggle-group" type="ui" title="Toggle group" description="Pressable toggles, alone or in a toolbar group: single or multiple, attached or spaced, horizontal or vertical." */
 
 import {
   Children,
@@ -79,9 +80,11 @@ const LOOK: Record<ToggleVariant, { off: string; on: string }> = {
     off: "text-muted-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground",
     on: "bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)]",
   },
+  // Off is a quiet outline (border, muted ink, no fill). On is plainly set: full ink, a light fill,
+  // a firmer ring (and, for a labelled Toggle, a check).
   outline: {
-    off: "bg-card text-muted-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_13%,transparent)] hover:bg-[color-mix(in_srgb,var(--muted)_60%,var(--card))] hover:text-foreground dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]",
-    on: "bg-[color-mix(in_srgb,var(--foreground)_8%,var(--card))] text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_30%,transparent)] dark:bg-[color-mix(in_srgb,var(--foreground)_14%,var(--card))]",
+    off: "bg-transparent text-muted-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] hover:text-foreground",
+    on: "bg-[color-mix(in_srgb,var(--foreground)_6%,var(--card))] text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_42%,transparent),inset_0_1px_1px_rgb(0_0_0/0.05)] dark:bg-[color-mix(in_srgb,var(--foreground)_12%,var(--card))] dark:shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_40%,transparent)]",
   },
 };
 
@@ -132,10 +135,19 @@ export function Toggle({
       {...rest}
     >
       {icon && <span aria-hidden className="contents">{icon}</span>}
+      {!icon && !square && variant === "outline" && pressed && <Check />}
       {!square && <span>{children}</span>}
     </button>
   );
   return tooltip ? <Tooltip content={tooltip}>{button}</Tooltip> : button;
+}
+
+function Check() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="-ml-0.5">
+      <path d="M3.5 8.5l3 3 6-7" />
+    </svg>
+  );
 }
 
 /* ── Group ── */

@@ -1,3 +1,4 @@
+/** @registry part-of="data-table" */
 /** Pure logic for DataTable: sorting, filtering, selection, pagination, windowing. */
 
 export interface SortRule {

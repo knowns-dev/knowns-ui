@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 Knowns
+Copyright (c) 2026 Knowns Lab
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Trademarks and third-party logos
+
+Third-party names and logos in registry/knowns/lib/knowns/icons are trademarks
+of their owners. They are not licensed under MIT, are included only to identify
+those products, and may not be used for commercial purposes or to suggest
+endorsement.
+
+Each logo's source and terms are listed in
+registry/knowns/lib/knowns/icons/LICENSES.md.

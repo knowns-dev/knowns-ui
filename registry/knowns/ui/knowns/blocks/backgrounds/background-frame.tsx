@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="backgrounds-core" type="ui" title="Backgrounds core" description="Shared shell and helpers for the backgrounds: fade masks, theme-token colours, density and speed, seeded layouts, and the motion gate." */
 
 import type { CSSProperties, ReactNode, Ref } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

@@ -1,3 +1,4 @@
+/** @registry part-of="chat-composer" */
 import { useCallback, useRef, useState } from "react";
 
 /** "820 B", "14 KB", "2.4 MB". Empty for a missing or negative size. */

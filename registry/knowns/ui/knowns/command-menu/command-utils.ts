@@ -1,3 +1,4 @@
+/** @registry part-of="command-menu" */
 /** Pure logic for CommandMenu: fuzzy match + highlight, ranking, recents, key handling. */
 
 export interface FuzzyMatch {
@@ -88,7 +89,8 @@ export interface Rankable {
 
 /**
  * Items that match, best first (ties keep the given order). The label is what gets highlighted; keywords
- * can make an item match but score a little lower and highlight nothing.
+ * can make an item match but score a little lower and highlight nothing. Keywords match only as a
+ * substring: a scattered subsequence in a long keyword ("Blocks / Illustrations" for "butt") is noise.
  */
 export function rankItems<T extends Rankable>(items: T[], query: string): { item: T; ranges: [number, number][]; score: number }[] {
   if (!query.trim()) return items.map((item) => ({ item, ranges: [], score: 0 }));
@@ -96,7 +98,9 @@ export function rankItems<T extends Rankable>(items: T[], query: string): { item
   items.forEach((item, i) => {
     const m = fuzzyMatch(query, item.label);
     let best = m ? { score: m.score, ranges: m.ranges } : null;
+    const q = query.toLowerCase().replace(/\s+/g, "");
     for (const k of item.keywords ?? []) {
+      if (!k.toLowerCase().replace(/\s+/g, "").includes(q)) continue;
       const km = fuzzyMatch(query, k);
       if (km && (!best || km.score - 15 > best.score)) best = { score: km.score - 15, ranges: m?.ranges ?? [] };
     }

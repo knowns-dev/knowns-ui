@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="pagination" type="ui" title="Pagination" description="Pages with ellipsis, previous/next, page size select and a compact variant." */
 
 import { useState, useSyncExternalStore } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";

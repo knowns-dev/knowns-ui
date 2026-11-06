@@ -1,3 +1,4 @@
+/** @registry part-of="agent-graph" */
 import { labelBox, overlaps, segHitsBox, segmentsCross, segmentsMerge, segsOf, type Box, type Layout, type RadialState, type RelayoutReason, type Seg } from "./layout";
 // Tree links are drawn with the shape the layout picked for each (Layout.routeFor → shapedRoute).
 import type { Pt } from "./routing";

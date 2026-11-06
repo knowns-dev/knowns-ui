@@ -1,3 +1,4 @@
+/** @registry part-of="knowns-core" */
 import type { ReactNode } from "react";
 
 /** Who takes part in a run. */

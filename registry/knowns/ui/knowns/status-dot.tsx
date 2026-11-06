@@ -1,3 +1,4 @@
+/** @registry name="status-dot" type="ui" title="Status dot" description="Coloured dot for idle, busy, blocked, failed and finished; live states pulse." */
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 export type StatusDotState = "idle" | "busy" | "blocked" | "failed" | "finished";

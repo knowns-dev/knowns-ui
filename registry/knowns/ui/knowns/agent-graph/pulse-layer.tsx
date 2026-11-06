@@ -1,4 +1,5 @@
 "use client";
+/** @registry part-of="agent-graph" */
 
 import { useEffect, useRef, useState } from "react";
 import { ease, measure, pointAt, roundedPath, slice, type Pt } from "./routing";

@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="menu" type="ui" title="Menu" description="Dropdown menu for a button: sections, checkable items, descriptions, icons, typeahead and arrow-key navigation." */
 
 import {
   cloneElement,

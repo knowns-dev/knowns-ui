@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="approval-prompt" type="ui" title="Approval prompt" description="Requests waiting for a human decision with a preview and Approve / Deny." */
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { Actor, Approval, ApprovalDecision } from "@/registry/knowns/lib/knowns/types";

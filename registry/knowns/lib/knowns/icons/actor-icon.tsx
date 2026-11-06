@@ -1,3 +1,4 @@
+/** @registry name="knowns-icons" type="lib" title="Knowns UI icons" description="Provider logos from a model name, brand logos or glyphs from a tool name, and actorIcon()." files="LICENSES.md" */
 import type { ReactNode } from "react";
 import type { Actor } from "@/registry/knowns/lib/knowns/types";
 import { modelIcon } from "./model-icons";

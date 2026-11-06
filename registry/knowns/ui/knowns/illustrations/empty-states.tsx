@@ -1,4 +1,5 @@
 "use client";
+/** @registry name="empty-states" type="ui" title="Empty states" description="Quiet animated scenes for no runs, an empty inbox, no tools and no agents, with title, description and action." */
 
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
@@ -16,56 +17,64 @@ export interface EmptyStateProps {
   className?: string;
 }
 
-const HUE = AGENT_PALETTE[0];
+/* ── One visual language for every scene ──
+ * A 160 x 100 drawing in the text colour at a few fixed opacities, 1.25px solid hairlines, 4-6px radii,
+ * soft neutral fills, exactly one accent detail and one quiet loop per scene. The same language as the
+ * catalog thumbnails, so the site reads as one family. Reduced motion (and offscreen) shows the still frame. */
+const ACCENT = AGENT_PALETTE[0];
+const INK = { fill: 0.06, fillStrong: 0.1, line: 0.32, faint: 0.18, text: 0.22, strong: 0.62 } as const;
 
-/* Namespaced keyframes, shipped with the component. Base styles are the still frame used for reduced motion. */
 const CSS = `
-@keyframes knes-march { to { stroke-dashoffset: -24 } }
-@keyframes knes-caret { 0%, 45% { opacity: 1 } 50%, 95% { opacity: 0 } 100% { opacity: 1 } }
-@keyframes knes-wait { 0%, 100% { opacity: .55 } 50% { opacity: 1 } }
-@keyframes knes-drop { 0% { opacity: 0; transform: translateY(-14px) } 18% { opacity: 1 } 42% { transform: translateY(0); opacity: 1 } 60%, 100% { transform: translateY(6px); opacity: 0 } }
-@keyframes knes-check { 0%, 52% { transform: scale(.6); opacity: 0 } 62% { transform: scale(1.12); opacity: 1 } 70%, 92% { transform: scale(1); opacity: 1 } 100% { transform: scale(1); opacity: 0 } }
-@keyframes knes-plug { 0%, 100% { transform: translateX(0) } 50% { transform: translateX(7px) } }
-@keyframes knes-spark { 0%, 40%, 100% { opacity: 0; transform: scale(.4) } 50% { opacity: 1; transform: scale(1) } 60% { opacity: 0; transform: scale(.6) } }
-@keyframes knes-orbit { to { stroke-dashoffset: -100 } }
-@keyframes knes-core { 0%, 100% { transform: scale(.9); opacity: .6 } 50% { transform: scale(1.08); opacity: 1 } }
+@keyframes knes-caret { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+@keyframes knes-breathe { 0%, 100% { transform: scale(1); opacity: .9 } 50% { transform: scale(1.06); opacity: 1 } }
+@keyframes knes-ease { 0%, 100% { transform: translateX(0) } 50% { transform: translateX(5px) } }
+@keyframes knes-orbit { to { offset-distance: 100% } }
+@keyframes knes-scan { 0%, 100% { transform: translateX(0) } 50% { transform: translateX(10px) } }
 ${MOTION_GATE}
 `;
 
-/* Shared strokes: hairlines in the foreground colour, so light and dark both read. */
-const line = { stroke: "currentColor", strokeOpacity: 0.22, strokeWidth: 1.25, fill: "none" } as const;
-const box = (o = 0.035) => ({ fill: `color-mix(in srgb, currentColor ${o * 100}%, transparent)` });
-const fillBox: CSSProperties = { transformBox: "fill-box", transformOrigin: "center" };
+const center: CSSProperties = { transformBox: "fill-box", transformOrigin: "center" };
+
+function Box({ x, y, w, h, r = 5, strong, fill = true }: { x: number; y: number; w: number; h: number; r?: number; strong?: boolean; fill?: boolean }) {
+  return (
+    <rect
+      x={x + 0.5}
+      y={y + 0.5}
+      width={w - 1}
+      height={h - 1}
+      rx={r}
+      fill="currentColor"
+      fillOpacity={fill ? (strong ? INK.fillStrong : INK.fill) : 0}
+      stroke="currentColor"
+      strokeOpacity={strong ? INK.strong : INK.line}
+      strokeWidth={1.25}
+    />
+  );
+}
+const Text = ({ x, y, w, strong }: { x: number; y: number; w: number; strong?: boolean }) => <rect x={x} y={y - 2} width={w} height={4} rx={2} fill="currentColor" fillOpacity={strong ? INK.strong * 0.7 : INK.text} />;
+const Line = ({ d, faint }: { d: string; faint?: boolean }) => <path d={d} fill="none" stroke="currentColor" strokeOpacity={faint ? INK.faint : INK.line} strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round" />;
+const Ring = ({ x, y, r }: { x: number; y: number; r: number }) => <circle cx={x} cy={y} r={r} fill="currentColor" fillOpacity={INK.fill} stroke="currentColor" strokeOpacity={INK.line} strokeWidth={1.25} />;
 
 function Frame({ name, art, title, description, action, compact, paused, className, label }: EmptyStateProps & { name: string; art: ReactNode; label: string }) {
   const root = useRef<HTMLDivElement>(null);
   const { live } = useLive(root, paused);
   return (
-    <div ref={root} data-kn-ill={name} data-live={live} className={cn("flex flex-col items-center text-center", compact ? "gap-2 py-4" : "gap-3 py-8", className)}>
+    <div ref={root} data-kn-ill={name} data-live={live} className={cn("flex flex-col items-center text-center", compact ? "py-5" : "py-10", className)}>
       <style href="kn-empty-states" precedence="default">
         {CSS}
       </style>
-      <svg viewBox="0 0 160 100" role="img" aria-label={label} className={cn("text-foreground", compact ? "w-28" : "w-40")}>
+      <svg viewBox="0 0 160 100" role="img" aria-label={label} className={cn("block text-foreground", compact ? "h-[72px] w-[115px]" : "h-28 w-[180px]")}>
         {art}
       </svg>
-      {(title || description) && (
-        <div className="flex max-w-[36ch] flex-col gap-1">
-          {title && <p className={cn("font-medium tracking-tight text-foreground", compact ? "text-[13px]" : "text-[14.5px]")}>{title}</p>}
-          {description && <p className={cn("text-muted-foreground", compact ? "text-[12px]" : "text-[13px] leading-relaxed")}>{description}</p>}
-        </div>
-      )}
-      {action && <div className={compact ? "mt-1" : "mt-2"}>{action}</div>}
+      {title && <p className={cn("font-semibold text-foreground", compact ? "mt-3 text-[14px]" : "mt-4 text-[16px]")}>{title}</p>}
+      {description && <p className={cn("max-w-[32ch] text-balance text-muted-foreground", compact ? "mt-1 text-[13px]" : "mt-2 text-[14px] leading-relaxed")}>{description}</p>}
+      {action && <div className={compact ? "mt-3" : "mt-4"}>{action}</div>}
     </div>
   );
 }
 
-/** A dashed graph waiting for a first prompt: the links march, the prompt caret blinks. */
-export function NoRuns({ title = "No runs yet", description = "Send a first prompt and your agents will show up here, live.", ...rest }: EmptyStateProps) {
-  const sat = [
-    { x: 38, y: 24 },
-    { x: 122, y: 24 },
-    { x: 122, y: 62 },
-  ];
+/** No runs yet: an agent graph with empty seats and a prompt waiting, its caret blinking. */
+export function NoRuns({ title = "No runs yet", description = "Send a first prompt and your agents show up here as they work.", ...rest }: EmptyStateProps) {
   return (
     <Frame
       name="no-runs"
@@ -75,47 +84,45 @@ export function NoRuns({ title = "No runs yet", description = "Send a first prom
       {...rest}
       art={
         <>
-          {sat.map((s, i) => (
-            <path key={i} d={`M 80 40 L ${s.x} ${s.y}`} {...line} strokeDasharray="3 3" style={{ animation: `knes-march ${2.4 + i * 0.3}s linear infinite` }} />
-          ))}
-          <rect x="68" y="28" width="24" height="24" rx="7" {...line} strokeOpacity={0.4} strokeDasharray="4 3" style={{ ...box(0.05), animation: "knes-wait 2.8s ease-in-out infinite" }} />
-          <circle cx="80" cy="40" r="2.5" fill={HUE} opacity={0.8} />
-          {sat.map((s, i) => (
-            <rect key={i} x={s.x - 8} y={s.y - 8} width="16" height="16" rx="5" {...line} strokeDasharray="3 3" style={box(0.03)} />
-          ))}
-          {/* The prompt, empty. */}
-          <rect x="34" y="78" width="92" height="14" rx="7" {...line} strokeOpacity={0.3} style={box(0.04)} />
-          <rect x="42" y="82" width="1.5" height="6" rx=".75" fill={HUE} style={{ animation: "knes-caret 1.1s steps(1) infinite" }} />
-          <circle cx="118" cy="85" r="3.5" fill="currentColor" fillOpacity={0.14} />
+          <Line d="M80 30V22H44V14M80 22H116V14" />
+          <Box x={68} y={30} w={24} h={18} strong />
+          <Box x={34} y={4} w={20} h={12} r={4} fill={false} />
+          <Box x={106} y={4} w={20} h={12} r={4} fill={false} />
+          <Line d="M80 48V58" faint />
+          {/* The prompt. */}
+          <Box x={30} y={62} w={100} h={22} r={6} />
+          <Text x={40} y={73} w={36} />
+          <rect x={80} y={67} width={1.75} height={12} rx={0.9} fill={ACCENT} style={{ animation: "knes-caret 1.1s steps(1) infinite" }} />
+          <rect x={112} y={67} width={12} height={12} rx={4} fill="currentColor" fillOpacity={INK.fillStrong} />
         </>
       }
     />
   );
 }
 
-/** Approvals cleared: a card drops into the tray and a check lights up. */
-export function EmptyInbox({ title = "You're all caught up", description = "No approvals waiting. Agents will ask here before anything risky.", ...rest }: EmptyStateProps) {
+/** All caught up: an approvals list with every row cleared and one check. */
+export function EmptyInbox({ title = "You're all caught up", description = "No approvals waiting. Agents ask here before anything risky.", ...rest }: EmptyStateProps) {
   return (
     <Frame
       name="empty-inbox"
-      label="An empty approvals tray with a check"
+      label="An approvals list with nothing waiting"
       title={title}
       description={description}
       {...rest}
       art={
         <>
-          {/* A card dropping in (hidden in the still frame). */}
-          <g style={{ ...fillBox, opacity: 0, animation: "knes-drop 3.2s cubic-bezier(.3,.7,.3,1) infinite" }}>
-            <rect x="58" y="22" width="44" height="26" rx="5" {...line} strokeOpacity={0.35} style={box(0.06)} />
-            <rect x="64" y="29" width="22" height="3" rx="1.5" fill="currentColor" fillOpacity={0.2} />
-            <rect x="64" y="36" width="30" height="3" rx="1.5" fill="currentColor" fillOpacity={0.12} />
-          </g>
-          {/* The tray. */}
-          <path d="M 40 52 L 52 52 L 58 62 L 102 62 L 108 52 L 120 52 L 120 80 Q 120 86 114 86 L 46 86 Q 40 86 40 80 Z" {...line} strokeOpacity={0.35} style={box(0.04)} />
-          <path d="M 40 52 L 48 36 L 112 36 L 120 52" {...line} />
-          <g style={{ ...fillBox, animation: "knes-check 3.2s cubic-bezier(.2,.8,.2,1) infinite" }}>
-            <circle cx="80" cy="72" r="7" fill={HUE} fillOpacity={0.14} stroke={HUE} strokeOpacity={0.6} strokeWidth={1.2} />
-            <path d="M 76.6 72.2 L 79 74.5 L 83.6 69.6" stroke={HUE} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Box x={34} y={10} w={92} h={80} r={6} />
+          <Text x={44} y={22} w={34} strong />
+          <Line d="M34 30H126" faint />
+          {[42, 56, 70].map((y) => (
+            <g key={y}>
+              <rect x={44} y={y - 4} width={8} height={8} rx={2.5} fill="currentColor" fillOpacity={INK.fill} stroke="currentColor" strokeOpacity={INK.faint} strokeWidth={1.25} />
+              <Text x={58} y={y} w={y === 56 ? 40 : 52} />
+            </g>
+          ))}
+          <g style={{ ...center, animation: "knes-breathe 3.6s ease-in-out infinite" }}>
+            <circle cx={118} cy={80} r={11} fill="var(--card, #fff)" stroke={ACCENT} strokeWidth={1.5} />
+            <path d="M113.5 80.2l3 3 6-6.4" fill="none" stroke={ACCENT} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
           </g>
         </>
       }
@@ -123,7 +130,7 @@ export function EmptyInbox({ title = "You're all caught up", description = "No a
   );
 }
 
-/** No tools connected: a plug eases toward its socket, a spark flickers in the gap. */
+/** No tools connected: a plug easing toward its socket, one accent pin. */
 export function NoTools({ title = "No tools connected", description = "Connect a tool so your agents can search, read and act.", ...rest }: EmptyStateProps) {
   return (
     <Frame
@@ -134,65 +141,78 @@ export function NoTools({ title = "No tools connected", description = "Connect a
       {...rest}
       art={
         <>
-          {/* Cable and plug. */}
-          <g style={{ animation: "knes-plug 2.6s ease-in-out infinite" }}>
-            <path d="M 8 66 C 30 66, 34 50, 52 50" {...line} strokeOpacity={0.3} strokeWidth={2} />
-            <rect x="52" y="40" width="20" height="20" rx="5" {...line} strokeOpacity={0.4} style={box(0.06)} />
-            <path d="M 72 45.5 L 79 45.5 M 72 54.5 L 79 54.5" stroke="currentColor" strokeOpacity={0.45} strokeWidth={2} strokeLinecap="round" />
+          <g style={{ animation: "knes-ease 2.8s cubic-bezier(.22,1,.36,1) infinite" }}>
+            <Line d="M10 62H34Q42 62 42 54V50" />
+            <Box x={34} y={36} w={26} h={20} r={5} strong />
+            <Line d="M60 42H68M60 50H68" />
           </g>
-          {/* Socket and its cable. */}
-          <rect x="94" y="38" width="22" height="24" rx="6" {...line} strokeOpacity={0.4} style={box(0.06)} />
-          <path d="M 100 45.5 L 104 45.5 M 100 54.5 L 104 54.5" stroke="currentColor" strokeOpacity={0.3} strokeWidth={2} strokeLinecap="round" />
-          <path d="M 116 50 C 132 50, 132 34, 152 34" {...line} strokeOpacity={0.3} strokeWidth={2} />
-          {/* Sparks in the gap. */}
-          {[
-            { x: 87, y: 44, d: 0 },
-            { x: 89, y: 55, d: 0.25 },
-          ].map((s, i) => (
-            <circle key={i} cx={s.x} cy={s.y} r="1.6" fill={HUE} style={{ ...fillBox, opacity: 0, animation: `knes-spark 2.6s ease-out ${s.d}s infinite` }} />
-          ))}
-          <path d="M 80 80 L 100 80" stroke="currentColor" strokeOpacity={0.12} strokeWidth={1.25} strokeDasharray="2 3" />
+          <Box x={88} y={34} w={30} h={24} r={6} />
+          <rect x={95} y={41} width={6} height={3} rx={1.5} fill="currentColor" fillOpacity={INK.strong * 0.6} />
+          <rect x={95} y={48} width={6} height={3} rx={1.5} fill={ACCENT} />
+          <Line d="M118 46H128Q136 46 136 38V20H150" />
+          <Text x={56} y={82} w={48} />
         </>
       }
     />
   );
 }
 
-/** No agents yet: an empty orbit with a light running around it and a core that breathes. */
-export function NoAgents({ title = "No agents yet", description = "Add an agent and it takes its place around the lead.", ...rest }: EmptyStateProps) {
-  const orbit = "M 30 50 A 50 22 0 1 0 130 50 A 50 22 0 1 0 30 50";
+/** No agents yet: the lead on its orbit with empty seats, one light travelling round. */
+export function NoAgents({ title = "No agents yet", description = "Add an agent and it takes its seat around the lead.", ...rest }: EmptyStateProps) {
+  const orbit = "M30 50a50 26 0 1 0 100 0a50 26 0 1 0 -100 0";
   return (
     <Frame
       name="no-agents"
-      label="An empty orbit waiting for agents"
+      label="An empty orbit around the lead agent"
       title={title}
       description={description}
       {...rest}
       art={
         <>
-          <path d="M 14 50 A 66 34 0 1 0 146 50 A 66 34 0 1 0 14 50" {...line} strokeOpacity={0.1} strokeDasharray="2 4" />
-          <path d={orbit} {...line} strokeOpacity={0.22} />
-          <path d={orbit} pathLength={100} stroke={HUE} strokeWidth={2} strokeLinecap="round" fill="none" strokeDasharray="6 94" style={{ animation: "knes-orbit 5s linear infinite" }} />
-          {/* Empty seats on the orbit. */}
+          <path d={orbit} fill="none" stroke="currentColor" strokeOpacity={INK.line} strokeWidth={1.25} />
           {[
-            { x: 34, y: 41 },
-            { x: 126, y: 59 },
-            { x: 80, y: 72 },
-          ].map((s, i) => (
-            <circle key={i} cx={s.x} cy={s.y} r="5" {...line} strokeOpacity={0.3} strokeDasharray="2 2" style={box(0.04)} />
+            [30, 50],
+            [130, 50],
+            [80, 76],
+          ].map(([x, y]) => (
+            <Ring key={`${x}${y}`} x={x} y={y} r={7} />
           ))}
-          <g style={{ ...fillBox, animation: "knes-core 3s ease-in-out infinite" }}>
-            <circle cx="80" cy="50" r="11" fill={HUE} fillOpacity={0.1} />
-            <rect x="73" y="43" width="14" height="14" rx="4.5" fill="var(--card, #fff)" stroke="currentColor" strokeOpacity={0.3} strokeWidth={1.25} />
-            <circle cx="80" cy="50" r="2.2" fill={HUE} />
-          </g>
+          <Box x={68} y={40} w={24} h={20} r={6} strong />
+          <Text x={74} y={50} w={12} strong />
+          <circle r={3.5} fill={ACCENT} style={{ offsetPath: `path("${orbit}")`, offsetRotate: "0deg", animation: "knes-orbit 6s linear infinite" } as CSSProperties} cx={0} cy={0} />
         </>
       }
     />
   );
 }
 
-/** Your own art in the same frame (title, description, action, pause handling). */
+/** No results: a search with nothing under it, the lens scanning. */
+export function NoResults({ title = "No results", description = "Try fewer words, or search the docs instead.", ...rest }: EmptyStateProps) {
+  return (
+    <Frame
+      name="no-results"
+      label="A search with no results"
+      title={title}
+      description={description}
+      {...rest}
+      art={
+        <>
+          <Box x={26} y={12} w={108} h={22} r={6} strong />
+          <Text x={48} y={23} w={40} strong />
+          <g style={{ animation: "knes-scan 3.2s cubic-bezier(.22,1,.36,1) infinite" }}>
+            <circle cx={36} cy={23} r={4.5} fill="none" stroke={ACCENT} strokeWidth={1.5} />
+            <path d="M39.4 26.4l3 3" stroke={ACCENT} strokeWidth={1.5} strokeLinecap="round" />
+          </g>
+          {[50, 64, 78].map((y, i) => (
+            <rect key={y} x={26} y={y - 5} width={108 - i * 18} height={10} rx={5} fill="currentColor" fillOpacity={INK.fill} />
+          ))}
+        </>
+      }
+    />
+  );
+}
+
+/** Your own art in the same frame (title, description, action, pause handling). Draw in a 160 x 100 viewBox. */
 export function EmptyState({ art, label, ...rest }: EmptyStateProps & { art: ReactNode; label: string }) {
   return <Frame name="empty-state" art={art} label={label} {...rest} />;
 }

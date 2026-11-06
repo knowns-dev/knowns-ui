@@ -1,3 +1,4 @@
+/** @registry part-of="backgrounds-core" */
 import type { CSSProperties, ReactNode } from "react";
 
 /** Pure helpers shared by the backgrounds: colour tokens, fade masks, density, seeded randomness, geometry. */
@@ -215,4 +216,297 @@ export function linkAlpha(dist: number, max: number): number {
 /** Link distance for a density: denser fields link over shorter spans so the web stays light. */
 export function linkDistance(density = 1): number {
   return Math.round(130 / Math.sqrt(Math.max(0.25, density)));
+}
+
+/* ── Grid pattern ── */
+
+/** A cell of a square grid, [column, row]. */
+export type GridCell = [number, number];
+
+/** `count` distinct cells of a cols×rows grid, deterministic for a seed. */
+export function gridSquares(cols: number, rows: number, count: number, seed = 5): GridCell[] {
+  const total = Math.max(0, Math.floor(cols) * Math.floor(rows));
+  const n = Math.min(total, Math.max(0, Math.floor(count)));
+  const rng = mulberry32(seed);
+  const taken = new Set<number>();
+  const out: GridCell[] = [];
+  while (out.length < n) {
+    const i = Math.floor(rng() * total);
+    if (taken.has(i)) continue;
+    taken.add(i);
+    out.push([i % Math.floor(cols), Math.floor(i / Math.floor(cols))]);
+  }
+  return out;
+}
+
+/** The next lit set: about `share` of the cells move to new free cells, the rest stay. Same length as `cells`. */
+export function rotateSquares(cells: GridCell[], cols: number, rows: number, rng: () => number, share = 0.34): GridCell[] {
+  const total = Math.floor(cols) * Math.floor(rows);
+  if (!cells.length || total <= cells.length) return cells;
+  const key = (c: GridCell) => c[1] * Math.floor(cols) + c[0];
+  const taken = new Set(cells.map(key));
+  const moves = Math.max(1, Math.round(cells.length * share));
+  const next = cells.slice();
+  for (let m = 0; m < moves; m++) {
+    const at = Math.floor(rng() * next.length);
+    let i = Math.floor(rng() * total);
+    for (let tries = 0; taken.has(i) && tries < 8; tries++) i = Math.floor(rng() * total);
+    if (taken.has(i)) continue;
+    taken.delete(key(next[at]));
+    taken.add(i);
+    next[at] = [i % Math.floor(cols), Math.floor(i / Math.floor(cols))];
+  }
+  return next;
+}
+
+/** Grid cell size for a density: denser grids have smaller cells. */
+export function gridCell(base = 40, density = 1): number {
+  return Math.max(8, Math.round(base / Math.sqrt(Math.max(0.25, density))));
+}
+
+/* ── Dither field ── */
+
+/**
+ * Ordered-dither thresholds: the n×n Bayer matrix (n = 2, 4 or 8), row-major, normalised to (0, 1) as
+ * (v + 0.5) / n². A cell is on when its intensity is above its threshold.
+ */
+export function bayerMatrix(n: 2 | 4 | 8 = 8): Float32Array {
+  let m = [0, 2, 3, 1];
+  let size = 2;
+  while (size < n) {
+    const next = new Array<number>(size * 2 * size * 2);
+    for (let y = 0; y < size; y++)
+      for (let x = 0; x < size; x++) {
+        const v = 4 * m[y * size + x];
+        next[y * 2 * size + x] = v;
+        next[y * 2 * size + x + size] = v + 2;
+        next[(y + size) * 2 * size + x] = v + 3;
+        next[(y + size) * 2 * size + x + size] = v + 1;
+      }
+    m = next;
+    size *= 2;
+  }
+  const out = new Float32Array(n * n);
+  for (let i = 0; i < out.length; i++) out[i] = (m[i] + 0.5) / (n * n);
+  return out;
+}
+
+/** Soft radial falloff: 1 at the centre, easing to 0 at `radius`. */
+export function glowFalloff(dist: number, radius: number): number {
+  if (radius <= 0 || dist >= radius) return 0;
+  const t = 1 - dist / radius;
+  return t * t * (3 - 2 * t);
+}
+
+/* ── Flickering grid ── */
+
+/** Columns and rows of size+gap cells that fill w×h (CSS px). */
+export function gridDims(w: number, h: number, size: number, gap: number): { cols: number; rows: number; pitch: number } {
+  const pitch = Math.max(1, size + gap);
+  return { cols: Math.max(0, Math.ceil(w / pitch)), rows: Math.max(0, Math.ceil(h / pitch)), pitch };
+}
+
+/**
+ * How many cells to re-roll this frame: each cell flickers `chance` times per second on average, so a
+ * frame of dt seconds updates cells × chance × dt, with the fractional part carried to the next frame.
+ * Returns [count, carry].
+ */
+export function flickerBudget(cells: number, chance: number, dt: number, carry = 0): [number, number] {
+  const want = Math.max(0, cells * chance * dt) + carry;
+  const n = Math.min(cells, Math.floor(want));
+  return [n, n === cells ? 0 : want - n];
+}
+
+/** xorshift32: a tiny allocation-free PRNG for per-frame sampling. Returns [0, 1). */
+export function xorshift32(seed = 2463534242): () => number {
+  let x = seed >>> 0 || 1;
+  return () => {
+    x ^= x << 13;
+    x >>>= 0;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    x >>>= 0;
+    return x / 4294967296;
+  };
+}
+
+/**
+ * A content-safe hole baked into one factor per grid cell: 0 inside `box` (in cell units, [x0, y0, x1, y1]),
+ * easing to 1 across `feather` cells with a smoothstep (a rounded rectangle), so a draw loop clears the
+ * content with one multiply per cell.
+ */
+export function holeField(cols: number, rows: number, box: [number, number, number, number], feather: number): Float32Array {
+  const cx = (box[0] + box[2]) / 2;
+  const cy = (box[1] + box[3]) / 2;
+  const hw = (box[2] - box[0]) / 2;
+  const hh = (box[3] - box[1]) / 2;
+  const f = Math.max(1e-6, feather);
+  const hole = new Float32Array(cols * rows);
+  for (let y = 0; y < rows; y++) {
+    const dy = Math.max(0, Math.abs(y + 0.5 - cy) - hh);
+    for (let x = 0; x < cols; x++) {
+      const dx = Math.max(0, Math.abs(x + 0.5 - cx) - hw);
+      const d = Math.min(1, Math.sqrt(dx * dx + dy * dy) / f);
+      hole[y * cols + x] = d * d * (3 - 2 * d);
+    }
+  }
+  return hole;
+}
+
+/** The same hole at one point: 0 inside `box` ([x0, y0, x1, y1]), easing to 1 across `feather`. */
+export function holeAt(x: number, y: number, box: [number, number, number, number], feather: number): number {
+  const dx = Math.max(0, Math.abs(x - (box[0] + box[2]) / 2) - (box[2] - box[0]) / 2);
+  const dy = Math.max(0, Math.abs(y - (box[1] + box[3]) / 2) - (box[3] - box[1]) / 2);
+  const d = Math.min(1, Math.sqrt(dx * dx + dy * dy) / Math.max(1e-6, feather));
+  return d * d * (3 - 2 * d);
+}
+
+/* ── Cube Field ── */
+
+export type CubeMode = "isometric" | "perspective";
+
+/** Perspective floor: the row gap at the bottom edge as a share of the pitch (the camera's tilt). */
+export const PERSPECTIVE_PITCH = 0.55;
+
+export interface CubeLayout {
+  n: number;
+  /** Top-face centre of each cube in CSS px, back to front (the draw order). */
+  x: Float32Array;
+  y: Float32Array;
+  /** Sprite scale: 1 when isometric, shrinking toward the horizon in perspective. */
+  scale: Float32Array;
+  /** Position on the ground plane in CSS px, where the pointer and the wave are measured. */
+  gx: Float32Array;
+  gy: Float32Array;
+  /** Distance fade, 0 to 1 (perspective only; 1 when isometric). */
+  fade: Float32Array;
+  /** The perspective camera: horizon y, height from the horizon to the bottom edge, and the width. */
+  cam: { hy: number; hs: number; w: number };
+}
+
+/**
+ * Where every cube sits for a w x h field. Isometric: a 2:1 lattice in staggered rows, `pitch` apart, ground
+ * y doubled so the pointer's reach is round on the floor. Perspective: rows on a floor seen from above,
+ * receding to a horizon above the top edge, culled where they shrink below 0.4.
+ */
+export function cubeLayout(mode: CubeMode, w: number, h: number, pitch: number): CubeLayout {
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const ss: number[] = [];
+  const gxs: number[] = [];
+  const gys: number[] = [];
+  const fs: number[] = [];
+  const hy = -0.3 * h;
+  const hs = h - hy;
+  if (mode === "isometric") {
+    const step = pitch / 4;
+    const rows = Math.ceil(h / step) + 2;
+    for (let r = -2; r < rows; r++) {
+      const off = r & 1 ? pitch / 2 : 0;
+      for (let x = off - pitch; x < w + pitch; x += pitch) {
+        xs.push(x);
+        ys.push(r * step);
+        ss.push(1);
+        gxs.push(x);
+        gys.push(r * step * 2);
+        fs.push(1);
+      }
+    }
+  } else {
+    const z0 = hs / (PERSPECTIVE_PITCH * pitch);
+    const near = -Math.ceil(z0 * 0.08);
+    const far = Math.ceil(z0 / 0.4 - z0);
+    for (let k = far; k >= near; k--) {
+      const s = z0 / (z0 + k);
+      if (s < 0.4) continue;
+      const y = hy + hs * s;
+      const span = pitch * s;
+      const fade = Math.min(1, (s - 0.4) / 0.22);
+      const half = Math.ceil(w / 2 / span) + 1;
+      for (let c = -half; c <= half; c++) {
+        xs.push(w / 2 + c * span);
+        ys.push(y);
+        ss.push(s);
+        gxs.push(c * pitch);
+        gys.push(hs / PERSPECTIVE_PITCH / s);
+        fs.push(fade * fade * (3 - 2 * fade));
+      }
+    }
+  }
+  return { n: xs.length, x: Float32Array.from(xs), y: Float32Array.from(ys), scale: Float32Array.from(ss), gx: Float32Array.from(gxs), gy: Float32Array.from(gys), fade: Float32Array.from(fs), cam: { hy, hs, w } };
+}
+
+/** The idle swell at a ground point: a slow travelling crest, sharpened so most cubes rest flat. */
+export function waveLift(gx: number, gy: number, t: number, height: number): number {
+  const a = 0.5 + 0.5 * Math.sin(gx * 0.011 + gy * 0.0065 - t * 1.15);
+  const b = 0.75 + 0.25 * Math.sin(gx * 0.0042 - gy * 0.009 + t * 0.6);
+  return a * a * a * a * b * height * 0.45;
+}
+
+/**
+ * One spring step toward `target` (semi-implicit Euler, substepped at 1/120 s so long frames stay stable).
+ * Slightly under-damped: a cube overshoots a touch and settles. Returns [position, velocity].
+ */
+export function springStep(x: number, v: number, target: number, dt: number, stiffness = 150, damping = 15): [number, number] {
+  const n = Math.max(1, Math.ceil(dt * 120));
+  const h = dt / n;
+  for (let i = 0; i < n; i++) {
+    v += ((target - x) * stiffness - v * damping) * h;
+    x += v * h;
+  }
+  return [x, v];
+}
+
+/**
+ * Like holeField, for many boxes (in dots): 0 inside the copy, easing to 1 across `feather`.
+ * The edge is one soft shape, not per-line boxes: each box is a rounded rectangle (signed distance with
+ * corner radius `round`), and nearby boxes melt together with a smooth minimum of width `smooth`, so the
+ * lines of a paragraph, its buttons and a chip below form one organic contour. Each box only touches the
+ * dots within reach, so measuring stays cheap with dozens of lines.
+ */
+export function holeFieldRects(
+  cols: number,
+  rows: number,
+  boxes: [number, number, number, number][],
+  feather: number,
+  o: { round?: number; smooth?: number } = {},
+): Float32Array {
+  const f = Math.max(1e-6, feather);
+  const k = Math.max(0, o.smooth ?? f * 0.75);
+  const dist = new Float32Array(cols * rows).fill(Infinity);
+  const reach = f + k;
+  for (const [bx0, by0, bx1, by1] of boxes) {
+    const hw = (bx1 - bx0) / 2;
+    const hh = (by1 - by0) / 2;
+    const cx = bx0 + hw;
+    const cy = by0 + hh;
+    const r = Math.max(0, Math.min(o.round ?? f * 0.25, hw, hh));
+    const x0 = Math.max(0, Math.floor(bx0 - reach));
+    const x1 = Math.min(cols - 1, Math.ceil(bx1 + reach));
+    const y0 = Math.max(0, Math.floor(by0 - reach));
+    const y1 = Math.min(rows - 1, Math.ceil(by1 + reach));
+    for (let y = y0; y <= y1; y++) {
+      const qy = Math.abs(y + 0.5 - cy) - (hh - r);
+      for (let x = x0; x <= x1; x++) {
+        const qx = Math.abs(x + 0.5 - cx) - (hw - r);
+        // Rounded-rectangle signed distance: negative inside, 0 on the edge.
+        const s = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+        const i = y * cols + x;
+        const a = dist[i];
+        if (a === Infinity || k === 0) {
+          if (s < a) dist[i] = s;
+          continue;
+        }
+        // Polynomial smooth minimum: melts boxes closer than k into one shape.
+        const h = Math.max(k - Math.abs(a - s), 0) / k;
+        dist[i] = Math.min(a, s) - h * h * k * 0.25;
+      }
+    }
+  }
+  const hole = new Float32Array(cols * rows);
+  for (let i = 0; i < hole.length; i++) {
+    const d = Math.min(1, Math.max(0, dist[i] / f));
+    hole[i] = d * d * (3 - 2 * d);
+  }
+  return hole;
 }
