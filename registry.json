@@ -1,0 +1,1211 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "knowns-ui",
+  "homepage": "https://ui.knowns.dev",
+  "items": [
+    {
+      "name": "knowns-core",
+      "type": "registry:lib",
+      "title": "Knowns UI core",
+      "description": "cn() helper, Actor/Span/Task/Approval types, the event-fed run store (createAgentRun, useAgentRun) and shared state labels and colours.",
+      "files": [
+        {
+          "path": "registry/knowns/lib/knowns/utils.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/utils.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/types.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/types.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/run.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/run.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/status.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/status.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/json.tsx",
+          "type": "registry:lib",
+          "target": "lib/knowns/json.tsx"
+        }
+      ],
+      "css": {
+        "@keyframes kn-breathe": {
+          "0%, 100%": {
+            "box-shadow": "0 0 0 0 transparent"
+          },
+          "50%": {
+            "box-shadow": "0 0 0 6px color-mix(in srgb, var(--hue, currentColor) 16%, transparent)"
+          }
+        },
+        "@keyframes kn-rise": {
+          "from": {
+            "transform": "translateY(6px)"
+          }
+        },
+        "@keyframes kn-shimmer": {
+          "to": {
+            "transform": "translateX(300%)"
+          }
+        },
+        "@keyframes kn-word": {
+          "from": {
+            "opacity": "0",
+            "filter": "blur(3px)"
+          }
+        },
+        "@keyframes kn-pop": {
+          "from": {
+            "opacity": "0",
+            "transform": "scale(0.6)"
+          }
+        }
+      }
+    },
+    {
+      "name": "knowns-icons",
+      "type": "registry:lib",
+      "title": "Knowns UI icons",
+      "description": "Provider logos from a model name, brand logos or glyphs from a tool name, and actorIcon().",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/lib/knowns/icons/actor-icon.tsx",
+          "type": "registry:lib",
+          "target": "lib/knowns/icons/actor-icon.tsx"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/icons/model-icons.tsx",
+          "type": "registry:lib",
+          "target": "lib/knowns/icons/model-icons.tsx"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/icons/model-icons.data.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/icons/model-icons.data.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/icons/tool-icons.tsx",
+          "type": "registry:lib",
+          "target": "lib/knowns/icons/tool-icons.tsx"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/icons/tool-icons.data.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/icons/tool-icons.data.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/icons/LICENSES.md",
+          "type": "registry:file",
+          "target": "lib/knowns/icons/LICENSES.md"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "Small indeterminate spinner.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/spinner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/spinner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Primary, secondary, ghost and destructive buttons with icons, three sizes and a loading state that stays focusable.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "Status labels in six tones: sizes, pill shape, icons, clickable and removable badges, and BadgeGroup with +N overflow.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "status-dot",
+      "type": "registry:ui",
+      "title": "Status dot",
+      "description": "Coloured dot for idle, busy, blocked, failed and finished; live states pulse.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/status-dot.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/status-dot.tsx"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "Bordered surface with header, content and footer parts.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "Image, logo or initials with status dot, badge and verified mark; AvatarGroup with +N and invite; AvatarLabel with name and supporting text.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/avatar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/avatar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "kbd",
+      "type": "registry:ui",
+      "title": "Kbd",
+      "description": "Keyboard key.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/kbd.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/kbd.tsx"
+        }
+      ]
+    },
+    {
+      "name": "separator",
+      "type": "registry:ui",
+      "title": "Separator",
+      "description": "Thin divider.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/separator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/separator.tsx"
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "description": "Loading placeholder.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/skeleton.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/skeleton.tsx"
+        }
+      ]
+    },
+    {
+      "name": "accordion",
+      "type": "registry:ui",
+      "title": "Accordion",
+      "description": "A stack of collapsible sections. One open, or several, with a full keyboard path.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/accordion.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/accordion.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "Input with sizes, prefix/suffix, shortcut and password reveal; InputGroup; Textarea with counter and auto-grow; Field with label, hint, error, required and help.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/kbd.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/input.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/chat-composer/use-autosize.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/chat-composer/use-autosize.ts"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "Native select in the field style, with sizes, a leading icon and a placeholder.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/input.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/select.tsx"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "Native checkbox with label, description, indeterminate state and sizes; CheckboxGroup with select-all.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/checkbox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/checkbox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "On/off toggle with role=switch.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/switch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/switch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Tabs in underline, pill and button styles, horizontal or vertical, with icons, counts, overflow scrolling and a sliding indicator.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "segmented-control",
+      "type": "registry:ui",
+      "title": "Segmented control",
+      "description": "Mutually exclusive options with a sliding thumb.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/segmented-control.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/segmented-control.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toggle-group",
+      "type": "registry:ui",
+      "title": "Toggle group",
+      "description": "Pressable toggles, alone or in a toolbar group: single or multiple, attached or spaced, horizontal or vertical.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/toggle-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/toggle-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "slider",
+      "type": "registry:ui",
+      "title": "Slider",
+      "description": "Single value or range slider with steps, marks, a value bubble and full keyboard support.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/slider.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/slider.tsx"
+        }
+      ]
+    },
+    {
+      "name": "date-range-picker",
+      "type": "registry:ui",
+      "title": "Date range picker",
+      "description": "Range or single date in a popover: one or two month calendar, presets, keyboard grid navigation, min/max and disabled days, Field label/hint/error. Intl only, no date library.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/popover.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/date-range-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/date-range-picker.tsx"
+        }
+      ]
+    },
+    {
+      "name": "otp-input",
+      "type": "registry:ui",
+      "title": "OTP input",
+      "description": "One-time code in N slots: paste fills all, auto-advance and backspace, numeric or alphanumeric, masked, error state, onComplete.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/otp-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/otp-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "stepper",
+      "type": "registry:ui",
+      "title": "Stepper",
+      "description": "Horizontal or vertical steps with done, current, upcoming and error states, optional descriptions and clickable completed steps.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/stepper.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/stepper.tsx"
+        }
+      ]
+    },
+    {
+      "name": "breadcrumb",
+      "type": "registry:ui",
+      "title": "Breadcrumb",
+      "description": "Path of links that collapses middle items into an overflow menu.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/menu.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/breadcrumb.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/breadcrumb.tsx"
+        }
+      ]
+    },
+    {
+      "name": "pagination",
+      "type": "registry:ui",
+      "title": "Pagination",
+      "description": "Pages with ellipsis, previous/next, page size select and a compact variant.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/select.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/pagination.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/pagination.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "Short hint on hover or focus, four sides, optional description; portaled above everything.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-floating.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/tooltip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "Floating panel that closes on Escape or an outside click and returns focus.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-floating.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/popover.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "Modal on the native dialog element.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "command-menu",
+      "type": "registry:ui",
+      "title": "Command menu",
+      "description": "⌘K palette: fuzzy search with highlights, groups, shortcuts, nested pages, recents and async results - all by keyboard.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/kbd.json",
+        "https://ui.knowns.dev/r/spinner.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/command-menu/command-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/command-menu/command-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/command-menu/command-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/command-menu/command-menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "description": "Notifications with ToastProvider and useToast().",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/toast.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/toast.tsx"
+        }
+      ]
+    },
+    {
+      "name": "menu",
+      "type": "registry:ui",
+      "title": "Menu",
+      "description": "Dropdown menu for a button: sections, checkable items, descriptions, icons, typeahead and arrow-key navigation.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-floating.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "agent-graph",
+      "type": "registry:ui",
+      "title": "Agent graph",
+      "description": "Live graph of agents and the tools they call: tree, horizontal and center layouts, light streaks per call, detail popover.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/badge.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/agent-graph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/agent-graph.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/radial.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/radial.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/detail-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/detail-card.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/pulse-layer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/pulse-layer.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/layout.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/layout.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/tree.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/tree.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/routing.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/routing.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-graph/frame.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-graph/frame.ts"
+        }
+      ]
+    },
+    {
+      "name": "agent-lanes",
+      "type": "registry:ui",
+      "title": "Agent lanes",
+      "description": "Where every agent is right now: a lane per agent, tasks growing into now, hand-offs and approvals on the block.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-lanes/agent-lanes.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-lanes/agent-lanes.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tool-call-card",
+      "type": "registry:ui",
+      "title": "Tool call card",
+      "description": "One call in detail: status and duration, input, output or error as highlighted JSON, retry.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/tool-call-card/tool-call-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/tool-call-card/tool-call-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "approval-prompt",
+      "type": "registry:ui",
+      "title": "Approval prompt",
+      "description": "Requests waiting for a human decision with a preview and Approve / Deny.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/approval-prompt/approval-prompt.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/approval-prompt/approval-prompt.tsx"
+        }
+      ]
+    },
+    {
+      "name": "trace-waterfall",
+      "type": "registry:ui",
+      "title": "Trace waterfall",
+      "description": "Every call of a run on one time axis: nested by caller, live bars, inline input/output/error, filters, search, brush zoom, critical path and virtualised rows.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/knowns-floating.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/input.json",
+        "https://ui.knowns.dev/r/segmented-control.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/trace-waterfall/waterfall-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/trace-waterfall/waterfall-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/trace-waterfall/trace-waterfall.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/trace-waterfall/trace-waterfall.tsx"
+        }
+      ]
+    },
+    {
+      "name": "context-window",
+      "type": "registry:ui",
+      "title": "Context window",
+      "description": "How full a model's context is and what fills it: segmented token bar, thresholds in words, compact action, ring variant and per-turn sparkline.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-floating.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/context-window/context-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/context-window/context-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/context-window/context-window.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/context-window/context-window.tsx"
+        }
+      ]
+    },
+    {
+      "name": "agent-monitor",
+      "type": "registry:ui",
+      "title": "Agent monitor",
+      "description": "One agent at work as a card: current step with a clock and cost, a time strip, finished steps with tool logos, the exact command when it needs your OK, and a folded bar.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/knowns-floating.json",
+        "https://ui.knowns.dev/r/kbd.json",
+        "https://ui.knowns.dev/r/popover.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-monitor/monitor-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-monitor/monitor-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-monitor/agent-monitor.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-monitor/agent-monitor.tsx"
+        }
+      ]
+    },
+    {
+      "name": "agent-fleet",
+      "type": "registry:ui",
+      "title": "Agent fleet",
+      "description": "Many agents at a glance: a card per main agent with model, task, tools, state, spend and clock, totals on top, and a sub-agent tree with approve and retry right in it.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/dialog.json",
+        "https://ui.knowns.dev/r/status-dot.json",
+        "https://ui.knowns.dev/r/knowns-floating.json",
+        "https://ui.knowns.dev/r/toggle-group.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-fleet/fleet-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-fleet/fleet-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-fleet/agent-fleet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-fleet/agent-fleet.tsx"
+        }
+      ]
+    },
+    {
+      "name": "agent-handoff",
+      "type": "registry:ui",
+      "title": "Agent handoff",
+      "description": "A relay of agents: who handed what to whom, with the context passed along, lost items, a light along the rail on each new hand-off, and forward reassignment by drag or keyboard.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/spinner.json",
+        "https://ui.knowns.dev/r/tooltip.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-handoff/handoff-map.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-handoff/handoff-map.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-handoff/agent-handoff.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-handoff/agent-handoff.tsx"
+        }
+      ]
+    },
+    {
+      "name": "agent-cursors",
+      "type": "registry:ui",
+      "title": "Agent cursors",
+      "description": "Agents editing a document like multiplayer teammates: coloured live pointers with name, action and spend, suggestions typed in as tracked changes with accept, reject and Accept all, image resize, code edits, margin comments with a typing indicator, and a Table tab.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/segmented-control.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-cursors/cursors-model.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-cursors/cursors-model.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-cursors/agent-cursors.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-cursors/agent-cursors.tsx"
+        }
+      ]
+    },
+    {
+      "name": "ai-answer",
+      "type": "registry:ui",
+      "title": "AI answer",
+      "description": "Streamed answer with steps, sources, numbered citations that preview their source, copy, regenerate, feedback and follow-ups.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/spinner.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/ai-answer/ai-answer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/ai-answer/ai-answer.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/ai-answer/answer-text.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/ai-answer/answer-text.ts"
+        }
+      ]
+    },
+    {
+      "name": "chat-composer",
+      "type": "registry:ui",
+      "title": "Chat composer",
+      "description": "Agent input: autosizing text, attachments, model and permission-mode menus, connected apps, working folder, dictation, send and stop.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/tooltip.json",
+        "https://ui.knowns.dev/r/menu.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/chat-composer/chat-composer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/chat-composer/chat-composer.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/chat-composer/composer-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/chat-composer/composer-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/chat-composer/use-autosize.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/chat-composer/use-autosize.ts"
+        }
+      ]
+    },
+    {
+      "name": "thinking-state",
+      "type": "registry:ui",
+      "title": "Thinking state",
+      "description": "What an agent is doing before it answers: live steps, searched sources, tool calls, streaming reasoning and a 'Thought for 12s' summary.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/spinner.json",
+        "https://ui.knowns.dev/r/tooltip.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/thinking-state/thinking-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/thinking-state/thinking-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/thinking-state/thinking-state.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/thinking-state/thinking-state.tsx"
+        }
+      ]
+    },
+    {
+      "name": "knowns-floating",
+      "type": "registry:lib",
+      "title": "Floating position",
+      "description": "useFloating(): portal host, fixed positioning, flip and clamp for tooltips, popovers, menus and comboboxes.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/use-floating.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/use-floating.ts"
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "Radio group",
+      "description": "One choice from a few options; arrow keys move and select; card variant.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/radio-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/radio-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "combobox",
+      "type": "registry:ui",
+      "title": "Combobox",
+      "description": "Select with icons, avatars, status dots, supporting text, groups, search, multiple choice and a tags mode. Opens as a popover, a dialog, or a bottom sheet on phones.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-floating.json",
+        "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/input.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/tag.json",
+        "https://ui.knowns.dev/r/dialog.json",
+        "https://ui.knowns.dev/r/button.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/combobox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/combobox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-table",
+      "type": "registry:ui",
+      "title": "Data table",
+      "description": "A real <table> with multi-sort, filters and search, range selection, column visibility, density, pagination or virtualised rows.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/checkbox.json",
+        "https://ui.knowns.dev/r/input.json",
+        "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/segmented-control.json",
+        "https://ui.knowns.dev/r/skeleton.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/data-table/table-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/data-table/table-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/data-table/data-table.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/data-table/data-table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "type": "registry:ui",
+      "title": "Tag",
+      "description": "Quiet chips and TagGroup with selection, removal and roving focus.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/tag.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/tag.tsx"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "Progress bar and ring, determinate or indeterminate.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "file-drop",
+      "type": "registry:ui",
+      "title": "File drop",
+      "description": "Drop zone with type/size/count validation and FileItem rows with progress, retry and remove.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/tooltip.json",
+        "https://ui.knowns.dev/r/progress.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/file-drop.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/file-drop.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dropdown",
+      "type": "registry:ui",
+      "title": "Dropdown",
+      "description": "Ready-made menus on Menu: account, row actions and pickers with avatar, toggle, link and badge rows.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/dropdown.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/dropdown.tsx"
+        }
+      ]
+    },
+    {
+      "name": "illustrations-core",
+      "type": "registry:ui",
+      "title": "Illustrations core",
+      "description": "Shared helpers for illustrations: pause offscreen, in hidden tabs and under reduced motion.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/illustrations/use-in-view.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/illustrations/use-in-view.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/illustrations/illust-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/illustrations/illust-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "empty-states",
+      "type": "registry:ui",
+      "title": "Empty states",
+      "description": "Quiet animated scenes for no runs, an empty inbox, no tools and no agents, with title, description and action.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/illustrations-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/illustrations/empty-states.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/illustrations/empty-states.tsx"
+        }
+      ]
+    },
+    {
+      "name": "text-animation-core",
+      "type": "registry:ui",
+      "title": "Text animation core",
+      "description": "Shared pieces for text animations: accessible shell, motion gate, caret.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/illustrations-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/text-animation/text-core.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/text-animation/text-core.tsx"
+        }
+      ]
+    },
+    {
+      "name": "shimmer-text",
+      "type": "registry:ui",
+      "title": "Shimmer text",
+      "description": "A soft bright band sweeping through in-progress labels like Thinking…",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/text-animation-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/text-animation/shimmer-text.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/text-animation/shimmer-text.tsx"
+        }
+      ]
+    },
+    {
+      "name": "backgrounds-core",
+      "type": "registry:ui",
+      "title": "Backgrounds core",
+      "description": "Shared shell and helpers for the backgrounds: fade masks, theme-token colours, density and speed, seeded layouts, and the motion gate.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/illustrations-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/backgrounds/bg-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/blocks/backgrounds/bg-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/backgrounds/background-frame.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/blocks/backgrounds/background-frame.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dot-spotlight",
+      "type": "registry:block",
+      "title": "Dot Spotlight",
+      "description": "A quiet dot grid with a soft light that follows the pointer and lifts the dots under it. CSS only.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/illustrations-core.json",
+        "https://ui.knowns.dev/r/backgrounds-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/backgrounds/dot-spotlight.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/backgrounds/dot-spotlight.tsx"
+        }
+      ]
+    }
+  ]
+}

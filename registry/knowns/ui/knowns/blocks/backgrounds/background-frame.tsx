@@ -1,0 +1,52 @@
+"use client";
+
+import type { CSSProperties, ReactNode, Ref } from "react";
+import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { MOTION_GATE } from "@/registry/knowns/ui/knowns/illustrations/use-in-view";
+import { maskComposite, maskImage, type BgMask } from "./bg-utils";
+
+/**
+ * The shell every background shares: a relative, isolated box; the drawing sits in an aria-hidden,
+ * pointer-transparent layer behind the children, faded by the mask. `data-live` pauses CSS motion through
+ * the illustrations' motion gate (offscreen, hidden tab, paused, prefers-reduced-motion).
+ */
+export function BackgroundFrame({
+  name,
+  live,
+  mask = "radial",
+  css,
+  layer,
+  className,
+  style,
+  children,
+  ref,
+}: {
+  name: string;
+  live: boolean;
+  mask?: BgMask;
+  /** Component CSS, hoisted once per page by React. */
+  css?: string;
+  layer: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  children?: ReactNode;
+  ref?: Ref<HTMLDivElement>;
+}) {
+  const image = maskImage(mask);
+  const composite = maskComposite(mask);
+  return (
+    <div ref={ref} data-kn-ill={name} data-kn-bg={name} data-live={live} className={cn("relative isolate overflow-hidden", className)} style={style}>
+      <style href={`kn-bg-${name}`} precedence="default">
+        {`${MOTION_GATE}\n${css ?? ""}`}
+      </style>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 select-none"
+        style={image ? { maskImage: image, WebkitMaskImage: image, maskComposite: composite, WebkitMaskComposite: composite === "intersect" ? "source-in" : undefined } : undefined}
+      >
+        {layer}
+      </div>
+      {children}
+    </div>
+  );
+}

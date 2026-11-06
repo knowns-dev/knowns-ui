@@ -1,0 +1,13 @@
+{
+  "name": "knowns-ui",
+  "private": true,
+  "description": "Knowns UI: React components for AI agent products, as a shadcn registry (Free items).",
+  "license": "MIT",
+  "homepage": "https://ui.knowns.dev",
+  "repository": "https://github.com/knowns-dev/knowns-ui",
+  "type": "module",
+  "scripts": {
+    "build": "npx -y shadcn@4 build registry.json -o public/r",
+    "check": "node scripts/check-registry.mjs"
+  }
+}
