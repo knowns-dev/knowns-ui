@@ -18,11 +18,19 @@ Live views of what your agents are doing, chat building blocks, and the everyday
 
 </div>
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/hero-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/hero-light.webp">
+  <img alt="Knowns UI: a live Agent Graph of a run, with agents, tools and calls in flight" src=".github/assets/hero-light.webp" width="100%">
+</picture>
+
 ## Why Knowns UI
 
 - **One run store, every view.** Feed agent events into one run; the graph, lanes, traces, approvals and chat all read it and stay in sync.
 - **You own the source.** It is a [shadcn registry](https://ui.shadcn.com/docs/registry), not a package: the CLI copies each component into your project. Tailwind CSS v4 and the shadcn/ui theme tokens.
 - **AI-ready.** An MCP server and plain-text docs let Claude Code, Cursor and VS Code find, read and install components for you.
+
+<img alt="Agent Graph growing as an orchestrator hands work to its agents" src=".github/assets/demo.webp" width="100%">
 
 ## Quick example
 
@@ -57,6 +65,89 @@ npx shadcn@latest add @knowns-ui/agent-graph
 ```
 
 Registry dependencies (the core types, the run store, icons) come along automatically.
+
+## Gallery
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<a href="https://ui.knowns.dev/docs/agent-graph">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/agent-graph-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/agent-graph-light.webp">
+  <img alt="Agent Graph: Agents and tools as a live graph" src=".github/assets/agent-graph-light.webp" width="100%">
+</picture>
+
+</a>
+<br><b><a href="https://ui.knowns.dev/docs/agent-graph">Agent Graph</a></b><br>Agents and tools as a live graph
+</td>
+<td width="50%" valign="top">
+<a href="https://ui.knowns.dev/docs/trace-waterfall">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/trace-waterfall-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/trace-waterfall-light.webp">
+  <img alt="Trace Waterfall: Every call on a timeline" src=".github/assets/trace-waterfall-light.webp" width="100%">
+</picture>
+
+</a>
+<br><b><a href="https://ui.knowns.dev/docs/trace-waterfall">Trace Waterfall</a></b><br>Every call on a timeline
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://ui.knowns.dev/docs/agent-cursors">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/agent-cursors-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/agent-cursors-light.webp">
+  <img alt="Agent Cursors: Agents editing the page with you" src=".github/assets/agent-cursors-light.webp" width="100%">
+</picture>
+
+</a>
+<br><b><a href="https://ui.knowns.dev/docs/agent-cursors">Agent Cursors</a></b><br>Agents editing the page with you
+</td>
+<td width="50%" valign="top">
+<a href="https://ui.knowns.dev/docs/ai-answer">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/ai-answer-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/ai-answer-light.webp">
+  <img alt="AI Answer: Streamed answers with sources and citations" src=".github/assets/ai-answer-light.webp" width="100%">
+</picture>
+
+</a>
+<br><b><a href="https://ui.knowns.dev/docs/ai-answer">AI Answer</a></b><br>Streamed answers with sources and citations
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="https://ui.knowns.dev/docs/thinking-state">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/thinking-state-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/thinking-state-light.webp">
+  <img alt="Thinking State: What happens before the answer" src=".github/assets/thinking-state-light.webp" width="100%">
+</picture>
+
+</a>
+<br><b><a href="https://ui.knowns.dev/docs/thinking-state">Thinking State</a></b><br>What happens before the answer
+</td>
+<td width="50%" valign="top">
+<a href="https://ui.knowns.dev/docs/agent-fleet">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/agent-fleet-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/agent-fleet-light.webp">
+  <img alt="Agent Fleet: Every agent you run, and what needs you" src=".github/assets/agent-fleet-light.webp" width="100%">
+</picture>
+
+</a>
+<br><b><a href="https://ui.knowns.dev/docs/agent-fleet">Agent Fleet</a></b><br>Every agent you run, and what needs you
+</td>
+</tr>
+</table>
 
 ## Components (52)
 
@@ -133,8 +224,8 @@ Connect your coding agent to the Knowns UI MCP server (`https://ui.knowns.dev/mc
 ## Develop
 
 ```bash
-npm run build   # shadcn build: registry.json to public/r
-npm run check   # installs every item into a fresh Next.js app and type-checks it
+bun run build   # shadcn build: registry.json to public/r
+bun run check   # installs every item into a fresh Next.js app and type-checks it
 ```
 
 ## License
