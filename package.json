@@ -6,8 +6,9 @@
   "homepage": "https://ui.knowns.dev",
   "repository": "https://github.com/knowns-dev/knowns-ui",
   "type": "module",
+  "packageManager": "bun@1.3.12",
   "scripts": {
-    "build": "npx -y shadcn@4 build registry.json -o public/r",
+    "build": "bunx shadcn@4 build registry.json -o public/r",
     "check": "node scripts/check-registry.mjs"
   }
 }

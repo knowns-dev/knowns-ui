@@ -4,12 +4,12 @@
 /**
  * Proves the registry installs for real: every item, one at a time, into a fresh Next.js app.
  *
- *   npm run registry:check                     # all items
- *   npm run registry:check -- --only button,agent-graph
- *   npm run registry:check -- --app /tmp/my-app --keep   # reuse a base app, keep the temp dir
- *   npm run registry:check -- --build-each     # also `next build` after every item (slow)
- *   npm run registry:check -- --jobs 6         # parallel items (default 4)
- *   npm run registry:check -- --registry /path/proposal.json --only x   # check items not yet in registry.json
+ *   bun run registry:check                     # all items
+ *   bun run registry:check -- --only button,agent-graph
+ *   bun run registry:check -- --app /tmp/my-app --keep   # reuse a base app, keep the temp dir
+ *   bun run registry:check -- --build-each     # also `next build` after every item (slow)
+ *   bun run registry:check -- --jobs 6         # parallel items (default 4)
+ *   bun run registry:check -- --registry /path/proposal.json --only x   # check items not yet in registry.json
  *
  * 1. Copies registry.json with its https://ui.knowns.dev/r/ URLs pointed at a local server, builds it
  *    with `shadcn build` into a temp dir and serves it (production URLs in registry.json are untouched).
@@ -135,7 +135,7 @@ log(`temp dir ${tmp}`);
 const localJson = path.join(tmp, "registry.local.json");
 fs.writeFileSync(localJson, JSON.stringify(registry).replaceAll(PROD, base));
 {
-  const b = await run("npx", ["-y", SHADCN, "build", localJson, "-o", path.join(tmp, "r")], ROOT);
+  const b = await run("bunx", [SHADCN, "build", localJson, "-o", path.join(tmp, "r")], ROOT);
   if (b.code !== 0) {
     console.error(b.out);
     console.error("shadcn build failed");
