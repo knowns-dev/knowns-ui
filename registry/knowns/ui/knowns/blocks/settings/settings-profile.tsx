@@ -148,7 +148,7 @@ export function ProfileSettings({
               <div className="flex flex-wrap gap-2">
                 {onAvatarUpload && (
                   <>
-                    <input ref={fileInput} id={ids.file} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" onChange={(e) => void pick(e.target.files?.[0])} />
+                    <input ref={fileInput} id={ids.file} type="file" aria-label="Upload avatar" tabIndex={-1} accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" onChange={(e) => void pick(e.target.files?.[0])} />
                     <Button size="sm" variant="secondary" loading={avatarBusy} onClick={() => fileInput.current?.click()}>
                       {avatar ? "Change photo" : "Upload photo"}
                     </Button>

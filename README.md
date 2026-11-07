@@ -8,7 +8,7 @@
 # Knowns UI
 
 The UI kit for AI products.<br>
-Agent views and chat, app screens, marketing sections and backgrounds. React and Tailwind, copied into your repo with the shadcn CLI.
+Every screen your AI product needs: agent views and chat, app screens, marketing sections and backgrounds. React and Tailwind, copied into your repo with the shadcn CLI.
 
 [Docs](https://ui.knowns.dev/docs/introduction) · [Components](https://ui.knowns.dev/components) · [Blocks](https://ui.knowns.dev/blocks) · [Pricing](https://ui.knowns.dev/pricing)
 

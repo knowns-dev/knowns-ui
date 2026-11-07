@@ -85,6 +85,13 @@ export interface AppShellProps {
    * parent and the main column scrolls, for an app that owns the whole viewport or a preview frame.
    */
   layout?: "page" | "fill";
+  /**
+   * Inside another page (a docs demo, a preview card): no main or complementary landmark of its own, so the host
+   * page keeps one main. Pair with `labelPrefix` when a page shows more than one shell.
+   */
+  embedded?: boolean;
+  /** Prefixes the shell's nav and breadcrumb names (e.g. "Demo" gives "Demo Main") so several shells on a page stay unique. */
+  labelPrefix?: string;
   className?: string;
 }
 
@@ -148,23 +155,27 @@ export function AppShell({
   hotkey = true,
   mobileBelow = 768,
   layout = "page",
+  embedded = false,
+  labelPrefix,
   className,
 }: AppShellProps) {
   const fill = layout === "fill";
+  const named = (name: string) => (labelPrefix ? `${labelPrefix} ${name}` : name);
+  const Main = embedded ? "div" : "main";
   return (
     <SidebarProvider storageKey={storageKey} defaultCollapsed={defaultCollapsed} hotkey={hotkey} mobileBelow={mobileBelow} className={cn(fill ? "h-full min-h-0" : "min-h-dvh", className)}>
       {/* Without a switcher the sheet needs its own top row for the close button. */}
-      <Sidebar label={label} sticky={!fill} sheetHeader={workspaces && workspaces.length > 0 ? undefined : label}>
+      <Sidebar label={named(label)} landmark={!embedded} sticky={!fill} sheetHeader={workspaces && workspaces.length > 0 ? undefined : label}>
         {workspaces && workspaces.length > 0 && (
           <SidebarHeader>
             <SidebarSwitcher workspaces={workspaces} value={workspace ?? workspaces[0].id} onChange={onWorkspaceChange} onCreate={onCreateWorkspace} />
           </SidebarHeader>
         )}
         <SidebarContent className={cn(!workspaces?.length && "pt-3")}>
-          <SidebarNav items={nav} active={active} onSelect={onSelect} linkAs={linkAs} label={label} storageKey={storageKey && `${storageKey}:nav`} />
+          <SidebarNav items={nav} active={active} onSelect={onSelect} linkAs={linkAs} label={named(label)} storageKey={storageKey && `${storageKey}:nav`} />
           {groups.map((g) => (
             <SidebarGroup key={g.id} label={g.label} collapsible={g.collapsible ?? true}>
-              <SidebarNav items={g.items} active={active} onSelect={onSelect} linkAs={linkAs} label={g.label} storageKey={storageKey && `${storageKey}:${g.id}`} />
+              <SidebarNav items={g.items} active={active} onSelect={onSelect} linkAs={linkAs} label={named(g.label)} storageKey={storageKey && `${storageKey}:${g.id}`} />
             </SidebarGroup>
           ))}
         </SidebarContent>
@@ -182,6 +193,7 @@ export function AppShell({
               {/* One line in the topbar; below 640px only the current page shows. */}
               <Breadcrumb
                 items={breadcrumb}
+                aria-label={named("Breadcrumb")}
                 size="sm"
                 maxItems={3}
                 className="min-w-0 [&_ol]:flex-nowrap max-sm:[&_li:not(:last-child)]:hidden max-sm:[&_li:last-child>span[aria-hidden]]:hidden"
@@ -195,7 +207,7 @@ export function AppShell({
             {user}
           </div>
         </header>
-        <main className="min-w-0 flex-1">{children}</main>
+        <Main className="min-w-0 flex-1">{children}</Main>
       </SidebarInset>
     </SidebarProvider>
   );

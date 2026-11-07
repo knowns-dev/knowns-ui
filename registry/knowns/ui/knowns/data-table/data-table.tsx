@@ -58,6 +58,8 @@ export interface DataTableProps<T> {
   getRowId: (row: T) => string;
   /** Visible title above the table; also names it. */
   title?: ReactNode;
+  /** The title's element, to fit the page's heading outline. Default "h3"; "div" for no heading. */
+  titleAs?: "h2" | "h3" | "h4" | "div";
   "aria-label"?: string;
   /** Sort rules, controlled. Shift-click a header adds a rule. */
   sort?: SortRule[];
@@ -139,6 +141,7 @@ export function DataTable<T>({
   columns,
   getRowId,
   title,
+  titleAs: TitleTag = "h3",
   "aria-label": ariaLabel,
   sort: sortProp,
   defaultSort = [],
@@ -258,9 +261,9 @@ export function DataTable<T>({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 px-4 py-3">
         {title && (
-          <h3 id={titleId} className="mr-1 text-[14px] font-semibold tracking-tight">
+          <TitleTag id={titleId} className="mr-1 text-[14px] font-semibold tracking-tight">
             {title}
-          </h3>
+          </TitleTag>
         )}
         <span className="text-[12px] text-muted-foreground tabular-nums" aria-live="polite">
           {status}

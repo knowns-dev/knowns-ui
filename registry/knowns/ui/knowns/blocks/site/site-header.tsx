@@ -314,8 +314,10 @@ export function SiteHeader({
     />
   );
 
+  // Rhythm: 8px between the icon buttons (search, theme), 12px around the account and before the CTA. Hidden
+  // children (e.g. a CTA a paid user doesn't see) take no gap with them, so there is never a hole.
   const right = (
-    <div className="flex flex-none items-center gap-0.5 sm:gap-1.5">
+    <div className="flex flex-none items-center gap-0.5 sm:gap-2">
       {search && (
         <>
           <span className="hidden lg:inline-flex">
@@ -330,7 +332,7 @@ export function SiteHeader({
         <ThemeToggle theme={theme.value} onThemeChange={(t) => theme.onChange(t === "dark" ? "dark" : "light")} size="md" className="pointer-coarse:min-h-11 pointer-coarse:min-w-11" />
       )}
       {account ? (
-        <span className="flex items-center">{account}</span>
+        <span className="flex items-center gap-3 sm:ml-1">{account}</span>
       ) : (
         signIn && (
           <LinkOrButton
@@ -344,7 +346,7 @@ export function SiteHeader({
         )
       )}
       {cta && (
-        <span className="hidden sm:inline-flex">
+        <span className="hidden sm:ml-1 sm:inline-flex">
           {cta.href ? (
             <a href={cta.href} onClick={(e) => (onNavigate?.(cta.href!, e), cta.onClick?.())} className={cn(buttonLook(minimal ? "secondary" : "primary"))}>
               {cta.label}

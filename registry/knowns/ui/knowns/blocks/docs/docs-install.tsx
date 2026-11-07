@@ -114,6 +114,8 @@ export function CommandBlock({
   const [own, setOwn] = useState<PackageManager>(pms[0] ?? "npm");
   const pm = value && commands[value] ? value : own;
   const cmd = commands[pm] ?? "";
+  // Wrapped commands break only at spaces: a word joiner after each hyphen (display only; Copy uses `cmd`).
+  const shown = wrap ? cmd.replace(/-/g, "-\u2060") : cmd;
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border bg-card" data-lang="bash">
       <div data-md="skip" className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
@@ -137,11 +139,11 @@ export function CommandBlock({
         )}
         <CopyBtn text={cmd} />
       </div>
-      <div tabIndex={0} role="group" aria-label="Command" className={cn("flex items-baseline gap-2 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring", wrap && "[&_code]:break-all [&_code]:whitespace-pre-wrap! [&_pre]:break-all [&_pre]:whitespace-pre-wrap!")}>
+      <div tabIndex={0} role="group" aria-label="Command" className={cn("flex items-baseline gap-2 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring", wrap && "[&_code]:whitespace-pre-wrap! [&_pre]:whitespace-pre-wrap! [&_code]:[overflow-wrap:normal] [&_pre]:[overflow-wrap:normal] [&_code]:[word-break:normal] [&_pre]:[word-break:normal]")}>
         <span aria-hidden="true" className="text-muted-foreground select-none">
           $
         </span>
-        {renderCode ? <div className="min-w-0">{renderCode(cmd, "bash")}</div> : <code className="whitespace-pre text-foreground">{cmd}</code>}
+        {renderCode ? <div className="min-w-0">{renderCode(shown, "bash")}</div> : <code className="whitespace-pre text-foreground">{shown}</code>}
       </div>
     </div>
   );

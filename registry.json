@@ -505,6 +505,66 @@
       ]
     },
     {
+      "name": "activity-feed",
+      "type": "registry:block",
+      "title": "Activity feed",
+      "description": "A timeline of what people and agents did: grouped by day, filters, expandable details and an N new pill when items arrive while scrolled.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/segmented-control.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/application/activity-feed.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/application/activity-feed.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/application/app-feed-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/application/app-feed-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/application/activity-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/application/activity-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "notification-center",
+      "type": "registry:block",
+      "title": "Notification center",
+      "description": "A bell with an unread count and a panel of notifications: tabs, day groups, read state, agent actions and an endless list; a sheet on phones.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/dialog.json",
+        "https://ui.knowns.dev/r/popover.json",
+        "https://ui.knowns.dev/r/tabs.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/application/notification-center.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/application/notification-center.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/application/app-feed-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/application/app-feed-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/application/notification-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/application/notification-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "auth-card",
       "type": "registry:block",
       "title": "Auth card",
@@ -663,6 +723,23 @@
       ]
     },
     {
+      "name": "gradient-floor",
+      "type": "registry:block",
+      "title": "Gradient Floor",
+      "description": "A lit floor that rises from the bottom edge: two soft gradient layers drift and breathe, and pulse(x) sends a wave across it from a ref or from other pieces (Prompt Keyboard sends one per key). CSS and the Web Animations API, no blur filter, no per-frame JavaScript.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/illustrations-core.json",
+        "https://ui.knowns.dev/r/backgrounds-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/backgrounds/gradient-floor.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/backgrounds/gradient-floor.tsx"
+        }
+      ]
+    },
+    {
       "name": "grid-pattern",
       "type": "registry:block",
       "title": "Grid Pattern",
@@ -754,6 +831,30 @@
           "path": "registry/knowns/ui/knowns/blocks/catalog/sketch.tsx",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/catalog/sketch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "cookie-consent",
+      "type": "registry:block",
+      "title": "Cookie consent",
+      "description": "A consent banner with Accept all, Reject all and Customize, and a preferences dialog with categories (necessary locked on). Saves the choice, calls back, never blocks the page, and rejecting is as easy as accepting.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/dialog.json",
+        "https://ui.knowns.dev/r/switch.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/consent/cookie-consent.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/consent/cookie-consent.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/consent/consent-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/consent/consent-utils.ts"
         }
       ]
     },
@@ -1154,7 +1255,7 @@
       "name": "stats-band",
       "type": "registry:block",
       "title": "Stats band",
-      "description": "Three or four headline numbers that count up on view, with labels, detail lines and a source footnote. Plain or card tone; reduced motion shows final values.",
+      "description": "Three or four headline numbers that count up on view, with labels, detail lines, an optional proof visual per number (trend, daily bars, distribution), a context line on hover or focus and a source footnote. Plain, card or divided tone; reduced motion shows final values.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/marketing-core.json",
@@ -1203,6 +1304,29 @@
           "path": "registry/knowns/ui/knowns/blocks/marketing/testimonials.tsx",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/marketing/testimonials.tsx"
+        }
+      ]
+    },
+    {
+      "name": "onboarding-checklist",
+      "type": "registry:block",
+      "title": "Onboarding checklist",
+      "description": "First-run steps for a dashboard corner: progress, done, current and locked states, a call to action and an optional how-to on each step, snooze and dismiss, and a calm completion state.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/progress.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/onboarding/onboarding-checklist.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/onboarding/onboarding-checklist.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/onboarding/onboarding-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/onboarding/onboarding-utils.ts"
         }
       ]
     },
@@ -1376,6 +1500,29 @@
       ]
     },
     {
+      "name": "setup-wizard",
+      "type": "registry:block",
+      "title": "Setup wizard",
+      "description": "A multi-step setup on the Stepper: per-step validation, Back, Next and Skip, a review step, a final success state, focus to the step heading and optional URL sync. Works in a page or a dialog.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/stepper.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/setup/setup-wizard.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/setup/setup-wizard.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/setup/setup-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/setup/setup-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "sidebar-docs",
       "type": "registry:block",
       "title": "Docs sidebar",
@@ -1487,6 +1634,78 @@
           "path": "registry/knowns/ui/knowns/blocks/site/site-utils.ts",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/site/site-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "template-app-dashboard",
+      "type": "registry:block",
+      "title": "App dashboard",
+      "description": "A signed-in dashboard on the App Shell: sidebar with workspaces, topbar with search and notifications, page header, stat band, a fleet of agents that need you, recent activity and a usage card. Demo data, replace it with yours.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/agent-fleet.json",
+        "https://ui.knowns.dev/r/app-shell.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/progress.json",
+        "https://ui.knowns.dev/r/user-menu.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/templates/app-dashboard.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/templates/app-dashboard.tsx"
+        }
+      ]
+    },
+    {
+      "name": "template-docs-site",
+      "type": "registry:block",
+      "title": "Docs site",
+      "description": "A docs site in one component: a home with search and category cards, then pages with the docs sidebar, page header, install steps, callouts, table of contents and previous/next links. Demo pages for a fictional product, replace them.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/docs-install.json",
+        "https://ui.knowns.dev/r/docs-layout.json",
+        "https://ui.knowns.dev/r/docs-page-header.json",
+        "https://ui.knowns.dev/r/docs-toc.json",
+        "https://ui.knowns.dev/r/sidebar-docs.json",
+        "https://ui.knowns.dev/r/site-header.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/templates/docs-site.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/templates/docs-site.tsx"
+        }
+      ]
+    },
+    {
+      "name": "template-saas-landing",
+      "type": "registry:block",
+      "title": "SaaS landing page",
+      "description": "A whole landing page from the marketing blocks: announcement bar, header, hero on a dither field, logo cloud, features, stats, pricing, testimonials, FAQ, call to action and footer. Demo brand and copy, replace them.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/announcement-bar.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/cta-section.json",
+        "https://ui.knowns.dev/r/dither-field.json",
+        "https://ui.knowns.dev/r/faq-section.json",
+        "https://ui.knowns.dev/r/feature-grid.json",
+        "https://ui.knowns.dev/r/grid-pattern.json",
+        "https://ui.knowns.dev/r/hero.json",
+        "https://ui.knowns.dev/r/logo-cloud.json",
+        "https://ui.knowns.dev/r/site-footer.json",
+        "https://ui.knowns.dev/r/site-header.json",
+        "https://ui.knowns.dev/r/stats-band.json",
+        "https://ui.knowns.dev/r/testimonials.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/templates/saas-landing.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/templates/saas-landing.tsx"
         }
       ]
     },
@@ -1925,6 +2144,23 @@
           "path": "registry/knowns/ui/knowns/illustrations/run-pulse.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/illustrations/run-pulse.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tab-overload",
+      "type": "registry:ui",
+      "title": "Tab overload",
+      "description": "A small stack of overlapping browser windows for a 4:3 feature or bento card. The highlight follows the window under the pointer and, when nobody is hovering, drifts on its own. Quiet, theme-aware, still under reduced motion.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/illustrations-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/illustrations/tab-overload.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/illustrations/tab-overload.tsx"
         }
       ]
     },
@@ -2370,6 +2606,23 @@
           "path": "registry/knowns/ui/knowns/text-animation/decode-text.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/text-animation/decode-text.tsx"
+        }
+      ]
+    },
+    {
+      "name": "gradient-text",
+      "type": "registry:ui",
+      "title": "Gradient text",
+      "description": "Text filled with a slowly flowing gradient, with an optional matching gradient-border pill.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/text-animation-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/text-animation/gradient-text.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/text-animation/gradient-text.tsx"
         }
       ]
     },

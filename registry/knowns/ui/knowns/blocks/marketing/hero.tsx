@@ -27,6 +27,8 @@ export interface HeroCopy {
   /** A short line above the headline, e.g. "Changelog: run replays". With href it is a link; badge is a word in the accent. */
   eyebrow?: { label: ReactNode; href?: string; badge?: string };
   title: ReactNode;
+  /** The headline's element. Default "h1"; use "h2" when the hero is not the page's main heading (a demo, a section). */
+  as?: "h1" | "h2" | "h3";
   /** Words that rotate at the end of the headline. Use sparingly. */
   rotate?: string[];
   lead?: ReactNode;
@@ -132,9 +134,9 @@ export function CommandChip({ command, onCopy, className }: { command: string; o
 /** Display type: 48 / 56 / 64, the only place with tight tracking. */
 export const DISPLAY = "text-[48px] leading-[1.04] sm:text-[56px] lg:text-[64px]";
 
-export function Title({ title, rotate, className }: { title: ReactNode; rotate?: string[]; className?: string }) {
+export function Title({ title, rotate, as: H = "h1", className }: { title: ReactNode; rotate?: string[]; as?: "h1" | "h2" | "h3"; className?: string }) {
   return (
-    <h1 className={cn("text-balance font-semibold tracking-[-0.035em]", className)}>
+    <H className={cn("text-balance font-semibold tracking-[-0.035em]", className)}>
       {title}
       {rotate && rotate.length > 0 && (
         <>
@@ -142,7 +144,7 @@ export function Title({ title, rotate, className }: { title: ReactNode; rotate?:
           <WordRotate words={rotate} wordClassName="text-muted-foreground" />
         </>
       )}
-    </h1>
+    </H>
   );
 }
 
@@ -225,7 +227,7 @@ export interface HeroCenteredProps extends HeroCopy {
   className?: string;
 }
 
-export function HeroCentered({ eyebrow, title, rotate, lead, primary, secondary, command, facts, align = "center", background, spacing = "default", figure, onCommandCopy, children, className }: HeroCenteredProps) {
+export function HeroCentered({ eyebrow, title, rotate, as, lead, primary, secondary, command, facts, align = "center", background, spacing = "default", figure, onCommandCopy, children, className }: HeroCenteredProps) {
   const center = align === "center";
   return (
     <section data-slot="hero" data-variant={center ? "centered" : "start"} className={cn("relative isolate overflow-hidden", className)}>
@@ -233,7 +235,7 @@ export function HeroCentered({ eyebrow, title, rotate, lead, primary, secondary,
       <div className={cn("mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6", spacing === "snug" ? "pt-6 pb-12 sm:pt-8 sm:pb-16" : spacing === "tight" ? "py-12 sm:py-16" : "py-16 sm:py-24", center ? "items-center text-center" : "items-start text-left")}>
         {figure}
         {eyebrow && <Eyebrow eyebrow={eyebrow} />}
-        <Title title={title} rotate={rotate} className={cn(DISPLAY, "max-w-4xl")} />
+        <Title title={title} rotate={rotate} as={as} className={cn(DISPLAY, "max-w-4xl")} />
         <Lead balance={center}>{lead}</Lead>
         <div className={cn("mt-2 flex w-full min-w-0 flex-col gap-6", center ? "items-center" : "items-start")}>
           <Actions primary={primary} secondary={secondary} center={center} />

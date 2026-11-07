@@ -26,6 +26,7 @@ export function Popover({
   side = "bottom",
   align = "start",
   className,
+  focusOnOpen = true,
   "aria-label": label,
 }: {
   trigger: ReactElement<TriggerProps>;
@@ -35,6 +36,8 @@ export function Popover({
   side?: "top" | "bottom" | "left" | "right";
   align?: "start" | "center" | "end";
   className?: string;
+  /** Move focus into the panel when it opens. Default true; false for a panel opened by hover, which must not steal focus. */
+  focusOnOpen?: boolean;
   "aria-label"?: string;
 }) {
   const [own, setOwn] = useState(false);
@@ -48,9 +51,10 @@ export function Popover({
 
   // Focus the first control once the panel is placed (it is visibility:hidden until then).
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !focusOnOpen) return;
     const panel = floatingRef.current;
     (panel && (tabbables(panel)[0] ?? panel))?.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, floatingRef]);
 
   useEffect(() => {

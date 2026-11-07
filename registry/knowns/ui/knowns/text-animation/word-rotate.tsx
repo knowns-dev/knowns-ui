@@ -1,7 +1,7 @@
 "use client";
 /** @registry name="word-rotate" type="ui" title="Word rotate" description="One word in a headline that changes in place, keeping its width." */
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { EASE, TextShell, useLive, useStep } from "./text-core";
 
@@ -12,6 +12,8 @@ export interface WordRotateProps {
   interval?: number;
   /** Line them up at the start (default) or centre them in the widest word's space. */
   align?: "start" | "center";
+  /** How a word hands over: "rise" (default) lifts the old one away; "morph" blurs it into the next. */
+  transition?: "rise" | "morph";
   /** Classes for the words, e.g. a gradient or accent colour. */
   wordClassName?: string;
   /** Screen reader text. Default the words as a list ("work, plan, or ship"). */
@@ -36,18 +38,30 @@ export function wordPlace(i: number, cur: number, prev: number | null): "in" | "
   return "wait";
 }
 
+/** Morph: the outgoing word blurs and fades while the incoming one sharpens, overlapping in the same slot. */
+export function morphStyle(place: "in" | "out" | "wait"): CSSProperties {
+  const on = place === "in";
+  return {
+    opacity: on ? 1 : 0,
+    filter: on ? "blur(0)" : "blur(.28em)",
+    transform: on ? "none" : "scale(.96)",
+    transition: place === "wait" ? "none" : `opacity 600ms ${EASE}, filter 600ms ${EASE}, transform 600ms ${EASE}`,
+  };
+}
+
 /**
  * One word in a sentence that changes in place: the old word lifts away as the next rises in.
  * Use it inline, e.g. "Show your agents while they <WordRotate words={…} />". The slot keeps the
  * widest word's width so the line never jumps. Screen readers hear all the words; reduced motion
  * shows the first. Pauses offscreen and in hidden tabs.
  */
-export function WordRotate({ words, interval = 2200, align = "start", wordClassName, label, paused, className }: WordRotateProps) {
+export function WordRotate({ words, interval = 2200, align = "start", transition = "rise", wordClassName, label, paused, className }: WordRotateProps) {
   const root = useRef<HTMLSpanElement>(null);
   const { live, reduced } = useLive(root, paused);
   const [{ cur, prev }, set] = useState<{ cur: number; prev: number | null }>({ cur: 0, prev: null });
   const n = words.length;
   useStep(live && n > 1, interval, () => set(({ cur: c }) => ({ cur: (c + 1) % n, prev: c })), `${cur}:${n}`);
+  const morph = transition === "morph";
   const at = reduced ? 0 : Math.min(cur, Math.max(0, n - 1));
 
   return (
@@ -57,14 +71,14 @@ export function WordRotate({ words, interval = 2200, align = "start", wordClassN
         .3em past the line box (padding, cancelled by a negative margin, so layout never shifts) so ascenders
         and descenders survive tight display leading.
       */}
-      <span className="inline-grid overflow-hidden py-[.3em] -my-[.3em] align-bottom">
+      <span className={cn("inline-grid overflow-hidden py-[.3em] -my-[.3em] align-bottom", morph && "px-[.2em] -mx-[.2em]")}>
         {words.map((w, i) => {
           const place = reduced ? (i === 0 ? "in" : "wait") : wordPlace(i, at, prev);
           return (
             <span
               key={`${i}-${w}`}
               className={cn("[grid-area:1/1] whitespace-nowrap", align === "center" && "text-center", wordClassName)}
-              style={{
+              style={morph ? morphStyle(place) : {
                 opacity: place === "in" ? 1 : 0,
                 transform: place === "in" ? "none" : place === "out" ? "translateY(-.5em)" : "translateY(.5em)",
                 // A clean hand-over: the outgoing word is mostly gone (fast fade) before the incoming one, which

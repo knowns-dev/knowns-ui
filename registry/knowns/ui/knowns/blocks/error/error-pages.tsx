@@ -33,17 +33,19 @@ export interface ErrorLayoutProps {
   footer?: ReactNode;
   /** Fill the viewport height (default) or only the parent. */
   fullHeight?: boolean;
+  /** The title's element. Default "h1"; "h2" when the page is shown inside another page (a demo). */
+  as?: "h1" | "h2";
   className?: string;
 }
 
 /** The shared frame: art, code, title, description, actions and a footer line, centred. */
-export function ErrorLayout({ code, art, title, description, children, footer, fullHeight = true, className }: ErrorLayoutProps) {
+export function ErrorLayout({ code, art, title, description, children, footer, fullHeight = true, as: H = "h1", className }: ErrorLayoutProps) {
   return (
     <section className={cn("grid place-items-center px-4 py-16 sm:px-6", fullHeight && "min-h-[calc(100dvh-4rem)]", className)}>
       <div className="flex w-full max-w-md flex-col items-center text-center">
         {art && <div className="mb-6 flex h-40 w-full items-center justify-center [&>*]:max-h-full">{art}</div>}
         {code && <p className="mb-2 font-mono text-[12.5px] font-medium tracking-wide text-muted-foreground">{code}</p>}
-        <h1 className="text-balance text-[26px] font-semibold tracking-[-0.02em] sm:text-[30px]">{title}</h1>
+        <H className="text-balance text-[26px] font-semibold tracking-[-0.02em] sm:text-[30px]">{title}</H>
         {description && <p className="mt-2.5 max-w-sm text-pretty text-[14.5px] leading-relaxed text-muted-foreground">{description}</p>}
         {children && <div className="mt-6 flex w-full flex-col items-center gap-4">{children}</div>}
         {footer && <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">{footer}</div>}
@@ -63,7 +65,7 @@ const linkClass = "rounded-sm underline decoration-border underline-offset-4 out
 
 /* ── 404 ── */
 
-export interface NotFoundPageProps extends Partial<Pick<ErrorLayoutProps, "art" | "fullHeight" | "className">> {
+export interface NotFoundPageProps extends Partial<Pick<ErrorLayoutProps, "art" | "fullHeight" | "as" | "className">> {
   title?: ReactNode;
   description?: ReactNode;
   /** A search box. With `action` it submits to `${action}?q=…`; with onSearch you handle it. */
@@ -81,6 +83,7 @@ export function NotFoundPage({
   home = { href: "/" },
   art,
   fullHeight,
+  as,
   className,
 }: NotFoundPageProps) {
   const [q, setQ] = useState("");
@@ -96,7 +99,7 @@ export function NotFoundPage({
     if (url) window.location.assign(url);
   };
   return (
-    <ErrorLayout code="404" art={art} title={title} description={description} fullHeight={fullHeight} className={className}>
+    <ErrorLayout code="404" art={art} title={title} description={description} fullHeight={fullHeight} as={as} className={className}>
       {search && (
         <form role="search" onSubmit={submit} className="flex w-full max-w-sm gap-2">
           <label htmlFor={`${id}-q`} className="sr-only">
@@ -136,7 +139,7 @@ export function NotFoundPage({
 
 /* ── 500 ── */
 
-export interface ServerErrorPageProps extends Partial<Pick<ErrorLayoutProps, "art" | "fullHeight" | "className">> {
+export interface ServerErrorPageProps extends Partial<Pick<ErrorLayoutProps, "art" | "fullHeight" | "as" | "className">> {
   title?: ReactNode;
   description?: ReactNode;
   /** Try again. A returned promise shows a spinner until it settles. */
@@ -160,6 +163,7 @@ export function ServerErrorPage({
   home = { href: "/" },
   art,
   fullHeight,
+  as,
   className,
 }: ServerErrorPageProps) {
   const [busy, setBusy] = useState(false);
@@ -189,7 +193,7 @@ export function ServerErrorPage({
       art={art}
       title={title}
       description={description}
-      fullHeight={fullHeight}
+      fullHeight={fullHeight} as={as}
       className={className}
       footer={
         (errorId || statusHref || supportHref) && (
@@ -235,7 +239,7 @@ export function ServerErrorPage({
 
 /* ── Maintenance ── */
 
-export interface MaintenancePageProps extends Partial<Pick<ErrorLayoutProps, "art" | "fullHeight" | "className">> {
+export interface MaintenancePageProps extends Partial<Pick<ErrorLayoutProps, "art" | "fullHeight" | "as" | "className">> {
   title?: ReactNode;
   description?: ReactNode;
   /** When you expect to be back. Shown as a clock time and "in about 40 minutes", updated every minute. */
@@ -255,6 +259,7 @@ export function MaintenancePage({
   locale,
   art,
   fullHeight,
+  as,
   className,
 }: MaintenancePageProps) {
   // The relative time renders after mount (the server's clock and timezone would not match).
@@ -295,7 +300,7 @@ export function MaintenancePage({
       art={art}
       title={title}
       description={description}
-      fullHeight={fullHeight}
+      fullHeight={fullHeight} as={as}
       className={className}
       footer={
         statusHref && (

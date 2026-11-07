@@ -34,6 +34,8 @@ export interface TestimonialsSectionProps {
   title?: ReactNode;
   lead?: ReactNode;
   align?: "start" | "center";
+  /** Section padding: "default" 64 / 96px (phone / desktop), "tight" 40 / 56px for use inside a page or a frame. */
+  spacing?: "default" | "tight";
   /** Shown under the section, e.g. "Sample data" or a source note. */
   footnote?: ReactNode;
   className?: string;
@@ -144,9 +146,9 @@ function Grid({ items, columns }: { items: Testimonial[]; columns: 2 | 3 }) {
 /* ── Section ── */
 
 /** The section shell every testimonials layout shares. `layout` lands on data-variant for styling hooks. */
-export function TestimonialsSection({ eyebrow, title, lead, align = "center", footnote, className, layout = "grid", children }: TestimonialsSectionProps & { layout?: string; children?: ReactNode }) {
+export function TestimonialsSection({ eyebrow, title, lead, align = "center", spacing = "default", footnote, className, layout = "grid", children }: TestimonialsSectionProps & { layout?: string; children?: ReactNode }) {
   return (
-    <section data-slot="testimonials" data-variant={layout} className={cn("mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24", className)}>
+    <section data-slot="testimonials" data-variant={layout} className={cn("mx-auto w-full max-w-6xl px-4 sm:px-6", spacing === "tight" ? "py-10 sm:py-14" : "py-16 sm:py-24", className)}>
       <SectionHeading eyebrow={eyebrow} title={title} lead={lead} align={align} className={cn(layout === "quote" ? "mb-8" : "mb-10", align === "start" && "max-w-2xl")} />
       {children}
       {footnote && <p className="mt-6 text-center text-[13px] text-muted-foreground">{footnote}</p>}

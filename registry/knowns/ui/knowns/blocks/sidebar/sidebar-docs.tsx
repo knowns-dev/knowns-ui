@@ -72,8 +72,8 @@ export interface DocsSidebarProps {
   onFilterChange?: (id: string) => void;
   /** Shows the search button. */
   onSearch?: () => void;
-  /** Beside the search button, e.g. a SidebarTrigger that hides the sidebar. */
-  searchAction?: ReactNode;
+  /** Before the search button on its row, e.g. a SidebarTrigger (look="field") that hides the sidebar. */
+  searchLeading?: ReactNode;
   /** Shows ⌘ instead of Ctrl on the search button. */
   isMac?: boolean;
   /** Replace the default New dot and Pro stars after a page's name. */
@@ -295,7 +295,7 @@ export function DocsSidebar({
   filter: filterProp,
   onFilterChange,
   onSearch,
-  searchAction,
+  searchLeading,
   isMac,
   renderMark,
   storageKey,
@@ -353,15 +353,16 @@ export function DocsSidebar({
 
   return (
     <div className={cn("flex h-full min-h-0 flex-1 flex-col overflow-hidden", className)}>
-      {(onSearch || searchAction || filters.length > 0) && (
+      {(onSearch || searchLeading || filters.length > 0) && (
         <div className="flex shrink-0 flex-col gap-2 pb-3 pr-3.5">
-          {(onSearch || searchAction) && (
-            <div className="flex items-center gap-1">
+          {(onSearch || searchLeading) && (
+            <div className="flex items-center gap-1.5">
+              {searchLeading}
               {onSearch && (
                 <button
                   type="button"
                   onClick={onSearch}
-                  className="flex h-8 w-full min-w-0 flex-1 items-center gap-2 rounded-[10px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 text-[13px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-10"
+                  className="flex h-9 w-full min-w-0 flex-1 items-center gap-2 rounded-[10px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 text-[13px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-10"
                 >
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" className="size-3.5">
                     <circle cx="7" cy="7" r="4.5" />
@@ -374,7 +375,6 @@ export function DocsSidebar({
                   </span>
                 </button>
               )}
-              {searchAction}
             </div>
           )}
           {filters.length > 1 && (

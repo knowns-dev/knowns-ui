@@ -3,8 +3,7 @@
 
 /**
  * The people behind the product: a grid of cards (avatar or initials, name, role, a short bio and
- * social links) or compact tiles for larger teams. Long bios are clamped; "Read more" opens them in place,
- * and on devices with a mouse, hovering a card opens its bio too. Exports Socials and TeamSection for the
+ * social links) or compact tiles for larger teams. Long bios are clamped; "Read more" opens them in place. Exports Socials and TeamSection for the
  * Pro list layout in ./team-list.
  */
 import { useState, type ReactNode } from "react";
@@ -31,6 +30,8 @@ export interface TeamSectionProps {
   title?: ReactNode;
   lead?: ReactNode;
   align?: "start" | "center";
+  /** Section padding: "default" 64 / 96px (phone / desktop), "tight" 40 / 56px for use inside a page or a frame. */
+  spacing?: "default" | "tight";
   /** Shown after the people, e.g. a "We're hiring" link. */
   footer?: ReactNode;
   className?: string;
@@ -103,7 +104,7 @@ function Card({ m }: { m: TeamMember }) {
   const [open, setOpen] = useState(false);
   const long = (m.bio?.length ?? 0) > BIO_CLAMP;
   return (
-    <li className="group/member flex flex-col gap-4 rounded-2xl border bg-card p-5">
+    <li className="flex h-full flex-col gap-4 rounded-2xl border bg-card p-5">
       <div className="flex items-center gap-4">
         <Avatar label={m.name} src={m.avatar} size="xl" shape="circle" decorative />
         <div className="min-w-0">
@@ -114,7 +115,7 @@ function Card({ m }: { m: TeamMember }) {
       </div>
       {m.bio && (
         <div className="flex flex-col items-start gap-1">
-          <p className={cn("text-[14px] leading-relaxed text-muted-foreground", long && !open && "line-clamp-3 pointer-fine:group-hover/member:line-clamp-none")}>{m.bio}</p>
+          <p className={cn("text-[14px] leading-relaxed text-muted-foreground", long && !open && "line-clamp-3")}>{m.bio}</p>
           {long && (
             <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cn("rounded-sm text-[13px] font-medium text-foreground underline-offset-2 hover:underline", focusRing)}>
               {open ? "Show less" : "Read more"}
@@ -131,9 +132,9 @@ function Card({ m }: { m: TeamMember }) {
 const COLS = { 2: "@[640px]:grid-cols-2", 3: "@[560px]:grid-cols-2 @[880px]:grid-cols-3", 4: "@[560px]:grid-cols-2 @[880px]:grid-cols-3 @[1100px]:grid-cols-4" } as const;
 
 /** The section shell every team layout shares. `layout` lands on data-variant for styling hooks. */
-export function TeamSection({ eyebrow, title = "The team", lead, align = "center", footer, className, layout = "grid", children }: TeamSectionProps & { layout?: string; children?: ReactNode }) {
+export function TeamSection({ eyebrow, title = "The team", lead, align = "center", spacing = "default", footer, className, layout = "grid", children }: TeamSectionProps & { layout?: string; children?: ReactNode }) {
   return (
-    <section data-slot="team-grid" data-variant={layout} className={cn("@container mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-16 sm:px-6 sm:py-24", className)}>
+    <section data-slot="team-grid" data-variant={layout} className={cn("@container mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-6", spacing === "tight" ? "py-10 sm:py-14" : "py-16 sm:py-24", className)}>
       <SectionHeading eyebrow={eyebrow} title={title} lead={lead} align={align} />
       {children}
       {footer && <div className={cn("text-[14px] text-muted-foreground", align === "center" && "text-center")}>{footer}</div>}
@@ -158,7 +159,7 @@ export function TeamGrid({ members, variant = "grid", columns = 3, ...section }:
           ))}
         </ul>
       ) : (
-        <ul className={cn("grid gap-4", COLS[columns])}>
+        <ul className={cn("grid items-stretch gap-4", COLS[columns])}>
           {members.map((m) => (
             <Card key={m.name} m={m} />
           ))}

@@ -80,7 +80,10 @@ export interface AgentFleetProps {
   /** Clock time (epoch ms). Default: ticks every second while something is live. */
   now?: number;
   formatCost?: (usd: number) => string;
+  /** Heading of the fleet. Pass null when the page already has one: the header then shows only the totals. */
   title?: ReactNode;
+  /** The region's name for screen readers. Default: the title when it's a string, else "Agent fleet". Give each fleet on a page its own. */
+  "aria-label"?: string;
   /** "compact" (default): 14px titles, 12-16px padding, 3-4 cards a row on a wide page. "comfortable": larger cards. */
   density?: FleetDensity;
   /**
@@ -618,6 +621,7 @@ export function AgentFleet({
   now: nowProp,
   formatCost = formatUsd,
   title = "Fleet",
+  "aria-label": ariaLabel,
   density = "compact",
   layout = "list",
   className,
@@ -1330,7 +1334,8 @@ export function AgentFleet({
   /** List: one row per main agent. The numbers sit in fixed, right-aligned columns so the rows line up. */
   const mainRow = (a: FleetAgent) => {
     const isOpen = a.id === openId;
-    const needs = walk(a).filter((x) => x.state === "waiting").length;
+    // Sub-agents waiting on you. The agent's own wait is already the pill, so it is not counted twice.
+    const needs = walk(a).filter((x) => x.id !== a.id && x.state === "waiting").length;
     const task = taskOf(a);
     return (
       <button
@@ -1427,17 +1432,22 @@ export function AgentFleet({
   const shownIndex = shown ? fleet.findIndex((a) => a.id === shown.id) : -1;
 
   return (
-    <section ref={root} aria-label={typeof title === "string" ? title : "Agent fleet"} className={cn("flex min-w-0 flex-col gap-4", WIRE, className)}>
+    <section ref={root} aria-label={ariaLabel ?? (typeof title === "string" ? title : "Agent fleet")} className={cn("flex min-w-0 flex-col gap-4", WIRE, className)}>
       <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-0.5">
-        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-          <span className="grid size-4 place-items-center text-[var(--fleet-head)] [&_svg]:size-full">
-            <Sparkle />
-          </span>
-          {title}
-        </h2>
+        {title ? (
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+            <span className="grid size-4 place-items-center text-[var(--fleet-head)] [&_svg]:size-full">
+              <Sparkle />
+            </span>
+            {title}
+          </h2>
+        ) : (
+          <span />
+        )}
         <p className="flex flex-wrap items-baseline gap-x-4 text-[13px] text-muted-foreground tabular-nums">
           <span>
-            {fleet.length} {fleet.length === 1 ? "agent" : "agents"} / {subs} sub-agents
+            {fleet.length} {fleet.length === 1 ? "agent" : "agents"}
+            {subs > 0 && ` / ${subs} ${subs === 1 ? "sub-agent" : "sub-agents"}`}
           </span>
           <span>{totals.running} running</span>
           <span>{totals.waiting} needs you</span>

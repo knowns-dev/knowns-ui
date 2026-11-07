@@ -4,7 +4,7 @@ Free changes in full. Pro changes are listed by title; see https://ui.knowns.dev
 
 ## 0.9.0 (2026-11-07) - Early access
 
-The first public version. Free covers the base components, agent views, chat, backgrounds, text animation and page blocks; Pro adds review and eval components, dashboards, maps and the SDK adapters. Everything installs as source with the shadcn CLI.
+The first public version. Free covers the base components, the core agent and chat views, backgrounds, text animation and the page blocks. Pro adds the review, eval and cost views, more chat, dashboards and boards, maps, the voice orb and agent avatars, and the SDK adapters. Everything installs as source with the shadcn CLI.
 
 ### Breaking
 

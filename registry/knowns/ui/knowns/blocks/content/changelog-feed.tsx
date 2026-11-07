@@ -43,6 +43,8 @@ const TAG: Record<ChangeTag, { label: string; cls: string }> = {
 };
 
 export const changeTagLabel = (t: ChangeTag) => TAG[t].label;
+/** The pill colours of a tag (soft fill, tone text), shared with the timeline view. */
+export const changeTagClass = (t: ChangeTag) => TAG[t].cls;
 
 /** Entries with the tag (null: all). */
 export const filterChanges = (entries: ChangelogEntry[], tag: ChangeTag | null) => (tag ? entries.filter((e) => e.tags.includes(tag)) : entries);
@@ -104,11 +106,11 @@ export function ChangelogFeed({ entries, title = "Changelog", description, filte
       {filter && used.length > 1 && (
         <div role="group" aria-label="Filter by type of change" className="mb-8 flex flex-wrap gap-1.5">
           <Toggle size="sm" variant="outline" pressed={tag === null} onPressedChange={() => setTag(null)}>
-            All
+            All <span className="tabular-nums text-muted-foreground">{entries.length}</span>
           </Toggle>
           {used.map((t) => (
             <Toggle key={t} size="sm" variant="outline" pressed={tag === t} onPressedChange={(on) => setTag(on ? t : null)}>
-              {TAG[t].label}
+              {TAG[t].label} <span className="tabular-nums text-muted-foreground">{entries.filter((e) => e.tags.includes(t)).length}</span>
             </Toggle>
           ))}
         </div>

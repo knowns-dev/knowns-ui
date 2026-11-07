@@ -222,6 +222,11 @@ export interface SidebarProps {
   sticky?: boolean;
   /** Sticky offset in px, e.g. 64 under a 64px header (the height shrinks to match). Default 0. */
   top?: number;
+  /**
+   * The desktop sidebar is a complementary landmark (an <aside>) named by `label`. False renders a plain <div>,
+   * for a sidebar inside another page's content (a demo), where a nested landmark would be wrong.
+   */
+  landmark?: boolean;
   /** Classes on the desktop aside (padding, border). */
   className?: string;
   /** Classes on the mobile sheet panel. */
@@ -234,23 +239,24 @@ export interface SidebarProps {
 }
 
 /** The sidebar itself: a 256px aside on desktop (56px as the rail, or hidden off-canvas), a modal sheet on mobile. */
-export function Sidebar({ children, label = "Sidebar", collapsible = true, width = 256, sticky = true, top = 0, className, sheetClassName, sheetHeader }: SidebarProps) {
+export function Sidebar({ children, label = "Sidebar", collapsible = true, width = 256, sticky = true, top = 0, landmark = true, className, sheetClassName, sheetHeader }: SidebarProps) {
   const s = useSidebar();
   const offcanvas = collapsible === "offcanvas";
   const rail = collapsible === true && s.collapsed;
   const off = offcanvas && s.collapsed;
+  const Aside = landmark ? "aside" : "div";
   const style = { width: rail ? 56 : off ? 0 : width, "--kn-sb-collapsed": offcanvas ? "0px" : "56px", ...(sticky ? { top, height: `calc(100dvh - ${top}px)` } : null) } as CSSProperties;
   return (
     <>
       {!s.isMobile && (
-        <aside
+        <Aside
           data-kn-sidebar-aside
           data-below={s.mobileBelow}
           data-key={s.storageKey}
           data-rail={rail || undefined}
           data-offcanvas={offcanvas || undefined}
           data-collapsed={off || undefined}
-          aria-label={label}
+          aria-label={landmark ? label : undefined}
           // Hidden off-canvas: out of the tab order and the accessibility tree, not only out of sight.
           inert={off || undefined}
           style={style}
@@ -266,7 +272,7 @@ export function Sidebar({ children, label = "Sidebar", collapsible = true, width
               children
             )}
           </SurfaceCtx.Provider>
-        </aside>
+        </Aside>
       )}
       {s.isMobile && (
         <SidebarSheet label={label} header={sheetHeader} className={sheetClassName}>
@@ -335,7 +341,8 @@ function SidebarSheet({ children, label, header, className }: { children: ReactN
         if (e.target === e.currentTarget || (e.target as Element).closest?.("a[href]")) setMobileOpen(false);
       }}
       className={cn(
-        "group/sb m-0 h-dvh max-h-none w-[min(18rem,calc(100vw-3rem))] max-w-none flex-col overflow-hidden border-r bg-background p-0 text-foreground shadow-xl open:flex",
+        // h-dvh: the visible height, so a mobile URL bar never pushes the bottom off-screen. The top inset clears a notch.
+        "group/sb m-0 h-dvh max-h-none w-[min(18rem,calc(100vw-3rem))] max-w-none flex-col overflow-hidden border-r bg-background p-0 pt-[env(safe-area-inset-top)] text-foreground shadow-xl open:flex",
         className,
       )}
     >
@@ -381,10 +388,16 @@ export function SidebarInset({ children, className }: { children: ReactNode; cla
   return <div className={cn("flex min-w-0 flex-1 flex-col", className)}>{children}</div>;
 }
 
-const PanelGlyph = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true" className="size-4">
-    <rect x="2" y="2.5" width="12" height="11" rx="2" />
-    <path d="M6 2.5v11" />
+/**
+ * Panel-left: a rounded frame with a tinted left panel and its divider, so it reads at 16px. `opens` adds a
+ * chevron pointing out of the panel (panel-left-open), for the button that brings a hidden sidebar back.
+ */
+const PanelGlyph = ({ opens }: { opens?: boolean }) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-4 shrink-0">
+    <path d="M4 2.75h2.25v10.5H4A2.25 2.25 0 0 1 1.75 11V5A2.25 2.25 0 0 1 4 2.75z" fill="currentColor" fillOpacity="0.28" stroke="none" />
+    <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2.25" />
+    <path d="M6.25 2.75v10.5" />
+    {opens && <path d="M9.5 6.25 11.25 8 9.5 9.75" />}
   </svg>
 );
 
@@ -422,8 +435,10 @@ export function SidebarReveal({ label = "Show sidebar", className }: { label?: s
  * Toggles the rail on desktop and opens the sheet on mobile. Put it in the sidebar header or the page header.
  * `label` names it on mobile (and on desktop without `labels`); `labels` names the desktop action by state,
  * e.g. { collapse: "Hide sidebar", expand: "Show sidebar" }. `className` goes on its wrapper (margins, hiding).
+ * `look="field"` matches a search field (36px, its fill and radius); `look="float"` is a 36px floating button (card,
+ * hairline border, soft shadow) for a trigger fixed over the page. Collapsed, the icon turns to panel-left-open.
  */
-export function SidebarTrigger({ className, label = "Toggle sidebar", labels }: { className?: string; label?: string; labels?: { collapse: string; expand: string } }) {
+export function SidebarTrigger({ className, label = "Toggle sidebar", labels, look = "ghost" }: { className?: string; label?: string; labels?: { collapse: string; expand: string }; look?: "ghost" | "field" | "float" }) {
   const s = useSidebar();
   const mac = typeof navigator !== "undefined" && isMac();
   const name = labels && !s.isMobile ? (s.collapsed ? labels.expand : labels.collapse) : label;
@@ -439,9 +454,16 @@ export function SidebarTrigger({ className, label = "Toggle sidebar", labels }: 
           aria-label={name}
           aria-expanded={s.isMobile ? s.mobileOpen : !s.collapsed}
           aria-controls={s.isMobile ? s.sheetId : undefined}
-          className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-11"
+          className={cn(
+            "grid shrink-0 place-items-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-11",
+            look === "field"
+              ? "size-9 rounded-[10px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-foreground/70 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-foreground"
+              : look === "float"
+                ? "size-9 rounded-[10px] border bg-card text-foreground/70 shadow-[0_1px_2px_rgb(0_0_0/0.06),0_4px_12px_-4px_rgb(0_0_0/0.12)] hover:bg-muted hover:text-foreground"
+                : "size-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
         >
-          <PanelGlyph />
+          <PanelGlyph opens={!s.isMobile && s.collapsed} />
         </button>
       </span>
     </Tooltip>
@@ -784,22 +806,60 @@ function Flyout({
   rowProps: { tabIndex?: number; onKeyDown?: (e: ReactKeyboardEvent) => void; onFocus?: () => void; "data-kn-sidebar-row"?: string };
 }) {
   const [open, setOpen] = useState(false);
-  const inside = ancestorsOf([node], active).includes(node.id);
+  // How it opened: a hover peek (closes when the pointer leaves, focus stays put) or a click / Enter (stays open,
+  // focus moves in). A click on the trigger while peeking pins it instead of closing it.
+  const [via, setVia] = useState<"hover" | "press">("press");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const pressing = useRef(false);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const peek = (e: { pointerType: string }) => {
+    if (e.pointerType !== "mouse") return;
+    clearTimeout(timer.current);
+    if (open) return;
+    timer.current = setTimeout(() => {
+      setVia("hover");
+      setOpen(true);
+    }, 120);
+  };
+  const leave = () => {
+    clearTimeout(timer.current);
+    if (via === "hover") timer.current = setTimeout(() => setOpen(false), 180);
+  };
+  const stay = () => clearTimeout(timer.current);
+  const inside = active === node.id || ancestorsOf([node], active).includes(node.id);
   const leaves = (ns: SidebarNode[]): SidebarNode[] => ns.flatMap((n) => (n.children?.length ? leaves(n.children) : [n]));
   return (
     <Popover
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(v) => {
+        clearTimeout(timer.current);
+        if (!v && open && via === "hover" && pressing.current) return setVia("press");
+        if (v) setVia("press");
+        setOpen(v);
+      }}
+      focusOnOpen={via === "press"}
       side="right"
       align="start"
       aria-label={node.label}
       className="w-56 p-1"
       trigger={
-        <button type="button" aria-label={node.label} className={cn(ROW, inside && "bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] text-foreground")} {...rowProps}>
+        <button
+          type="button"
+          aria-label={node.label}
+          onPointerEnter={peek}
+          onPointerLeave={leave}
+          onPointerDown={() => {
+            pressing.current = true;
+            setTimeout(() => (pressing.current = false), 0);
+          }}
+          className={cn(ROW, inside && "bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] text-foreground")}
+          {...rowProps}
+        >
           {node.icon ? <span className="grid size-4 shrink-0 place-items-center [&>svg]:size-4">{node.icon}</span> : <span aria-hidden="true" className="size-4 shrink-0" />}
         </button>
       }
     >
+      <div onPointerEnter={stay} onPointerLeave={leave}>
       <p className="px-2 pt-1 pb-1.5 text-[11.5px] font-medium text-muted-foreground">{node.label}</p>
       <ul className="flex flex-col gap-px">
         {leaves(node.children ?? []).map((c) => (
@@ -834,6 +894,7 @@ function Flyout({
           </li>
         ))}
       </ul>
+      </div>
     </Popover>
   );
 }
