@@ -4,7 +4,7 @@
 import type { CSSProperties, ReactNode, Ref } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { MOTION_GATE } from "@/registry/knowns/ui/knowns/illustrations/use-in-view";
-import { maskComposite, maskImage, type BgMask } from "./bg-utils";
+import { bgMaskImage, maskComposite, type BgFocus, type BgMask } from "./bg-utils";
 
 /**
  * The shell every background shares: a relative, isolated box; the drawing sits in an aria-hidden,
@@ -15,6 +15,7 @@ export function BackgroundFrame({
   name,
   live,
   mask = "radial",
+  focus = "none",
   css,
   layer,
   className,
@@ -25,6 +26,7 @@ export function BackgroundFrame({
   name: string;
   live: boolean;
   mask?: BgMask;
+  focus?: BgFocus;
   /** Component CSS, hoisted once per page by React. */
   css?: string;
   layer: ReactNode;
@@ -33,8 +35,8 @@ export function BackgroundFrame({
   children?: ReactNode;
   ref?: Ref<HTMLDivElement>;
 }) {
-  const image = maskImage(mask);
-  const composite = maskComposite(mask);
+  const image = bgMaskImage(mask, focus);
+  const composite = maskComposite(mask, focus);
   return (
     <div ref={ref} data-kn-ill={name} data-kn-bg={name} data-live={live} className={cn("relative isolate overflow-hidden", className)} style={style}>
       <style href={`kn-bg-${name}`} precedence="default">

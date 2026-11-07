@@ -78,9 +78,12 @@ export function toolIcon(name?: string): ReactNode | null {
   if (!name) return null;
   const brand = BRANDS.find(([re]) => re.test(name));
   // Trusted, generated SVG markup.
-  if (brand) return <span className={LOGO} dangerouslySetInnerHTML={{ __html: TOOL_SVGS[brand[1]] }} />;
+  if (brand) return <span className={LOGO} dangerouslySetInnerHTML={{ __html: onDark(TOOL_SVGS[brand[1]]) }} />;
   return GENERIC.find(([re]) => re.test(name))?.[1] ?? null;
 }
+
+/** Zendesk's mark is near-black (#03363d): it follows the text colour so it stays visible in dark mode. */
+const onDark = (svg: string) => svg.replace('fill="#03363d"', 'fill="currentColor"');
 
 /** Brand logos that are wordmarks, not square marks: unreadable in a 16px box, so show the name instead. */
 const WORDMARKS = new Set(["stripe", "hubspot"]);

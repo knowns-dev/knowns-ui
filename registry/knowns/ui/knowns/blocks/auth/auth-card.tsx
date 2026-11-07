@@ -253,7 +253,7 @@ export function AuthCard({
                 disabled={busy || social !== null}
               />
             </Field>
-            <Button type="submit" loading={busy} disabled={blocked || social !== null || email.trim() === ""} className="w-full">
+            <Button type="submit" loading={busy} disabled={blocked || social !== null} className="w-full">
               {mode === "sign-up" ? "Create account" : "Continue"}
             </Button>
             {mode === "sign-up" && terms && <p className="text-center text-[12px] leading-relaxed text-muted-foreground">{terms}</p>}

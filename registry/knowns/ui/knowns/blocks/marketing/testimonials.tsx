@@ -76,7 +76,7 @@ export function Person({ t, size = "md" }: { t: Testimonial; size?: "md" | "lg" 
     <figcaption className="flex min-w-0 items-center gap-3">
       <Avatar label={t.name} src={t.avatar} size={size === "lg" ? "lg" : "md"} shape="circle" decorative />
       <span className="min-w-0">
-        <span className="block truncate text-[14px] font-medium">
+        <span className="block text-[14px] font-medium">
           {t.href ? (
             <a href={t.href} target="_blank" rel="noreferrer" className={cn("rounded-sm hover:underline", focusRing)}>
               {t.name}
@@ -85,7 +85,7 @@ export function Person({ t, size = "md" }: { t: Testimonial; size?: "md" | "lg" 
             t.name
           )}
         </span>
-        {byline(t) && <span className="block truncate text-[13px] text-muted-foreground">{byline(t)}</span>}
+        {byline(t) && <span className="block text-[13px] text-muted-foreground">{byline(t)}</span>}
       </span>
     </figcaption>
   );

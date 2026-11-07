@@ -23,7 +23,7 @@ const glyph = (d: string) => (
 
 const NAV: SidebarNode[] = [
   { id: "home", label: "Dashboard", href: "#/dashboard", icon: glyph("M2.5 7.5 8 3l5.5 4.5V13H2.5z") },
-  { id: "approvals", label: "Approvals", href: "#/approvals", icon: glyph("M2.5 9.5 4 3.5h8l1.5 6v3h-11zM2.5 9.5H6l.5 1.5h3l.5-1.5h3.5"), count: 3 },
+  { id: "approvals", label: "Approvals", href: "#/approvals", icon: glyph("M2.5 9.5 4 3.5h8l1.5 6v3h-11zM2.5 9.5H6l.5 1.5h3l.5-1.5h3.5"), count: 1 },
   { id: "runs", label: "Runs", href: "#/runs", icon: glyph("M3 3.5v9l9-4.5z") },
   { id: "agents", label: "Agents", href: "#/agents", icon: glyph("M8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM3.5 14c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5") },
   { id: "tools", label: "Tools", href: "#/tools", icon: glyph("M10 3.5a2.5 2.5 0 0 0-2.4 3.2L3 11.3V13h1.7l4.6-4.6A2.5 2.5 0 1 0 10 3.5z") },
@@ -47,15 +47,16 @@ const AGENTS: FleetAgent[] = [
 
 const STATS: [string, string][] = [
   ["Runs today", "148"],
-  ["Waiting on you", "3"],
+  ["Waiting on you", "1"],
   ["Spend today", "$12.40"],
 ];
 
+/** What happened earlier today. The agents above already say what they are doing now, so none of this repeats them. */
 const ACTIVITY = [
-  { id: "a1", text: "Pricing research finished a comparison of three trackers", at: "4m ago", dot: "bg-emerald-500" },
-  { id: "a2", text: "Support triage is waiting for a refund approval", at: "4m ago", dot: "bg-amber-500" },
-  { id: "a3", text: "Release captain stopped: 3 of 41 checks failed", at: "9m ago", dot: "bg-red-500" },
-  { id: "a4", text: "Weekly digest sent to 12 people", at: "1h ago", dot: "bg-emerald-500" },
+  { id: "a1", text: "Weekly digest sent to 12 people", at: "1h ago" },
+  { id: "a2", text: "Ada approved a $18.00 refund", at: "2h ago" },
+  { id: "a3", text: "Docs agent updated 6 pages", at: "3h ago" },
+  { id: "a4", text: "Nightly evals passed: 212 of 212", at: "5h ago" },
 ];
 
 const Bell = () => (
@@ -155,7 +156,6 @@ export function AppDashboardTemplate({ layout = "page", embedded, labelPrefix, c
             <ul className="divide-y">
               {ACTIVITY.map((a) => (
                 <li key={a.id} className="flex items-center gap-3 py-3 text-[13.5px]">
-                  <span aria-hidden className={`size-2 shrink-0 rounded-full ${a.dot}`} />
                   <span className="min-w-0 flex-1 truncate">{a.text}</span>
                   <span className="shrink-0 text-[12.5px] text-muted-foreground">{a.at}</span>
                 </li>

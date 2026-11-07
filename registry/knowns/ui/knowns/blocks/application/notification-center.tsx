@@ -40,10 +40,10 @@ export interface NotificationItem extends NotificationLike {
   actions?: NotificationAction[];
 }
 
-const STATE: Record<NotificationState, { label: string; dot: string; text: string }> = {
-  finished: { label: "Finished", dot: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400" },
-  "needs-approval": { label: "Needs approval", dot: "bg-amber-500", text: "text-amber-700 dark:text-amber-400" },
-  failed: { label: "Failed", dot: "bg-red-500", text: "text-red-700 dark:text-red-400" },
+const STATE: Record<NotificationState, { label: string; text: string }> = {
+  finished: { label: "Finished", text: "text-emerald-700 dark:text-emerald-400" },
+  "needs-approval": { label: "Needs approval", text: "text-amber-700 dark:text-amber-400" },
+  failed: { label: "Failed", text: "text-red-700 dark:text-red-400" },
 };
 
 const BotMark = () => (
@@ -260,10 +260,8 @@ function Row({
           {n.body && <span className="mt-0.5 line-clamp-2 block text-[13px] leading-5 text-muted-foreground">{n.body}</span>}
         </button>
         {state && (
-          <p className={cn("mt-1 flex items-center gap-1.5 text-[12px] font-medium", state.text)}>
-            <span className={cn("size-1.5 rounded-full", state.dot)} aria-hidden="true" />
-            {state.label}
-          </p>
+          // One state, one signal: the coloured word is the state. (No extra dot beside it.)
+          <p className={cn("mt-1 text-[12px] font-medium", state.text)}>{state.label}</p>
         )}
         {n.actions && n.actions.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">

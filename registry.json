@@ -2468,7 +2468,7 @@
       "name": "skeleton",
       "type": "registry:ui",
       "title": "Skeleton",
-      "description": "Loading placeholder.",
+      "description": "Loading placeholder. Every skeleton on a page shares ONE light sweep, like a single light passing over the layout. Content-shaped presets (text, profile card, list, media grid) and a gate that crossfades into the real content without shifting the layout.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json"
       ],

@@ -40,7 +40,7 @@ export function GridPattern({
   density,
   speed,
   color,
-  mask = "radial",
+  mask = "radial", focus,
   intensity,
   paused,
   cell = 40,
@@ -118,7 +118,7 @@ export function GridPattern({
       ref={root}
       name="grid-pattern"
       live={live}
-      mask={mask}
+      mask={mask} focus={focus}
       css={CSS}
       className={className}
       style={style}

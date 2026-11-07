@@ -149,7 +149,8 @@ export function SetupWizard({
   };
 
   const stepperSteps: Step[] = [
-    ...steps.map((s): Step => ({ id: s.id, title: s.title, description: s.description, optional: s.optional, status: error?.id === s.id ? "error" : undefined })),
+    // Descriptions live in the step panel, once: the stepper carries titles (and "Optional") only, so its labels stay even.
+    ...steps.map((s): Step => ({ id: s.id, title: s.title, optional: s.optional, status: error?.id === s.id ? "error" : undefined })),
     ...(review ? [{ id: "review", title: review.title ?? "Review" } as Step] : []),
   ];
   const stepperCurrent = finished ? stepperSteps.length : index;

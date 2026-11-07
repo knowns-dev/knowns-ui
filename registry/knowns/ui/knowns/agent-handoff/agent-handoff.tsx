@@ -606,7 +606,6 @@ export function AgentHandoff({
           <div className="flex flex-none items-center gap-2">
             {actor?.spend !== undefined && <span className="text-[12.5px] tabular-nums text-muted-foreground @max-[339px]/agent:hidden">{formatUsd(actor.spend)}</span>}
             <span className={cn("inline-flex h-6 items-center gap-1.5 rounded-[7px] px-2 text-[12px] font-medium", pill.className)}>
-              {st === "working" && <Spinner label="" className="size-3" />}
               {pill.text}
             </span>
           </div>

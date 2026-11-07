@@ -49,7 +49,7 @@ export function LogoMark({ logo, color, dense, className }: { logo: Logo; color?
   // no SVG or image ever renders at its intrinsic size. Marks get a 24px square.
   const box = "h-7 w-32 items-center justify-center [&>*]:max-h-full [&>*]:max-w-full [&>img]:size-full [&>img]:object-contain [&>svg]:size-full";
   const word = (
-    <span className={cn("min-w-0 text-center text-[14px] leading-tight font-semibold", dense ? "whitespace-nowrap" : "text-balance sm:truncate sm:text-[16px] sm:whitespace-nowrap")}>{logo.name}</span>
+    <span className={cn("min-w-0 text-center text-[14px] leading-tight font-semibold", dense ? "whitespace-nowrap" : "text-balance sm:text-[15px]")}>{logo.name}</span>
   );
   const art = logo.logo ? (
     <>

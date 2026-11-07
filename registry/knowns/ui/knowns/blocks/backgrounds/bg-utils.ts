@@ -8,6 +8,13 @@ export type BgDensity = "low" | "medium" | "high" | number;
 /** Where the background stays visible; it fades out everywhere else. */
 export type BgMask = "none" | "radial" | "top" | "bottom" | "edges";
 
+/**
+ * A quiet zone for your content, so body copy stays readable on top of the pattern. "center" fades the pattern
+ * out in an ellipse behind a centred block (a hero); "band" clears a horizontal stripe through the middle;
+ * "none" leaves the pattern as it is. It stacks with `mask`: both must let the pattern through.
+ */
+export type BgFocus = "none" | "center" | "band";
+
 /** Shared props of every background. */
 export interface BackgroundProps {
   /** How much is drawn: "low" | "medium" | "high", or a multiplier (0.25–3). Default "medium". */
@@ -18,6 +25,8 @@ export interface BackgroundProps {
   color?: string;
   /** Fade mask. Default "radial". */
   mask?: BgMask;
+  /** Quiet zone behind your content: "center", "band" or "none" (default). Keeps body copy at AA contrast. */
+  focus?: BgFocus;
   /** Overall strength, 0–1.5. Default 1. */
   intensity?: number;
   /** Stops the motion (it also stops offscreen, in hidden tabs and with prefers-reduced-motion). */
@@ -75,9 +84,28 @@ export function maskImage(mask: BgMask = "radial"): string | undefined {
   }
 }
 
-/** "edges" stacks two gradients: they must intersect, not add. */
-export function maskComposite(mask: BgMask = "radial"): string | undefined {
-  return mask === "edges" ? "intersect" : undefined;
+/** mask-image for the focus zone: transparent where the content sits, opaque (pattern visible) around it. */
+export function focusImage(focus: BgFocus = "none"): string | undefined {
+  switch (focus) {
+    case "center":
+      return "radial-gradient(ellipse 48% 46% at 50% 50%, transparent 62%, #000 100%)";
+    case "band":
+      return "linear-gradient(to bottom, #000 0%, #000 18%, transparent 34%, transparent 74%, #000 90%, #000 100%)";
+    case "none":
+    default:
+      return undefined;
+  }
+}
+
+/** The mask-image of a background: its fade mask and focus zone, stacked. */
+export function bgMaskImage(mask: BgMask = "radial", focus: BgFocus = "none"): string | undefined {
+  const parts = [maskImage(mask), focusImage(focus)].filter(Boolean) as string[];
+  return parts.length ? parts.join(", ") : undefined;
+}
+
+/** Stacked masks (edges, or any mask with a focus zone) must intersect, not add. */
+export function maskComposite(mask: BgMask = "radial", focus: BgFocus = "none"): string | undefined {
+  return mask === "edges" || (mask !== "none" && focus !== "none") ? "intersect" : undefined;
 }
 
 /** Density as a multiplier. */

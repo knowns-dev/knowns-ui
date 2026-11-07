@@ -30,7 +30,7 @@ function resolveColor(el: HTMLElement, css: string): string {
  * one frame loop that only runs while the field is on screen and allowed to move; reduced motion draws
  * a single still frame. Re-reads the colour when the theme class changes.
  */
-export function NodeField({ density, speed, color, mask = "radial", intensity, paused, interactive = true, seed = 11, className, style, children }: NodeFieldProps) {
+export function NodeField({ density, speed, color, mask = "radial", focus, intensity, paused, interactive = true, seed = 11, className, style, children }: NodeFieldProps) {
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const { live } = useLive(root, paused);
@@ -171,7 +171,7 @@ export function NodeField({ density, speed, color, mask = "radial", intensity, p
   }, [live, s]);
 
   return (
-    <BackgroundFrame ref={root} name="node-field" live={live} mask={mask} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
+    <BackgroundFrame ref={root} name="node-field" live={live} mask={mask} focus={focus} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
       {children}
     </BackgroundFrame>
   );

@@ -35,7 +35,8 @@ const accentOf = (c: string | undefined) => {
 /** Where window `i` of `n` sits, in % of the card: a gentle diagonal cascade that keeps every tab visible. */
 export function windowBox(i: number, n: number): { left: number; top: number; width: number; height: number } {
   const t = n > 1 ? i / (n - 1) : 0;
-  return { left: 4 + t * 30, top: 6 + t * 28, width: 62, height: 58 };
+  // The vertical step (x 0.75, the card is 4:3) is at least the 7cqw tab strip, so no tab label is covered by the next window.
+  return { left: 4 + t * 30, top: 4 + t * 38, width: 62, height: 54 };
 }
 
 const LINES: number[][] = [
@@ -114,15 +115,15 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
             }}
           >
             {/* Tab strip: three dots and the window's tab. */}
-            <div className="flex h-[10cqw] items-end gap-[1.2cqw] border-b bg-muted/60 px-[3cqw]">
-              <span className="mb-[3.4cqw] flex gap-[1.2cqw]" aria-hidden="true">
+            <div className="flex h-[7cqw] items-end gap-[1.2cqw] border-b bg-muted/60 px-[3cqw]">
+              <span className="mb-[2.6cqw] flex gap-[1.2cqw]" aria-hidden="true">
                 {[0, 1, 2].map((d) => (
                   <span key={d} className="size-[1.7cqw] rounded-full bg-foreground/15" />
                 ))}
               </span>
               <span
                 className={cn(
-                  "ml-[1.5cqw] flex h-[6.4cqw] items-center rounded-t-[1.6cqw] border border-b-0 px-[2.6cqw] text-[2.9cqw] leading-none font-medium whitespace-nowrap transition-colors duration-[420ms]",
+                  "ml-[1.5cqw] flex h-[5.2cqw] items-center rounded-t-[1.4cqw] border border-b-0 px-[2.4cqw] text-[2.6cqw] leading-none font-medium whitespace-nowrap transition-colors duration-[420ms]",
                   on ? "bg-card text-foreground" : "bg-transparent text-muted-foreground",
                 )}
                 style={on ? { boxShadow: "inset 0 0.5cqw 0 var(--kn-accent)" } : undefined}

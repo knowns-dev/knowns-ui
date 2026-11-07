@@ -59,7 +59,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
  * nothing and React never re-renders for a pulse. It pauses offscreen and in hidden tabs, and under reduced
  * motion shows the still, composed floor (pulses are ignored).
  */
-export function GradientFloor({ speed, color, mask = "none", intensity, paused, height = 0.6, channel, className, style, children, ref }: GradientFloorProps) {
+export function GradientFloor({ speed, color, mask = "none", focus, intensity, paused, height = 0.6, channel, className, style, children, ref }: GradientFloorProps) {
   const root = useRef<HTMLDivElement>(null);
   const waves = useRef<HTMLDivElement>(null);
   const { live } = useLive(root, paused);
@@ -112,7 +112,7 @@ export function GradientFloor({ speed, color, mask = "none", intensity, paused, 
   const dur = (base: number) => `${(base / Math.max(0.05, s)).toFixed(1)}s`;
 
   return (
-    <BackgroundFrame ref={root} name="gradient-floor" live={live} mask={mask} css={CSS} className={className} style={style} layer={
+    <BackgroundFrame ref={root} name="gradient-floor" live={live} mask={mask} focus={focus} css={CSS} className={className} style={style} layer={
       <div className="kn-rise absolute inset-x-0 bottom-0" style={{ height: `${rise}%` }}>
         {/* A low base wash, so the floor reads as one lit surface under the two drifting layers. */}
         <div className="kn-breathe absolute inset-0 opacity-[0.85] dark:opacity-100" style={{ background: `linear-gradient(to top, ${withAlpha(c1, 0.34 * k)}, ${withAlpha(c2, 0.08 * k)} 58%, transparent)`, animationPlayState: hold, ["--kn-breathe" as string]: dur(9) }} />

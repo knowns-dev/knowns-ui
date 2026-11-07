@@ -194,13 +194,14 @@ export function SaveBar({ dirty, saving, result, hint = "Changes are saved when 
       <span role="status" aria-live="polite" className={cn("min-w-0", result && !result.ok && "text-red-600 dark:text-red-400", result?.ok && !dirty && "text-emerald-700 dark:text-emerald-400")}>
         {result && !result.ok ? result.error : dirty ? "You have unsaved changes." : result?.ok ? (result.message ?? "Saved.") : hint}
       </span>
-      <span className="flex items-center gap-2">
-        {onDiscard && (
-          <Button size="sm" variant="ghost" disabled={!dirty || saving} onClick={onDiscard}>
+      {/* Nothing to save: Save stays (outlined when disabled, not a grey slab) so the hint is true; Discard only appears with changes. */}
+      <span className="flex min-h-8 items-center gap-2">
+        {(dirty || saving) && onDiscard && (
+          <Button size="sm" variant="ghost" disabled={saving} onClick={onDiscard}>
             Discard
           </Button>
         )}
-        <Button size="sm" loading={saving} disabled={!dirty} onClick={onSave}>
+        <Button size="sm" loading={saving} disabled={!dirty && !saving} onClick={onSave}>
           {saveLabel}
         </Button>
       </span>

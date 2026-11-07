@@ -11,16 +11,16 @@ export type ButtonSize = "xs" | "sm" | "md" | "lg";
 const VARIANT: Record<ButtonVariant, string> = {
   // Dark chip in light mode, light chip in dark mode, with a thin top light for depth.
   primary:
-    "bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(0_0_0/0.14),0_2px_6px_-2px_rgb(0_0_0/0.18)] hover:bg-primary/90 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.6),0_1px_2px_rgb(0_0_0/0.4)]",
+    "bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(0_0_0/0.14),0_2px_6px_-2px_rgb(0_0_0/0.18)] not-disabled:hover:bg-primary/90 disabled:bg-transparent disabled:text-foreground disabled:shadow-[0_0_0_1px_var(--border)] dark:disabled:shadow-[0_0_0_1px_var(--border)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.6),0_1px_2px_rgb(0_0_0/0.4)]",
   // Card chip with a hairline ring and a whisper of shadow.
   secondary:
-    "bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.05)] hover:bg-[color-mix(in_srgb,var(--muted)_55%,var(--card))] dark:bg-[color-mix(in_srgb,var(--muted)_55%,var(--card))] dark:hover:bg-muted",
-  ghost: "text-muted-foreground hover:bg-[color-mix(in_srgb,var(--muted)_70%,transparent)] hover:text-foreground",
+    "bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.05)] not-disabled:hover:bg-[color-mix(in_srgb,var(--muted)_55%,var(--card))] dark:bg-[color-mix(in_srgb,var(--muted)_55%,var(--card))] dark:not-disabled:hover:bg-muted",
+  ghost: "text-muted-foreground not-disabled:hover:bg-[color-mix(in_srgb,var(--muted)_70%,transparent)] not-disabled:hover:text-foreground",
   // Soft red with a faint ring: serious without shouting.
   destructive:
-    "bg-red-500/[0.08] text-red-700 shadow-[0_0_0_1px_rgb(239_68_68/0.16)] hover:bg-red-500/[0.13] dark:bg-red-500/12 dark:text-red-300 dark:shadow-[0_0_0_1px_rgb(248_113_113/0.2)] dark:hover:bg-red-500/18",
+    "bg-red-500/[0.08] text-red-700 shadow-[0_0_0_1px_rgb(239_68_68/0.16)] not-disabled:hover:bg-red-500/[0.13] dark:bg-red-500/12 dark:text-red-300 dark:shadow-[0_0_0_1px_rgb(248_113_113/0.2)] dark:not-disabled:hover:bg-red-500/18",
   // Inline text action ("Show more", "Add back"): no chip, no lift, just muted ink that brightens.
-  quiet: "text-muted-foreground hover:text-foreground",
+  quiet: "text-muted-foreground not-disabled:hover:text-foreground",
 };
 
 // 24 / 28 / 32 / 36px high with generous side padding; taller on touch screens.
@@ -51,8 +51,8 @@ export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize
   return cn(
     "inline-flex flex-none cursor-pointer items-center justify-center overflow-hidden font-medium tracking-[0.005em] whitespace-nowrap select-none",
     "transition-[background-color,color,box-shadow,translate,scale] duration-200 ease-[cubic-bezier(.2,.8,.2,1)]",
-    !quiet && "hover:-translate-y-px active:translate-y-0 active:scale-[.975] motion-reduce:transform-none",
-    "disabled:pointer-events-none disabled:opacity-45 [&_svg]:flex-none",
+    !quiet && "not-disabled:hover:-translate-y-px not-disabled:active:translate-y-0 not-disabled:active:scale-[.975] motion-reduce:transform-none",
+    "disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:flex-none",
     focusRing,
     VARIANT[variant],
     quiet ? QUIET_SIZE[size] : SIZE[size],

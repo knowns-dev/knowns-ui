@@ -85,7 +85,7 @@ const DETAIL_GUESS = 190;
 const INDENT = 14;
 
 const SURFACE = cn(
-  "@container relative flex flex-col rounded-2xl border bg-card text-[13px] text-card-foreground",
+  "@container relative flex flex-col overflow-x-clip rounded-2xl border bg-card text-[13px] text-card-foreground",
   "[border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)]",
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent),0_1px_2px_rgb(0_0_0/0.04)]",
   "dark:[background:color-mix(in_srgb,var(--card)_70%,#000)] dark:shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_7%,transparent),0_10px_24px_-16px_rgb(0_0_0/0.55)]",
@@ -458,7 +458,7 @@ export function TraceWaterfall({
     const spend = callee?.type === "agent" ? callee.spend : undefined;
     const durText = running ? `${formatDuration(dur)}…` : formatDuration(dur);
     // Duration label: after the bar, else before it, else (a bar filling the view) inside its right end.
-    const textPos = g.left + g.width < 0.86 ? "after" : g.left > 0.12 ? "before" : "inside";
+    const textPos = g.left + g.width < 0.78 ? "after" : g.left > 0.12 ? "before" : "inside";
     // A label inside the bar sits on its colour: pick an ink (and, for mid tones, a slightly darker fill) that reaches 4.5:1.
     const inside = textPos === "inside" ? readableInk(failed ? "#ef4444" : color) : null;
     const enter = entering(s.id);
@@ -681,7 +681,7 @@ export function TraceWaterfall({
           onPointerUp={onAxisUp}
           onPointerLeave={() => !brush && setCursor(null)}
           onDoubleClick={() => setZoom(null)}
-          className={cn("relative flex-1 cursor-col-resize border-l [border-color:color-mix(in_srgb,var(--foreground)_6%,transparent)]", focusRing)}
+          className={cn("relative flex-1 cursor-col-resize overflow-x-clip border-l [border-color:color-mix(in_srgb,var(--foreground)_6%,transparent)]", focusRing)}
         >
           {tickList.map((t) => {
             const x = (t - (view[0] - domain[0])) / viewLen;

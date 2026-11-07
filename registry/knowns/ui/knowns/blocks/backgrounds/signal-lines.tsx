@@ -26,7 +26,7 @@ const CSS = `
  * Faint routed traces across the box with pulses travelling along them, like traffic between agents and
  * tools. SVG + CSS (stroke-dashoffset only); the layout is seeded, so server and client draw the same board.
  */
-export function SignalLines({ density, speed, color, pulseColor, mask = "radial", intensity, paused, seed = 7, className, style, children }: SignalLinesProps) {
+export function SignalLines({ density, speed, color, pulseColor, mask = "radial", focus, intensity, paused, seed = 7, className, style, children }: SignalLinesProps) {
   const root = useRef<HTMLDivElement>(null);
   const { live } = useLive(root, paused);
   const d = densityScale(density);
@@ -43,7 +43,7 @@ export function SignalLines({ density, speed, color, pulseColor, mask = "radial"
       ref={root}
       name="signal-lines"
       live={live}
-      mask={mask}
+      mask={mask} focus={focus}
       css={CSS}
       className={className}
       style={style}

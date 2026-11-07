@@ -23,6 +23,8 @@ export interface TokenStreamProps {
   /** Show a caret while tokens arrive. Default true. */
   caret?: boolean;
   onDone?: () => void;
+  /** Start with the whole text already shown (the finished state), then replay on `loop`. For posters and previews. */
+  startComplete?: boolean;
   paused?: boolean;
   className?: string;
 }
@@ -60,7 +62,7 @@ export function keptTokens(prev: string, next: string, shown: number): number {
 }
 
 const CSS = `
-[data-kn-text="token-stream"] [data-tok] { animation: kntx-in 280ms ${EASE} both; }
+[data-kn-text="token-stream"] [data-tok]:not([data-still]) { animation: kntx-in 280ms ${EASE} both; }
 `;
 
 /**
@@ -68,11 +70,11 @@ const CSS = `
  * stream (simulate={false}). Screen readers get the whole text; reduced motion shows it at once.
  * Pauses offscreen and in hidden tabs.
  */
-export function TokenStream({ text, simulate = true, streaming, speed = 32, delay = 300, loop, caret = true, onDone, paused, className }: TokenStreamProps) {
+export function TokenStream({ text, simulate = true, streaming, speed = 32, delay = 300, loop, caret = true, onDone, startComplete, paused, className }: TokenStreamProps) {
   const root = useRef<HTMLSpanElement>(null);
   const { live, reduced } = useLive(root, paused);
   const tokens = useMemo(() => tokenize(text), [text]);
-  const [n, setN] = useState(simulate ? 0 : tokens.length);
+  const [n, setN] = useState(simulate && !startComplete ? 0 : tokens.length);
   const [cycle, setCycle] = useState(0);
 
   // Keep what is already shown when the text grows (a stream) or restart when it changes.
@@ -116,7 +118,7 @@ export function TokenStream({ text, simulate = true, streaming, speed = 32, dela
     <TextShell kind="token-stream" label={text} live={live} css={CSS} rootRef={root} className={className}>
       <span className="whitespace-pre-wrap">
         {tokens.slice(0, shown).map((t, i) => (
-          <span key={`${cycle}-${i}`} data-tok="">
+          <span key={`${cycle}-${i}`} data-tok="" data-still={startComplete && cycle === 0 ? "" : undefined}>
             {t}
           </span>
         ))}

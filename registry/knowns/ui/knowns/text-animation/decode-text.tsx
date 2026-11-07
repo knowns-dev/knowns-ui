@@ -19,6 +19,8 @@ export interface DecodeTextProps {
   loop?: number;
   /** Render the noise and the text in the mono font. Default false. */
   mono?: boolean;
+  /** Start with the final text (the finished state), then decode again on `loop`. For posters and previews. */
+  startComplete?: boolean;
   onDone?: () => void;
   paused?: boolean;
   className?: string;
@@ -49,17 +51,24 @@ export function decodeFrame(text: string, progress: number, set: string, tick: n
  * being revealed. Replays when `text` changes. The layout holds the final text's size, so nothing
  * shifts. Screen readers get the text; reduced motion shows it at once. Pauses offscreen.
  */
-export function DecodeText({ text, duration = 1100, delay = 0, charset = "alnum", loop, mono, onDone, paused, className }: DecodeTextProps) {
+export function DecodeText({ text, duration = 1100, delay = 0, charset = "alnum", loop, mono, startComplete, onDone, paused, className }: DecodeTextProps) {
   const root = useRef<HTMLSpanElement>(null);
   const { live, reduced } = useLive(root, paused);
   const set = SETS[charset] ?? charset;
   // progress < 0: not started; 1: done.
-  const [state, setState] = useState({ progress: -1, tick: 0, run: 0 });
+  const [state, setState] = useState({ progress: startComplete ? 1 : -1, tick: 0, run: 0 });
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
 
-  // Restart when the text changes.
-  useEffect(() => setState((s) => ({ progress: -1, tick: 0, run: s.run + 1 })), [text]);
+  // Restart when the text changes (not on mount: a start-complete text is already final).
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      if (startComplete) return;
+    }
+    setState((s) => ({ progress: -1, tick: 0, run: s.run + 1 }));
+  }, [text]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!live) return;

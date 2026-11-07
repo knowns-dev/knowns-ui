@@ -272,6 +272,8 @@ function Event({
               <Chevron open={open} />
             </button>
           )}
+          {/* Rows without details keep the chevron's width, so every time lines up. */}
+          {!it.details && <span aria-hidden="true" className="size-6" />}
         </div>
       </div>
       {it.details && (

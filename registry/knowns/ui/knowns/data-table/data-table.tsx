@@ -261,22 +261,23 @@ export function DataTable<T>({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 px-4 py-3">
         {title && (
-          <TitleTag id={titleId} className="mr-1 text-[14px] font-semibold tracking-tight">
+          <TitleTag id={titleId} className="mr-1 text-[14px] font-semibold tracking-tight max-sm:order-1">
             {title}
           </TitleTag>
         )}
-        <span className="text-[12px] text-muted-foreground tabular-nums" aria-live="polite">
+        <span className="text-[12px] text-muted-foreground tabular-nums max-sm:order-1" aria-live="polite">
           {status}
           {selectable && selected.length > 0 && ` · ${selected.length} selected`}
         </span>
-        <span className="flex-1" />
+        <span className="flex-1 max-sm:order-1" />
         {search && (
-          <span className="w-52 max-w-full">
+          <span className="max-w-full max-sm:order-2 max-sm:min-w-0 max-sm:flex-1 sm:w-52">
             <Input size="sm" type="search" icon={<SearchGlyph />} placeholder="Search" aria-label="Search rows" value={query} onChange={(e) => setQuery(e.target.value)} />
           </span>
         )}
-        {controls && <SegmentedControl size="sm" aria-label="Row density" options={DENSITIES} value={density} onValueChange={(v) => setDensity(v as Density)} />}
+        {controls && <SegmentedControl className="max-sm:order-2" size="sm" aria-label="Row density" options={DENSITIES} value={density} onValueChange={(v) => setDensity(v as Density)} />}
         {controls && columnItems.length > 0 && (
+          <span className="max-sm:order-1">
           <Menu
             aria-label="Columns"
             align="end"
@@ -296,8 +297,9 @@ export function DataTable<T>({
               </Button>
             }
           />
+          </span>
         )}
-        {toolbar}
+        {toolbar && <span className="max-sm:order-2">{toolbar}</span>}
       </div>
 
       {/* Table */}

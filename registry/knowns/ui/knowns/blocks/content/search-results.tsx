@@ -166,7 +166,9 @@ export function SearchResults({
         <div role="group" aria-label="Filter by type" className="mt-4 flex flex-wrap gap-1.5">
           {facets.map((f) => (
             <Toggle key={f.type} size="sm" variant="outline" pressed={type === f.type} disabled={f.count === 0 && f.type !== "all"} onPressedChange={() => setType(f.type)}>
-              {labelOf(f.type)} <span className="text-muted-foreground tabular-nums">{f.count}</span>
+              {labelOf(f.type)}
+              {/* "All" has no count: the line above already says how many results there are. */}
+              {f.type !== "all" && <> <span className="text-muted-foreground tabular-nums">{f.count}</span></>}
             </Toggle>
           ))}
         </div>
@@ -214,7 +216,10 @@ export function SearchResults({
                   <span className="min-w-0 text-[16px] font-semibold text-foreground">
                     <Highlight text={r.title} query={query} />
                   </span>
-                  <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-1.5 py-px text-[13px] text-muted-foreground">{labelOf(r.type)}</span>
+                  {/* The type chip is skipped when the breadcrumb already starts with it ("Docs › Agents"). */}
+                  {r.crumbs?.[0]?.toLowerCase() !== labelOf(r.type).toLowerCase() && (
+                    <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-1.5 py-px text-[13px] text-muted-foreground">{labelOf(r.type)}</span>
+                  )}
                 </span>
                 {r.excerpt && (
                   <span className="mt-1 line-clamp-2 text-[14px] leading-relaxed text-muted-foreground">

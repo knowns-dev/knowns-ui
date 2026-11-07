@@ -301,7 +301,7 @@ const ChevronRight = () => (
   </svg>
 );
 
-const PILL_ICON: Record<FleetState, () => ReactNode> = { running: Spinner, done: Check, waiting: Clock, failed: Cross, queued: Ring, stopped: Ring };
+const PILL_ICON: Record<FleetState, () => ReactNode> = { running: () => null, done: Check, waiting: Clock, failed: Cross, queued: Ring, stopped: Ring };
 const SUMMARY_ICON: Record<SummaryTone, () => ReactNode> = { waiting: Clock, failed: Cross, running: Ring, done: Check, none: Ring };
 
 /* ── Card parts ── */
@@ -1449,7 +1449,7 @@ export function AgentFleet({
             {fleet.length} {fleet.length === 1 ? "agent" : "agents"}
             {subs > 0 && ` / ${subs} ${subs === 1 ? "sub-agent" : "sub-agents"}`}
           </span>
-          <span>{totals.running} running</span>
+          <span>{fleet.filter((a) => a.state === "running").length} running</span>
           <span>{totals.waiting} needs you</span>
           <span className="font-medium text-foreground">{formatCost(totals.cost)}</span>
         </p>

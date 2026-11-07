@@ -38,7 +38,7 @@ const CSS = `
  * lines and translates by exactly one cell per loop, linear and infinite, so the first and last frames are
  * the same and there is no snap. The horizon fade is a mask on the static parent.
  */
-export function PerspectiveGrid({ density, speed, color, mask = "none", intensity, paused, angle = 64, horizon = 40, className, style, children }: PerspectiveGridProps) {
+export function PerspectiveGrid({ density, speed, color, mask = "none", focus, intensity, paused, angle = 64, horizon = 40, className, style, children }: PerspectiveGridProps) {
   const root = useRef<HTMLDivElement>(null);
   const { live } = useLive(root, paused);
   const cell = gridCell(density);
@@ -58,7 +58,7 @@ export function PerspectiveGrid({ density, speed, color, mask = "none", intensit
       ref={root}
       name="perspective-grid"
       live={live}
-      mask={mask}
+      mask={mask} focus={focus}
       css={CSS}
       className={className}
       style={style}

@@ -138,7 +138,7 @@ const DOT: Record<MonitorState, string> = {
 };
 const BAR: Record<BarTone, string> = {
   done: "bg-[color-mix(in_srgb,var(--foreground)_20%,transparent)]",
-  failed: "bg-red-500/70 dark:bg-red-400/70",
+  failed: "bg-[color-mix(in_srgb,var(--foreground)_40%,transparent)]",
   running: "bg-blue-500 dark:bg-blue-400",
   paused: "bg-[color-mix(in_srgb,var(--foreground)_40%,transparent)]",
   waiting: "bg-amber-500 dark:bg-amber-400",
@@ -149,7 +149,7 @@ const WELL: Record<MonitorState, string> = {
   running: "",
   waiting: "bg-amber-500/[0.07] shadow-[inset_0_0_0_1px_rgb(245_158_11/0.22)] dark:bg-amber-400/[0.07] dark:shadow-[inset_0_0_0_1px_rgb(251_191_36/0.18)]",
   finished: "",
-  failed: "bg-red-500/[0.05] shadow-[inset_0_0_0_1px_rgb(239_68_68/0.18)] dark:bg-red-400/[0.06]",
+  failed: "",
 };
 
 /** Ticks once a second while `on` (the strip's 1s linear transition fills the gaps). */
@@ -629,7 +629,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
                             )}
                           >
                             <Logo icon={stepIcon(s)} className="text-muted-foreground" />
-                            <span className={cn("min-w-0 flex-1 truncate", s.state === "failed" ? "text-red-700 dark:text-red-300" : "text-foreground/85")}>{s.label}</span>
+                            <span className={cn("min-w-0 flex-1 truncate", "text-foreground/85")}>{s.label}</span>
                             <span className="flex-none text-[11.5px] text-muted-foreground tabular-nums">{took}</span>
                           </button>
                         }

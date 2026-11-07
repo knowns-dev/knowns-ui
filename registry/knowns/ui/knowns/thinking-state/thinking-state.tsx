@@ -329,8 +329,10 @@ export function ThinkingState({
 
   /* Header */
   const current = [...steps].reverse().find((s, i) => stepStatus(s, steps.length - 1 - i, steps.length, status) === "running");
-  const headline = running ? current?.title ?? label : endedLabelProp ? endedLabelProp(status as Exclude<ThinkingStatus, "thinking">, seconds) : endText;
-  const sourceCount = steps.reduce((n, s) => n + (s.sources?.length ?? 0), 0);
+  /* Open, the list already shows the running step, so the header says what the whole thing is; closed, it is the only place the step shows. */
+  const headline = running ? (open ? label : current?.title ?? label) : endedLabelProp ? endedLabelProp(status as Exclude<ThinkingStatus, "thinking">, seconds) : endText;
+  /* A page searched and then read is one source, not two: count each url (or title) once. */
+  const sourceCount = new Set(steps.flatMap((s) => (s.sources ?? []).map((x) => x.url ?? x.title))).size;
   const summary = !running && steps.length > 0 ? [`${steps.length} ${steps.length === 1 ? "step" : "steps"}`, sourceCount > 0 && `${sourceCount} ${sourceCount === 1 ? "source" : "sources"}`].filter(Boolean).join(" · ") : "";
 
   return (

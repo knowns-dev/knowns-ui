@@ -140,7 +140,7 @@ export function StatsBand({ eyebrow, title, lead, stats, footnote, tone = "plain
       ) : (
         <dl className={cn("grid grid-cols-2 gap-y-10", cols, card ? "rounded-2xl border bg-card py-8 [&>div]:px-6 lg:[&>div+div]:border-l" : "gap-x-8")}>{stats.map(cell)}</dl>
       )}
-      {footnote && <p className="mt-8 text-[13px] text-muted-foreground">{footnote}</p>}
+      {footnote && <p className="mt-4 text-[13px] text-muted-foreground">{footnote}</p>}
     </section>
   );
 }

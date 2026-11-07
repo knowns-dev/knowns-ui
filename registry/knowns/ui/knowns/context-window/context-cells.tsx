@@ -77,7 +77,7 @@ export function ContextCells({ segments, span, cellTokens, colors, limit, warnAt
         })}
       </div>
       <p className="text-[11.5px] text-muted-foreground">
-        Each cell is {fmt(cellTokens)} tokens{limit ? ` · outlined amber past ${Math.round(warnAt * 100)}%, red past ${Math.round(fullAt * 100)}%` : ""}
+        Each cell is {fmt(cellTokens)} tokens
       </p>
     </div>
   );

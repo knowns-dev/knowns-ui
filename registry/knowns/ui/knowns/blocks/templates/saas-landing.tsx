@@ -183,7 +183,7 @@ export function SaasLandingTemplate({ scrollRoot, brand = "Northwind", className
             { value: "5 min", label: "to first flow" },
             { value: "No card", label: "to start" },
           ]}
-          background={<DitherField shape="horizon" color="var(--accent)" mask="none" intensity={1.1} center={[0.5, 0.74]} className="[mask-image:linear-gradient(to_bottom,transparent_30%,#000_58%,#000_74%,transparent)]" />}
+          background={<DitherField shape="horizon" color="var(--accent)" mask="none" intensity={1.1} center={[0.5, 0.74]} className="[-webkit-mask-composite:source-in] [mask-composite:intersect] [mask-image:linear-gradient(to_bottom,transparent_30%,#000_58%,#000_74%,transparent),radial-gradient(ellipse_46%_62%_at_50%_52%,transparent_58%,#000_100%)]" />}
         />
         <LogoCloud title="Trusted by operations teams" logos={LOGOS} columns={8} className="pt-4 pb-6 sm:pt-6 sm:pb-10" />
         <div id="features">

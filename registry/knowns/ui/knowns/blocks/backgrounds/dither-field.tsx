@@ -51,7 +51,7 @@ export function DitherField({
   density,
   speed,
   color,
-  mask = "radial",
+  mask = "radial", focus,
   intensity,
   paused,
   shape = "glow",
@@ -338,7 +338,7 @@ export function DitherField({
   }, [live, reduced, s, drift, follow, shape, cxf, cyf]);
 
   return (
-    <BackgroundFrame ref={root} name="dither-field" live={live} mask={mask} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
+    <BackgroundFrame ref={root} name="dither-field" live={live} mask={mask} focus={focus} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
       {children}
     </BackgroundFrame>
   );

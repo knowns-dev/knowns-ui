@@ -27,7 +27,13 @@ export interface CatalogItem {
    * The live preview, mounted when the card comes into view (the thumbnail is the poster until then). Laid out
    * at `previewWidth` px and scaled down to the card. Inert and hidden from assistive tech.
    */
-  preview?: () => ReactNode;
+  preview?: (state: { live: boolean }) => ReactNode;
+  /**
+   * Render `preview` in the card itself, unscaled, instead of as a scaled overlay on the thumbnail. It is called with
+   * `live: false` until the card goes live (and always on touch screens, Save-Data and reduced motion), so it shows its
+   * still, finished state as the poster and plays only when live. For text samples, which must never be scaled.
+   */
+  inline?: boolean;
   /**
    * Design width of the live preview in px (default 720): it is laid out that wide and scaled to the card, top
    * anchored. "fit": measure the preview at its own size, then centre it and scale it to the card: down to fit, or up
@@ -328,10 +334,11 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
     return observe(item.id, el);
   }, [observe, hasPreview, item.id]);
   const isLive = Boolean(item.preview && live?.mounted.has(item.id));
+  const inline = Boolean(item.inline && item.preview);
   const body = (
     <>
       <span ref={thumbRef} className="relative block aspect-[16/10] w-full overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] transition-[box-shadow,background-color] duration-200 ease-out group-hover:bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))] group-hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_16%,transparent)]">
-        <span className="absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full">{item.thumb}</span>
+        <span className="absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full">{inline ? <span className="block w-full">{item.preview?.({ live: isLive })}</span> : item.thumb}</span>
 
 
       </span>
@@ -347,9 +354,9 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
   );
   const cls = cn("group flex w-full min-w-0 flex-col rounded-[12px] text-left", focusRing);
   // Outside the link (a preview has links of its own), over the thumbnail, click-through.
-  const overlay = isLive && item.preview && (
+  const overlay = isLive && item.preview && !inline && (
     <span className="pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground">
-      <LivePreview width={item.previewWidth ?? 720} align={item.previewAlign} render={item.preview} />
+      <LivePreview width={item.previewWidth ?? 720} align={item.previewAlign} render={() => item.preview?.({ live: true })} />
       {item.previewWidth !== "fit" && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] to-transparent" />}
       <span aria-hidden="true" className="absolute inset-0 rounded-[12px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]" />
     </span>

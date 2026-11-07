@@ -31,7 +31,7 @@ const FIELDS = [
  * A slow aurora: up to three soft colour fields drifting and turning behind the content. CSS only and
  * transform-animated (no blur filter: the softness is in the gradients), so it stays cheap on any page.
  */
-export function Aurora({ density, speed, color, mask = "radial", intensity, paused, className, style, children }: AuroraProps) {
+export function Aurora({ density, speed, color, mask = "radial", focus, intensity, paused, className, style, children }: AuroraProps) {
   const root = useRef<HTMLDivElement>(null);
   const { live } = useLive(root, paused);
   const s = speedScale(speed);
@@ -46,7 +46,7 @@ export function Aurora({ density, speed, color, mask = "radial", intensity, paus
       ref={root}
       name="aurora"
       live={live}
-      mask={mask}
+      mask={mask} focus={focus}
       css={CSS}
       className={className}
       style={style}

@@ -23,6 +23,8 @@ export interface TypewriterProps {
   caret?: boolean;
   /** Screen reader text. Default the script's final text, or the phrases. */
   label?: string;
+  /** Start with the finished text on screen (the first phrase, or the script's end), then play. For posters and previews. */
+  startComplete?: boolean;
   paused?: boolean;
   className?: string;
 }
@@ -55,7 +57,8 @@ export function typeFrames(script: TypeStep[], typeSpeed = 55, deleteSpeed = 28)
       }
     } else if ("back" in step) {
       const chars = Array.from(text);
-      for (let i = 0; i < Math.min(step.back, chars.length); i++) {
+      const count = Math.min(step.back, chars.length);
+      for (let i = 0; i < count; i++) {
         chars.pop();
         text = chars.join("");
         // A short hesitation before the first delete, as if noticing the typo.
@@ -85,19 +88,21 @@ export function finalText(script: TypeStep[]): string {
  * a script, or phrases to cycle through. Screen readers get the final text; reduced motion shows it.
  * Pauses offscreen and in hidden tabs.
  */
-export function Typewriter({ script, phrases, typeSpeed = 55, deleteSpeed = 28, hold = 1600, loop, caret = true, label, paused, className }: TypewriterProps) {
+export function Typewriter({ script, phrases, typeSpeed = 55, deleteSpeed = 28, hold = 1600, loop, caret = true, label, startComplete, paused, className }: TypewriterProps) {
   const root = useRef<HTMLSpanElement>(null);
   const { live, reduced } = useLive(root, paused);
   const steps = useMemo(() => script ?? phrasesScript(phrases ?? [], hold), [script, phrases, hold]);
   const frames = useMemo(() => typeFrames(steps, typeSpeed, deleteSpeed), [steps, typeSpeed, deleteSpeed]);
   const loops = loop ?? (!script && !!phrases);
-  const [i, setI] = useState(-1);
+  // -2: resting on the finished text before the first run (startComplete).
+  const [i, setI] = useState(startComplete ? -2 : -1);
+  const resting = i === -2;
   const done = i >= frames.length - 1;
 
-  useStep(live, done ? (loops ? 900 : null) : frames[i + 1]?.wait ?? null, () => setI((k) => (k >= frames.length - 1 ? -1 : k + 1)), `${i}:${frames.length}`);
+  useStep(live, resting ? hold : done ? (loops ? 900 : null) : frames[i + 1]?.wait ?? null, () => setI((k) => (k < -1 || k >= frames.length - 1 ? -1 : k + 1)), `${i}:${frames.length}`);
 
   const still = phrases && !script ? phrases[0] ?? "" : finalText(steps);
-  const text = reduced ? still : i < 0 ? "" : frames[i].text;
+  const text = reduced || resting ? still : i < 0 ? "" : frames[i].text;
   const spoken = label ?? (phrases && !script ? phrases.join(", ") : still);
 
   return (

@@ -21,7 +21,7 @@ export function DotSpotlight({
   density,
   speed,
   color,
-  mask = "radial",
+  mask = "radial", focus,
   intensity,
   paused,
   radius = 260,
@@ -100,7 +100,7 @@ export function DotSpotlight({
       ref={root}
       name="dot-spotlight"
       live={live}
-      mask={mask}
+      mask={mask} focus={focus}
       className={className}
       style={style}
       layer={

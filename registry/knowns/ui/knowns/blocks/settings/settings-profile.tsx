@@ -211,7 +211,7 @@ export function ProfileSettings({
           </SettingsRow>
 
           {hasBio && (
-            <Field label="Bio" id={ids.bio} optional hint={`${draft.bio.length}/${BIO_MAX}`}>
+            <Field label="Bio" id={ids.bio} optional>
               <Textarea id={ids.bio} rows={3} autoGrow maxLength={BIO_MAX} value={draft.bio} onChange={(e) => setDraft({ ...draft, bio: e.target.value })} placeholder="A line about what you work on." />
             </Field>
           )}

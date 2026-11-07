@@ -42,7 +42,7 @@ export function CubeField({
   density,
   speed,
   color,
-  mask = "radial",
+  mask = "radial", focus,
   intensity,
   paused,
   mode = "isometric",
@@ -483,7 +483,7 @@ export function CubeField({
   }, [live, reduced, s, wave, radius, height, mode, pitch]);
 
   return (
-    <BackgroundFrame ref={root} name="cube-field" live={live} mask={mask} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
+    <BackgroundFrame ref={root} name="cube-field" live={live} mask={mask} focus={focus} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
       {children}
     </BackgroundFrame>
   );

@@ -298,16 +298,7 @@ export function ContextWindow(props: ContextWindowProps) {
       {history && history.length > 1 && <Sparkline history={history} limit={limit} warnAt={warnAt} fullAt={fullAt} fmt={fmt} />}
 
       {onNewChat && (
-        <div className="flex items-center justify-between gap-3 border-t pt-3 text-[12.5px]">
-          <span className="text-muted-foreground">
-            {limit ? (
-              <>
-                <span className={cn("font-medium tabular-nums", state === "ok" ? "text-foreground" : STATE_TONE[state])}>{fmt(Math.max(0, totals.free))}</span> left
-              </>
-            ) : (
-              `${fmt(totals.used)} used`
-            )}
-          </span>
+        <div className="flex items-center justify-end gap-3 border-t pt-3 text-[12.5px]">
           <Button size="sm" variant={state === "full" || state === "over" ? "primary" : "secondary"} onClick={onNewChat}>
             {newChatLabel}
           </Button>

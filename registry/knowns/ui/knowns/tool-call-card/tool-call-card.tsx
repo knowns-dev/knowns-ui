@@ -427,7 +427,7 @@ export function ToolCallGroup({ spans: spansProp, run, spanIds, actors: actorsPr
             <>
               <span className="font-medium">{head}</span>
               {rest.map((part) => (
-                <span key={part} className={/failed$/.test(part) ? "text-red-700/80 dark:text-red-400/80" : "text-muted-foreground"}>
+                <span key={part} className={"text-muted-foreground"}>
                   <span className="text-muted-foreground"> · </span>
                   {part}
                 </span>
