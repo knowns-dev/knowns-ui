@@ -7,8 +7,10 @@
  */
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
+import { CodeBlock } from "../../code-block/code-block";
+import { SegmentedControl } from "../../segmented-control";
 import { Tooltip } from "../../tooltip";
-import { fitScale, VIEWPORT_WIDTH, type PreviewViewport } from "./docs-utils";
+import { fitScale, parseViewport, VIEWPORT_KEY, VIEWPORT_WIDTH, type PreviewViewport } from "./docs-utils";
 
 export type PreviewTheme = "light" | "dark";
 
@@ -82,7 +84,7 @@ const ICONS = {
 };
 
 const tool =
-  "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-pressed:bg-muted aria-pressed:text-foreground";
+  "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-pressed:bg-muted aria-pressed:text-foreground";
 
 function Tool({ label, onClick, pressed, children }: { label: string; onClick: () => void; pressed?: boolean; children: ReactNode }) {
   return (
@@ -93,6 +95,86 @@ function Tool({ label, onClick, pressed, children }: { label: string; onClick: (
     </Tooltip>
   );
 }
+
+const VIEWPORT_LABEL: Record<PreviewViewport, string> = { desktop: "Desktop", tablet: "Tablet", mobile: "Phone" };
+
+/** The viewer's width choice, remembered in localStorage (every read and write guarded: it can be blocked or full). */
+function useViewport() {
+  const [viewport, setViewport] = useState<PreviewViewport>("desktop");
+  // Read after mount, so server and first client render agree.
+  useEffect(() => {
+    try {
+      setViewport(parseViewport(localStorage.getItem(VIEWPORT_KEY)));
+    } catch {
+      /* storage unavailable: keep the default */
+    }
+  }, []);
+  const choose = (v: PreviewViewport) => {
+    setViewport(v);
+    try {
+      localStorage.setItem(VIEWPORT_KEY, v);
+    } catch {
+      /* not remembered */
+    }
+  };
+  return [viewport, choose] as const;
+}
+
+/** Whether the window is wide enough (sm, 640px) to host the width switch. */
+function useRoomForSwitch() {
+  const [room, setRoom] = useState(true);
+  useEffect(() => {
+    if (typeof matchMedia === "undefined") return;
+    const mq = matchMedia("(min-width: 640px)");
+    const on = () => setRoom(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return room;
+}
+
+/**
+ * The Preview / Code swap (a few times per visit: the standard tier). Both panels sit in one grid cell. The box
+ * follows the panel that is showing: its one row is set to that panel's measured height and moves there through
+ * `grid-template-rows` (the one layout transition kn-motion allows) over --kn-dur-slow on --kn-ease-inout, since
+ * something already on screen resizes. The taller idle panel is clipped meanwhile. The panel that arrives fades in
+ * and rises 4px over --kn-dur; the one that leaves goes back down the same way in --kn-dur-fast, both on
+ * --kn-ease-out. The idle panel is invisible and inert, so only one is ever in the accessibility tree. The first
+ * height is set without a transition, and `data-kn-m` lets the reduced-motion rule in knowns.css make it instant.
+ */
+const ROWS = "transition-[grid-template-rows] duration-(--kn-dur-slow) ease-(--kn-ease-inout)";
+
+/** The height of whichever panel is showing, kept current while either resizes (a demo that grows, a frame). */
+function useActiveHeight(active: "preview" | "code", enabled: boolean) {
+  const preview = useRef<HTMLDivElement>(null);
+  const code = useRef<HTMLDivElement>(null);
+  const [h, setH] = useState<{ preview: number; code: number }>({ preview: 0, code: 0 });
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!enabled || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setH({ preview: preview.current?.offsetHeight ?? 0, code: code.current?.offsetHeight ?? 0 }));
+    for (const el of [preview.current, code.current]) if (el) ro.observe(el);
+    return () => ro.disconnect();
+  });
+  const px = active === "code" && h.code > 0 ? h.code : h.preview;
+  // Turn the transition on only after the first height is in place, so nothing plays on mount.
+  useEffect(() => {
+    if (!px || ready) return;
+    const raf = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(raf);
+  }, [px, ready]);
+  return { preview, code, rows: enabled && px > 0 ? `${px}px` : undefined, animate: ready };
+}
+const SWAP_ON = "visible translate-none opacity-100 transition-[opacity,translate,visibility] duration-(--kn-dur) ease-(--kn-ease-out)";
+const SWAP_OFF = "invisible translate-y-1 opacity-0 transition-[opacity,translate,visibility] duration-(--kn-dur-fast) ease-(--kn-ease-out)";
+const swap = (on: boolean) => (on ? SWAP_ON : SWAP_OFF);
+/** The tool cluster only fades (no rise): it is small and its place is fixed. */
+const FADE_ON = "visible opacity-100 transition-[opacity,visibility] duration-(--kn-dur) ease-(--kn-ease-out)";
+const FADE_OFF = "invisible opacity-0 transition-[opacity,visibility] duration-(--kn-dur-fast) ease-(--kn-ease-out)";
+const swapFade = (on: boolean) => (on ? FADE_ON : FADE_OFF);
+
+const ORDER: PreviewViewport[] = ["desktop", "tablet", "mobile"];
 
 const Sep = () => <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />;
 
@@ -124,7 +206,7 @@ function CopyCode({ text }: { text: string }) {
         setDone(true);
         setTimeout(() => setDone(false), 1400);
       }}
-      className="h-7 rounded-md px-2 text-[12px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
+      className="h-7 rounded-md px-2 text-[12px] font-medium text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
     >
       <span aria-live="polite">{done ? "Copied" : "Copy"}</span>
     </button>
@@ -203,7 +285,9 @@ export function DocsPreview({
   };
   const [run, setRun] = useState(0);
   const [full, setFull] = useState(false);
-  const [viewport, setViewport] = useState<PreviewViewport>("desktop");
+  const [chosen, setViewport] = useViewport();
+  // On a narrow window the switch is hidden, so a remembered Phone or Tablet width must not apply either.
+  const viewport = useRoomForSwitch() ? chosen : "desktop";
   const pageTheme = usePageTheme();
   const [ownTheme, setOwnTheme] = useState<PreviewTheme | null>(null);
   const theme = ownTheme ?? pageTheme;
@@ -257,6 +341,17 @@ export function DocsPreview({
   const H = `h${titleLevel}` as "h2" | "h3" | "h4";
   const text = code?.trim();
   const tabs = Boolean(text || codePanel);
+  // The code mounts on first use (it is highlighted then), one frame after the tab changes so it can fade in.
+  const [codeSeen, setCodeSeen] = useState(false);
+  useEffect(() => {
+    if (tab !== "code" || codeSeen) return;
+    const raf = requestAnimationFrame(() => setCodeSeen(true));
+    return () => cancelAnimationFrame(raf);
+  }, [tab, codeSeen]);
+  const codeOn = tab === "code" && codeSeen;
+  const copyOn = tab === "code" && Boolean(text);
+  // Full-height (fullscreen) previews fill the viewport, so only the inline box follows the panel's height.
+  const fit = useActiveHeight(codeOn ? "code" : "preview", tabs && !full);
 
   const body = framed ? (
     <Frame key={`${viewport}-${theme}-${run}`} src={frame!({ viewport, theme })} width={VIEWPORT_WIDTH[viewport]} zoom={zoom} minHeight={Math.max(240, inlineHeight)} />
@@ -286,49 +381,37 @@ export function DocsPreview({
         aria-modal={full || undefined}
         aria-label={full ? "Preview, full screen" : undefined}
         data-fullscreen={full || undefined}
-        className={cn("min-w-0 outline-none", full ? "fixed inset-0 z-50 flex flex-col overflow-auto bg-background" : "overflow-hidden rounded-2xl border bg-muted/20")}
+        className={cn("min-w-0 outline-none", full ? "fixed inset-0 z-50 flex flex-col overflow-auto bg-background" : "overflow-clip rounded-2xl border bg-muted/20")}
       >
         <div className="sticky top-0 z-10 flex h-11 items-center justify-between gap-2 border-b bg-card/80 px-2 backdrop-blur">
           {tabs ? (
-            <div role="tablist" aria-label="Example view" className="flex items-center gap-0.5">
-              {(["preview", "code"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  id={`${id}-${t}`}
-                  aria-selected={tab === t}
-                  aria-controls={`${id}-${t}-panel`}
-                  tabIndex={tab === t ? 0 : -1}
-                  onClick={() => setTab(t)}
-                  onKeyDown={(e) => {
-                    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-                    e.preventDefault();
-                    const n = t === "preview" ? "code" : "preview";
-                    setTab(n);
-                    document.getElementById(`${id}-${n}`)?.focus();
-                  }}
-                  className="rounded-md px-2.5 py-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-selected:bg-muted aria-selected:font-medium aria-selected:text-foreground"
-                >
-                  {t === "preview" ? "Preview" : "Code"}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              size="sm"
+              role="tablist"
+              aria-label="Example view"
+              value={tab}
+              onValueChange={(v) => setTab(v as "preview" | "code")}
+              options={[
+                { value: "preview", label: "Preview", id: `${id}-preview`, controls: `${id}-preview-panel` },
+                { value: "code", label: "Code", id: `${id}-code`, controls: `${id}-code-panel` },
+              ]}
+            />
           ) : (
             <span data-md="skip" className="px-2.5 text-[13px] font-medium">Preview</span>
           )}
-          {tab === "code" && text ? (
-            <CopyCode text={text} />
-          ) : (
-            <div role="toolbar" aria-label="Preview tools" className="flex items-center">
+          {/* Tools and Copy share one cell: they cross-fade, and Copy stays at the right edge. */}
+          <div className="grid justify-items-end">
+            <div role="toolbar" aria-label="Preview tools" data-kn-m="" inert={copyOn} className={cn("col-start-1 row-start-1 flex items-center", swapFade(!copyOn))}>
               {toolbar}
               {frame && viewports.length > 1 && (
                 <div className="hidden items-center sm:flex">
-                  {viewports.map((v) => (
-                    <Tool key={v} label={v === "desktop" ? "Full width" : `${v === "mobile" ? "Phone" : "Tablet"}, ${VIEWPORT_WIDTH[v]}px`} pressed={viewport === v} onClick={() => setViewport(v)}>
-                      {ICONS[v]}
-                    </Tool>
-                  ))}
+                  <SegmentedControl
+                    size="sm"
+                    aria-label="Preview width"
+                    value={viewport}
+                    onValueChange={(v) => setViewport(v as PreviewViewport)}
+                    options={[...viewports].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)).map((v) => ({ value: v, label: VIEWPORT_LABEL[v], icon: ICONS[v] }))}
+                  />
                   <Sep />
                 </div>
               )}
@@ -369,30 +452,59 @@ export function DocsPreview({
                 </Tool>
               )}
             </div>
-          )}
+            {text && (
+              <div data-kn-m="" inert={!copyOn} className={cn("col-start-1 row-start-1", swapFade(copyOn))}>
+                <CopyCode text={text} />
+              </div>
+            )}
+          </div>
         </div>
-        {/* The preview stays mounted on the Code tab, so live demos keep their state. */}
-        <div data-docs-preview-body="" data-toc="false" id={`${id}-preview-panel`} role={tabs ? "tabpanel" : undefined} aria-labelledby={tabs ? `${id}-preview` : undefined} hidden={tab !== "preview"} className={cn(full && "flex flex-1 flex-col")}>
-          {body}
-          {panel && !framed && (
-            <div data-docs-preview-panel="" className={cn("border-t px-3 py-3 sm:px-4", full && "sticky bottom-0 mt-auto bg-background")}>
-              {panel}
+        {/* The preview stays mounted on the Code tab (live demos keep their state); the code mounts on first use. */}
+        <div
+          data-kn-m=""
+          className={cn("grid", full && "min-h-0 flex-1", fit.rows && "overflow-hidden", fit.rows && fit.animate && ROWS)}
+          style={fit.rows ? { gridTemplateRows: fit.rows } : undefined}
+        >
+          <div
+            ref={fit.preview}
+            data-docs-preview-body=""
+            data-toc="false"
+            data-kn-m=""
+            id={`${id}-preview-panel`}
+            role={tabs ? "tabpanel" : undefined}
+            aria-labelledby={tabs ? `${id}-preview` : undefined}
+            inert={tab !== "preview"}
+            className={cn("col-start-1 row-start-1 min-w-0", full ? "flex flex-col" : "self-start", swap(tab === "preview"))}
+          >
+            {body}
+            {panel && !framed && (
+              <div data-docs-preview-panel="" className={cn("border-t px-3 py-3 sm:px-4", full && "sticky bottom-0 mt-auto bg-background")}>
+                {panel}
+              </div>
+            )}
+          </div>
+          {tabs && (tab === "code" || codeSeen) && (
+            <div
+              ref={fit.code}
+              id={`${id}-code-panel`}
+              role="tabpanel"
+              aria-labelledby={`${id}-code`}
+              data-kn-m=""
+              inert={!codeOn}
+              className={cn("col-start-1 row-start-1 min-w-0 bg-card", !full && "self-start", swap(codeOn))}
+            >
+              <div className={cn("kn-scroll overflow-auto", full ? "h-full" : "max-h-[560px]")}>
+                {!text ? (
+                  codePanel
+                ) : renderCode ? (
+                  renderCode(text, lang)
+                ) : (
+                  <CodeBlock flush copy={false} wrapToggle={false} code={text} language={lang} trim={false} className="[&_pre]:px-1" />
+                )}
+              </div>
             </div>
           )}
         </div>
-        {tabs && tab === "code" && (
-          <div id={`${id}-code-panel`} role="tabpanel" aria-labelledby={`${id}-code`} className={cn("kn-scroll overflow-auto bg-card", full ? "flex-1" : "max-h-[560px]")}>
-            {!text ? (
-              codePanel
-            ) : renderCode ? (
-              renderCode(text, lang)
-            ) : (
-              <pre tabIndex={0} className="p-4 font-mono text-[12.5px] leading-relaxed">
-                <code>{text}</code>
-              </pre>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

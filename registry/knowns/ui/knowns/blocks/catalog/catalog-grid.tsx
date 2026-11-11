@@ -16,6 +16,8 @@ export interface CatalogItem {
   description?: string;
   /** e.g. the number of examples on the item's page. Shown from 2 up. */
   count?: number;
+  /** A kind label on the thumbnail's top left, e.g. "Block", for grids that mix kinds. */
+  kind?: string;
   /** Badges on the thumbnail. */
   isNew?: boolean;
   pro?: boolean;
@@ -152,7 +154,7 @@ function useLiveManager(allowed: boolean, max: number): LiveCtx | null {
         };
         if (!fresh) continue;
         if (step === 0) mount();
-        else stagger.push(window.setTimeout(mount, step * 160));
+        else stagger.push(window.setTimeout(mount, Math.min(step, 3) * 40));
         step++;
       }
       if (step === 0 && acc.size !== current.current.size) apply(new Set(acc));
@@ -256,7 +258,7 @@ function LivePreview({ width, render, align = "top" }: { width: number | "fit"; 
   }, []);
   // Give the preview a moment to mount and lay out before it covers the poster.
   useEffect(() => {
-    const t = window.setTimeout(() => setShown(true), 250);
+    const t = window.setTimeout(() => setShown(true), 120);
     return () => window.clearTimeout(t);
   }, []);
   const scale = size && width !== "fit" ? size.w / width : 0;
@@ -274,7 +276,7 @@ function LivePreview({ width, render, align = "top" }: { width: number | "fit"; 
         // Same inner padding as the poster (12px). The fade at the bottom edge is a static overlay on the card
         // (a mask here would re-composite the animating preview on every frame).
         // contain: strict keeps each live card's layout, paint and style work inside its own box.
-        "pointer-events-none absolute inset-3 overflow-hidden [contain:strict] transition-opacity duration-300 ease-out motion-reduce:transition-none",
+        "pointer-events-none absolute inset-3 overflow-hidden [contain:strict] transition-opacity duration-200 ease-out motion-reduce:transition-none",
         shown && ready ? "opacity-100" : "opacity-0",
       )}
     >
@@ -306,12 +308,12 @@ function LivePreview({ width, render, align = "top" }: { width: number | "fit"; 
   );
 }
 
-function Badge({ children, tone }: { children: ReactNode; tone: "new" | "pro" | "variants" }) {
+function Badge({ children, tone }: { children: ReactNode; tone: "new" | "pro" | "variants" | "kind" }) {
   return (
     <span
       className={cn(
         "rounded-full px-1.5 py-px text-[11px] leading-4",
-        tone === "new" ? "bg-[color-mix(in_srgb,#6366f1_14%,var(--card))] text-[color-mix(in_srgb,#6366f1_70%,var(--foreground))]" : tone === "pro"
+        tone === "kind" ? "bg-card text-muted-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent)]" : tone === "new" ? "bg-[color-mix(in_srgb,var(--kn-accent,#6366f1)_14%,var(--card))] text-[color-mix(in_srgb,var(--kn-accent,#6366f1)_70%,var(--foreground))]" : tone === "pro"
             ? "bg-card text-foreground/80 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_18%,transparent)]"
             : "border border-dashed border-[color-mix(in_srgb,var(--foreground)_28%,transparent)] bg-card py-0 text-foreground/70",
       )}
@@ -345,14 +347,14 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
       <span className="mt-2.5 block min-w-0 px-0.5">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="min-w-0 truncate text-[14px] leading-5 font-semibold text-foreground">{item.title}</span>
-          {item.isNew && <span aria-hidden="true" title="New" className="size-1.5 flex-none translate-y-[-2px] rounded-full bg-[color-mix(in_srgb,#6366f1_75%,var(--foreground))]" />}
+          {item.isNew && <span aria-hidden="true" title="New" className="size-1.5 flex-none translate-y-[-2px] rounded-full bg-[color-mix(in_srgb,var(--kn-accent,#6366f1)_75%,var(--foreground))]" />}
           {count && <span className="ml-auto flex-none text-[12.5px] leading-5 text-muted-foreground tabular-nums">{item.count}</span>}
         </span>
         {item.description && <span className="mt-0.5 block truncate text-[13px] leading-5 text-muted-foreground">{item.description}</span>}
       </span>
     </>
   );
-  const cls = cn("group flex w-full min-w-0 flex-col rounded-[12px] text-left", focusRing);
+  const cls = cn("group flex w-full min-w-0 flex-col rounded-[12px] text-left transition-transform duration-(--kn-dur) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transition-none motion-reduce:active:scale-100", focusRing);
   // Outside the link (a preview has links of its own), over the thumbnail, click-through.
   const overlay = isLive && item.preview && !inline && (
     <span className="pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground">
@@ -361,7 +363,7 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
       <span aria-hidden="true" className="absolute inset-0 rounded-[12px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]" />
     </span>
   );
-  const label = [item.title, item.pro ? "Pro" : item.proVariants ? "Pro variants" : null, item.isNew ? "New" : null, count].filter(Boolean).join(", ");
+  const label = [item.title, item.kind ?? null, item.pro ? "Pro" : item.proVariants ? "Pro variants" : null, item.isNew ? "New" : null, count].filter(Boolean).join(", ");
   const card = item.href ? (
     <a href={item.href} aria-label={label} className={cls} onClick={onSelect ? () => onSelect(item) : undefined}>
       {body}
@@ -375,6 +377,11 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
     <div className="relative flex w-full min-w-0">
       {card}
       {overlay}
+      {item.kind && (
+        <span className="pointer-events-none absolute top-2 left-2 flex">
+          <Badge tone="kind">{item.kind}</Badge>
+        </span>
+      )}
       {/* Above the live preview, so Pro always shows. Click-through: the card link underneath stays the target. */}
       {(item.pro || item.proVariants) && (
         <span className="pointer-events-none absolute top-2 right-2 flex">{item.pro ? <Badge tone="pro">Pro</Badge> : <Badge tone="variants">Pro variants</Badge>}</span>

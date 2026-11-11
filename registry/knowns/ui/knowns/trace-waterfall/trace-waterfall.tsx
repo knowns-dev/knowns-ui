@@ -5,7 +5,7 @@ import { useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, u
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { actorColors, formatUsd, readableInk, rootAgent, spanColor } from "@/registry/knowns/lib/knowns/status";
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
-import { Json } from "@/registry/knowns/lib/knowns/json";
+import { CodeBlock } from "../code-block/code-block";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
 import type { Actor, Span } from "@/registry/knowns/lib/knowns/types";
 import { Button } from "../button";
@@ -55,7 +55,7 @@ export interface TraceWaterfallProps {
   className?: string;
 }
 
-const EASE = "ease-[cubic-bezier(.22,1,.36,1)]";
+const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 /** Rows gliding to a new place, the body growing, a new row settling in. */
 const GLIDE = `duration-[380ms] ${EASE} motion-reduce:transition-none`;
 
@@ -102,14 +102,9 @@ function Block({ label, value, tone }: { label: string; value: unknown; tone?: "
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className={cn("text-[11px] font-medium tracking-wide uppercase", tone === "error" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>{label}</span>
-      <pre
-        className={cn(
-          "kn-scroll max-h-40 overflow-auto rounded-[8px] px-2.5 py-2 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words",
-          tone === "error" ? "bg-red-500/[0.06] text-red-700 dark:text-red-300" : "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
-        )}
-      >
-        <Json value={value} />
-      </pre>
+      <div className={cn("overflow-hidden rounded-[8px]", tone === "error" ? "bg-red-500/[0.06] text-red-700 dark:text-red-300" : "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]")}>
+        <CodeBlock flush code={typeof value === "string" ? value : JSON.stringify(value, null, 2)} language={typeof value === "string" ? undefined : "json"} label={false} copy={false} wrapToggle={false} defaultWrap maxHeight={160} aria-label={`${label}`} className="[&_pre]:py-2! [&_pre]:text-[11.5px]! [&_pre]:leading-relaxed! [&_[data-line]]:px-2.5!" />
+      </div>
     </div>
   );
 }
@@ -504,7 +499,7 @@ export function TraceWaterfall({
           }}
           className={cn(
             "group flex h-8 cursor-pointer items-center outline-none",
-            enter && "transition-[opacity,translate] duration-[420ms] ease-[cubic-bezier(.22,1,.36,1)] starting:-translate-y-1.5 starting:opacity-0",
+            enter && "transition-[opacity,translate] duration-[420ms] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:-translate-y-1.5 starting:opacity-0",
             "hover:bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:shadow-[inset_2px_0_0_var(--ring)]",
             isOpen && "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
             dim && "opacity-45",
@@ -554,7 +549,7 @@ export function TraceWaterfall({
                   className={cn(
                     "pointer-events-auto relative block w-full",
                     textPos === "inside" ? "h-4" : "h-3",
-                    "transition-[background-color,opacity] duration-500 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+                    "transition-[background-color,opacity] duration-500 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
                     failed && "!bg-red-500/90 dark:!bg-red-400/90",
                   )}
                   style={{
@@ -725,7 +720,7 @@ export function TraceWaterfall({
         {shown.length === 0 ? (
           <div className="px-4 py-8 text-center text-[12.5px] text-muted-foreground">{spans.length ? "No calls match." : "No calls yet."}</div>
         ) : (
-          <div role="tree" aria-label="Calls" aria-multiselectable={false} onKeyDown={onTreeKey} className={cn("relative transition-[height]", GLIDE)} style={{ height: layout.total }}>
+          <div role="tree" aria-label="Calls" aria-multiselectable={false} onKeyDown={onTreeKey} className="relative" style={{ height: layout.total }}>
             {/* Tick lines + time cursor over the track column */}
             <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 left-(--label-w)">
               {tickList.map((t) => {

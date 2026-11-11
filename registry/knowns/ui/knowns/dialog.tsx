@@ -5,6 +5,29 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "./button";
 
+/*
+ * Motion, all CSS: the panel fades in from 4px below and goes back the same way on close (the native dialog
+ * stays painted through `overlay` / `display` with allow-discrete). As a bottom sheet (phones) it slides from
+ * and back to the bottom edge. Reduced motion: opacity only.
+ */
+const MOTION = `
+[data-kn-dialog]{opacity:1;translate:0 0;transition:opacity var(--kn-dur,180ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),translate var(--kn-dur,180ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay var(--kn-dur,180ms) allow-discrete,display var(--kn-dur,180ms) allow-discrete}
+[data-kn-dialog]:not([open]){opacity:0;translate:0 4px;transition-duration:var(--kn-dur-fast,120ms)}
+@starting-style{[data-kn-dialog][open]{opacity:0;translate:0 4px}}
+[data-kn-dialog]::backdrop{opacity:1;transition:opacity var(--kn-dur,180ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay var(--kn-dur,180ms) allow-discrete,display var(--kn-dur,180ms) allow-discrete}
+[data-kn-dialog]:not([open])::backdrop{opacity:0;transition-duration:var(--kn-dur-fast,120ms)}
+@starting-style{[data-kn-dialog][open]::backdrop{opacity:0}}
+@media (max-width:639px){
+  [data-kn-dialog][data-sheet]{opacity:1;translate:0 0}
+  [data-kn-dialog][data-sheet]:not([open]){opacity:1;translate:0 100%}
+  @starting-style{[data-kn-dialog][data-sheet][open]{opacity:1;translate:0 100%}}
+}
+@media (prefers-reduced-motion:reduce){
+  [data-kn-dialog],[data-kn-dialog]:not([open]),[data-kn-dialog]::backdrop,[data-kn-dialog]:not([open])::backdrop{translate:0 0!important;transition-duration:0s!important}
+  [data-kn-dialog]:not([open]){opacity:0!important}
+}
+`;
+
 /**
  * Modal dialog on the native <dialog> element: focus is trapped and Escape closes it
  * for free. Controlled with `open` / `onOpenChange`.
@@ -51,8 +74,14 @@ export function Dialog({
   }, [open]);
 
   return (
+    <>
+    <style href="kn-dialog" precedence="default">
+      {MOTION}
+    </style>
     <dialog
       ref={ref}
+      data-kn-dialog
+      data-sheet={sheet || undefined}
       aria-labelledby={titleId}
       aria-describedby={description ? descId : undefined}
       onCancel={(e) => {
@@ -65,11 +94,10 @@ export function Dialog({
       }}
       className={cn(
         "m-auto w-[calc(100%-2rem)] rounded-2xl border bg-popover p-0 text-[13.5px] text-popover-foreground shadow-[0_24px_64px_-16px_rgb(0_0_0/0.35)]",
-        "backdrop:bg-black/40 backdrop:backdrop-blur-[2px] open:animate-[kn-rise_180ms_ease-out] motion-reduce:open:animate-none",
+        "backdrop:bg-black/40 backdrop:backdrop-blur-[2px]",
         size === "sm" ? "max-w-sm" : size === "lg" ? "max-w-2xl" : "max-w-md",
         sheet && [
           "max-sm:mx-0 max-sm:mt-auto max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 max-sm:pb-[env(safe-area-inset-bottom)]",
-          "max-sm:open:animate-none max-sm:transition-[translate] max-sm:duration-300 max-sm:ease-[cubic-bezier(.22,1,.36,1)] max-sm:starting:open:translate-y-full motion-reduce:transition-none",
         ].join(" "),
         className,
       )}
@@ -101,5 +129,6 @@ export function Dialog({
       {children && <div className={bodyClassName ?? "px-5 py-2"}>{children}</div>}
       {footer && <div className={cn("mt-2 flex flex-none justify-end gap-2 rounded-b-2xl border-t bg-muted/30 px-5 py-3", sheet && "max-sm:rounded-b-none")}>{footer}</div>}
     </dialog>
+    </>
   );
 }

@@ -4,7 +4,7 @@
 import { cloneElement, useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { setRefs, useFloating } from "./use-floating";
+import { FLOAT_FADE, setRefs, useFloating } from "./use-floating";
 
 const TABBABLE = "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
@@ -47,7 +47,7 @@ export function Popover({
     onOpenChange?.(v);
   };
   const id = useId();
-  const { triggerRef, floatingRef, style, placement, portalHost, ready } = useFloating<HTMLElement, HTMLDivElement>({ open, side, align, offset: 8 });
+  const { triggerRef, floatingRef, style, placement, portalHost, ready, closing } = useFloating<HTMLElement, HTMLDivElement>({ open, side, align, offset: 8 });
 
   // Focus the first control once the panel is placed (it is visibility:hidden until then).
   useEffect(() => {
@@ -113,8 +113,7 @@ export function Popover({
         "aria-controls": open ? id : undefined,
         "aria-haspopup": "dialog",
       })}
-      {open &&
-        portalHost &&
+      {portalHost &&
         createPortal(
           <div
             ref={floatingRef}
@@ -123,12 +122,13 @@ export function Popover({
             aria-label={label}
             tabIndex={-1}
             data-side={placement}
+            data-state={closing ? "closed" : "open"}
             style={style}
             onKeyDown={onPanelKey}
             className={cn(
               "z-[60] min-w-48 overflow-auto rounded-xl bg-popover p-3 text-[13px] text-popover-foreground outline-none",
               "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_12px_32px_-12px_rgb(0_0_0/0.3),0_2px_6px_rgb(0_0_0/0.06)]",
-              ready && "animate-[kn-rise_160ms_ease-out_both] motion-reduce:animate-none",
+              FLOAT_FADE,
               className,
             )}
           >

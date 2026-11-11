@@ -1,6 +1,7 @@
 "use client";
 /** @registry name="checkbox" type="ui" title="Checkbox" description="Native checkbox with label, description, indeterminate state and sizes; CheckboxGroup with select-all." */
 
+import { cva } from "class-variance-authority";
 import { useCallback, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 
@@ -20,6 +21,16 @@ const BOX: Record<CheckboxSize, { box: string; input: string; glyph: string; tex
   sm: { box: "size-3.5", input: "size-3.5 rounded-[4px]", glyph: "size-2.5", text: "text-[12.5px] gap-2", desc: "text-[12px]", pad: "pt-[3px]" },
   md: { box: "size-4", input: "size-4 rounded-[5px]", glyph: "size-3", text: "text-[13.5px] gap-2.5", desc: "text-[12.5px]", pad: "pt-0.5" },
 };
+
+/** The input as a cva map. Checked and indeterminate take their colour from `--kn-accent` (default `--primary`). */
+export const checkboxVariants = cva(
+  [
+    "peer cursor-pointer appearance-none bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_24%,transparent),0_1px_1px_rgb(0_0_0/0.05)] transition-[background-color,box-shadow] duration-150 ease-out",
+    "checked:bg-[color:var(--kn-accent,var(--primary))] checked:shadow-[0_0_0_1px_var(--kn-accent,var(--primary))] indeterminate:bg-[color:var(--kn-accent,var(--primary))] indeterminate:shadow-[0_0_0_1px_var(--kn-accent,var(--primary))]",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+  ],
+  { variants: { size: { sm: BOX.sm.input, md: BOX.md.input } }, defaultVariants: { size: "md" } },
+);
 
 /** A native checkbox, restyled. Clicking the label toggles it. */
 export function Checkbox({ label, description, indeterminate = false, size = "md", className, ref, ...rest }: CheckboxProps) {
@@ -43,20 +54,14 @@ export function Checkbox({ label, description, indeterminate = false, size = "md
       <input
         ref={setRef}
         type="checkbox"
-        className={cn(
-          "peer cursor-pointer appearance-none bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_24%,transparent),0_1px_1px_rgb(0_0_0/0.05)] transition-[background-color,box-shadow] duration-150 ease-out",
-          "checked:bg-primary checked:shadow-[0_0_0_1px_var(--primary)] indeterminate:bg-primary indeterminate:shadow-[0_0_0_1px_var(--primary)]",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          s.input,
-          focusRing,
-        )}
+        className={cn(checkboxVariants({ size }), focusRing)}
         {...rest}
       />
       <svg
         viewBox="0 0 16 16"
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute scale-50 text-primary-foreground opacity-0 transition-[opacity,scale] duration-150 ease-out peer-[:checked:not(:indeterminate)]:scale-100 peer-[:checked:not(:indeterminate)]:opacity-100",
+          "pointer-events-none absolute scale-90 text-[color:var(--kn-accent-foreground,var(--primary-foreground))] opacity-0 transition-[opacity,scale] duration-150 ease-out peer-[:checked:not(:indeterminate)]:scale-100 peer-[:checked:not(:indeterminate)]:opacity-100",
           s.glyph,
         )}
       >
@@ -65,7 +70,7 @@ export function Checkbox({ label, description, indeterminate = false, size = "md
       <svg
         viewBox="0 0 16 16"
         aria-hidden="true"
-        className={cn("pointer-events-none absolute scale-x-50 text-primary-foreground opacity-0 transition-[opacity,scale] duration-150 ease-out peer-indeterminate:scale-x-100 peer-indeterminate:opacity-100", s.glyph)}
+        className={cn("pointer-events-none absolute scale-x-90 text-[color:var(--kn-accent-foreground,var(--primary-foreground))] opacity-0 transition-[opacity,scale] duration-150 ease-out peer-indeterminate:scale-x-100 peer-indeterminate:opacity-100", s.glyph)}
       >
         <path d="M4 8h8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
       </svg>

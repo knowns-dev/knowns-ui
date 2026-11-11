@@ -259,7 +259,7 @@ export function DataTable<T>({
   return (
     <div role="region" aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : ariaLabel} className={cn(SURFACE, className)}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-4 pb-3">
         {title && (
           <TitleTag id={titleId} className="mr-1 text-[14px] font-semibold tracking-tight max-sm:order-1">
             {title}

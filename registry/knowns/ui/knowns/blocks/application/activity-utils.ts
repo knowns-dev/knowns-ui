@@ -6,6 +6,7 @@ export interface ActivityLike {
   id: string;
   at: number;
   type: string;
+  unread?: boolean;
   actor: { name: string; agent?: boolean };
 }
 
@@ -38,5 +39,42 @@ export function newerThanSeen(items: readonly { id: string; at: number }[], seen
 }
 
 export function newPillText(count: number): string {
-  return `${count} new`;
+  return `${count} new ${count === 1 ? "update" : "updates"}`;
+}
+
+/** Unread by the item's own flag, unless the reader has read it here. */
+export function isUnread(item: { id: string; unread?: boolean }, read: ReadonlySet<string>): boolean {
+  return !!item.unread && !read.has(item.id);
+}
+
+/** How many items are still unread. */
+export function unreadCount(items: readonly { id: string; unread?: boolean }[], read: ReadonlySet<string>): number {
+  let n = 0;
+  for (const i of items) if (isUnread(i, read)) n++;
+  return n;
+}
+
+/** Ids of the unread items (what "Mark all read" reports). */
+export function unreadIds(items: readonly { id: string; unread?: boolean }[], read: ReadonlySet<string>): string[] {
+  return items.filter((i) => isUnread(i, read)).map((i) => i.id);
+}
+
+/** Counts per type plus the total, for the tab labels. Types with no items are 0. */
+export function typeCounts(items: readonly { type: string }[], types: readonly string[] = []): { all: number; byType: Record<string, number> } {
+  const byType: Record<string, number> = {};
+  for (const t of types) byType[t] = 0;
+  for (const i of items) byType[i.type] = (byType[i.type] ?? 0) + 1;
+  return { all: items.length, byType };
+}
+
+/** Put incoming items on top, newest first. Items whose id is already there are skipped. */
+export function insertNew<T extends { id: string; at: number }>(items: readonly T[], incoming: readonly T[]): T[] {
+  const have = new Set(items.map((i) => i.id));
+  const fresh = incoming.filter((i) => !have.has(i.id));
+  return [...fresh, ...items].sort((a, b) => b.at - a.at);
+}
+
+/** Delay in ms for row `index` of the mark-all-read sweep: at most 4 rows are staggered, the rest go with the last. */
+export function sweepDelay(index: number, step = 40, max = 4): number {
+  return Math.min(Math.max(index, 0), max - 1) * step;
 }

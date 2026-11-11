@@ -160,7 +160,7 @@ export function FaqSection({ items, eyebrow, title = "Frequently asked questions
                     onClick={() => copyLink(id)}
                     aria-label={copied === id ? "Link copied" : `Copy link to "${it.question}"`}
                     className={cn(
-                      "absolute top-4 right-8 grid size-6 place-items-center rounded-lg text-muted-foreground opacity-0 transition-opacity group-hover/faq:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-60",
+                      "absolute top-4 right-8 grid size-6 place-items-center rounded-lg text-muted-foreground opacity-0 transition-opacity ease-(--kn-ease-out) group-hover/faq:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-60",
                       focusRing,
                     )}
                   >

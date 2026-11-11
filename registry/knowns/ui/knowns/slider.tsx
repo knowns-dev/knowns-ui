@@ -124,7 +124,7 @@ const SIZE = {
   md: { track: "h-1.5", thumb: "size-4.5", pad: "px-[9px]", height: "h-5", tick: "size-1" },
 };
 
-const EASE = "duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none";
+const EASE = "duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none";
 
 /**
  * Pick a number, or a range, by dragging, clicking the track or using the keyboard:
@@ -232,7 +232,6 @@ export function Slider<T extends SliderValue = number>({
   const lo = isRange ? values[0] : min;
   const hi = isRange ? values[1] : values[0];
   const readout = values.map(formatValue).join(" – ");
-  const anim = dragging < 0 ? cn("transition-[left,width]", EASE) : "";
 
   return (
     // role=group + aria-disabled marks the dimmed readout as inactive UI (WCAG exempts it from contrast).
@@ -268,7 +267,7 @@ export function Slider<T extends SliderValue = number>({
         <div ref={track} className={cn("relative w-full rounded-full bg-[color-mix(in_srgb,var(--foreground)_11%,transparent)]", s.track)}>
           <span
             aria-hidden="true"
-            className={cn("absolute inset-y-0 rounded-full bg-primary", anim)}
+            className="absolute inset-y-0 rounded-full bg-primary"
             style={{ left: `${percent(lo, min, max)}%`, width: `${percent(hi, min, max) - percent(lo, min, max)}%` }}
           />
           {ticks.map((m) => {
@@ -311,7 +310,7 @@ export function Slider<T extends SliderValue = number>({
                 className={cn(
                   "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-card outline-none",
                   "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_18%,transparent),0_1px_3px_rgb(0_0_0/0.18)]",
-                  dragging < 0 ? "transition-[left,scale]" : "transition-[scale]",
+                  "transition-[scale]",
                   EASE,
                   // A wider invisible hit area for fingers.
                   "before:absolute before:-inset-2 before:rounded-full pointer-coarse:before:-inset-3.5",

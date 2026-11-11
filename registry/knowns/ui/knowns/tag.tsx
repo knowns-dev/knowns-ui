@@ -21,7 +21,7 @@ export type TagSize = "sm" | "md";
 /* Quieter than Badge: a card chip with a hairline; tones only tint the ring, the dot and a whisper of fill. */
 const TONE: Record<TagTone, string> = {
   neutral: "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)] dark:bg-[color-mix(in_srgb,var(--muted)_45%,var(--card))]",
-  accent: "bg-indigo-500/[0.06] shadow-[0_0_0_1px_rgb(99_102_241/0.22)] dark:bg-indigo-400/10",
+  accent: "bg-[color:var(--kn-accent,var(--color-indigo-500))]/[0.06] shadow-[0_0_0_1px_color-mix(in_srgb,var(--kn-accent,rgb(99_102_241))_22%,transparent)] dark:bg-[color:var(--kn-accent,var(--color-indigo-400))]/10",
   info: "bg-sky-500/[0.06] shadow-[0_0_0_1px_rgb(14_165_233/0.22)] dark:bg-sky-400/10",
   success: "bg-emerald-500/[0.06] shadow-[0_0_0_1px_rgb(16_185_129/0.22)] dark:bg-emerald-400/10",
   warning: "bg-amber-500/[0.07] shadow-[0_0_0_1px_rgb(245_158_11/0.26)] dark:bg-amber-400/10",
@@ -29,7 +29,7 @@ const TONE: Record<TagTone, string> = {
 };
 const DOT: Record<TagTone, string> = {
   neutral: "bg-muted-foreground",
-  accent: "bg-indigo-500",
+  accent: "bg-[color:var(--kn-accent,var(--color-indigo-500))]",
   info: "bg-sky-500",
   success: "bg-emerald-500",
   warning: "bg-amber-500",
@@ -106,7 +106,7 @@ export function Tag({
     <span
       className={cn(
         "inline-flex max-w-full min-w-0 flex-none items-center font-medium whitespace-nowrap text-foreground/90 select-none",
-        "transition-[background-color,box-shadow,color,opacity] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
+        "transition-[background-color,box-shadow,color,opacity] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
         SIZE[size],
         selected ? SELECTED : TONE[tone],
         onRemove && SIZE_REMOVABLE[size],

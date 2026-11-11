@@ -10,7 +10,7 @@ import { Dialog } from "./dialog";
 import { fieldClass } from "./input";
 import { GlideHighlight, MenuCheck, matchIndex, nextIndex, useGlide } from "./menu";
 import { Tag } from "./tag";
-import { useFloating } from "./use-floating";
+import { FLOAT_FADE, useFloating } from "./use-floating";
 
 export type ComboboxDotTone = "neutral" | "accent" | "info" | "success" | "warning" | "danger";
 
@@ -261,7 +261,7 @@ export function Combobox(props: ComboboxProps) {
   const search = useRef<HTMLInputElement>(null);
   const inline = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
-  const { triggerRef, floatingRef, style, portalHost, ready } = useFloating<HTMLElement, HTMLDivElement>({ open: open && !asDialog, side: "auto", align: "start", offset: 6, matchWidth: true });
+  const { triggerRef, floatingRef, style, portalHost, ready, closing } = useFloating<HTMLElement, HTMLDivElement>({ open: open && !asDialog, side: "auto", align: "start", offset: 6, matchWidth: true });
 
   const baseId = useId();
   const controlId = props.id ?? `${baseId}-control`;
@@ -676,17 +676,17 @@ export function Combobox(props: ComboboxProps) {
     <>
       {trigger}
       {name && selected.map((v) => <input key={v} type="hidden" name={name} value={v} />)}
-      {open &&
-        !asDialog &&
+      {!asDialog &&
         portalHost &&
         createPortal(
           <div
             ref={floatingRef}
+            data-state={closing ? "closed" : "open"}
             style={style}
             className={cn(
               "z-[60] flex min-w-[180px] flex-col overflow-hidden rounded-xl bg-popover text-[13px] text-popover-foreground",
               "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_12px_32px_-12px_rgb(0_0_0/0.3),0_2px_6px_rgb(0_0_0/0.06)]",
-              ready && "animate-[kn-rise_150ms_ease-out_both] motion-reduce:animate-none",
+              FLOAT_FADE,
             )}
           >
             {searchable && !tags && (

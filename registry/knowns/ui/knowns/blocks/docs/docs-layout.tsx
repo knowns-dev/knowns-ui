@@ -54,7 +54,7 @@ export function DocsPager({ prev, next, linkAs: L = "a", className }: { prev?: D
         <L href={prev.href} rel="prev" className={card}>
           <div className="text-[12px] text-muted-foreground">Previous</div>
           <div className="mt-0.5 font-medium">
-            <span aria-hidden="true" className="mr-1 inline-block transition-transform group-hover:-translate-x-0.5">
+            <span aria-hidden="true" className="mr-1 inline-block transition-transform ease-(--kn-ease-out) group-hover:-translate-x-0.5">
               ←
             </span>
             {prev.title}
@@ -68,7 +68,7 @@ export function DocsPager({ prev, next, linkAs: L = "a", className }: { prev?: D
           <div className="text-[12px] text-muted-foreground">Next</div>
           <div className="mt-0.5 font-medium">
             {next.title}
-            <span aria-hidden="true" className="ml-1 inline-block transition-transform group-hover:translate-x-0.5">
+            <span aria-hidden="true" className="ml-1 inline-block transition-transform ease-(--kn-ease-out) group-hover:translate-x-0.5">
               →
             </span>
           </div>

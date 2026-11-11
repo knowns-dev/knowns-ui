@@ -47,10 +47,14 @@ export interface SiteHeaderProps {
   currentHref?: string;
   /** Called for every link click inside the header; call e.preventDefault() for client-side routing. */
   onNavigate?: (href: string, e: MouseEvent<HTMLAnchorElement>) => void;
-  /** Shows a search button (⌘K hint from 1024px). Open your CommandMenu here. */
-  search?: { onOpen: () => void; label?: string; shortcut?: string[] };
+  /** Shows a search button (⌘K hint from 1024px) and a Search row in the drawer. Open your CommandMenu here. */
+  search?: { onOpen: () => void; label?: string; shortcut?: string[]; /** false: no button in the bar, only the drawer's Search row (the keyboard shortcut is yours to bind). Default true. */ button?: boolean };
   /** Shows a light/dark toggle: our ThemeToggle, revealing the new theme with a circle from the click. */
   theme?: { value: "light" | "dark"; onChange: (value: "light" | "dark") => void };
+  /** Extra content at the foot of the mobile menu, above the buttons (a settings row such as an accent picker). */
+  drawerExtra?: ReactNode;
+  /** Icon buttons after the theme toggle, in its rhythm: a GitHub link, notifications. Give them the ghost icon Button style so they match the toggle. */
+  actions?: ReactNode;
   /** Signed in: your UserMenu (or any avatar button). */
   account?: ReactNode;
   /** Signed out: a Sign in link. Ignored when account is set. */
@@ -81,7 +85,7 @@ const Chevron = ({ open }: { open?: boolean }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
-    className={cn("size-3.5 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none", open && "rotate-180")}
+    className={cn("size-3.5 text-muted-foreground transition-transform ease-(--kn-ease-out) duration-200 motion-reduce:transition-none", open && "rotate-180")}
   >
     <path d="M4.5 6.5 8 10l3.5-3.5" />
   </svg>
@@ -197,6 +201,8 @@ export function SiteHeader({
   search,
   theme,
   account,
+  actions,
+  drawerExtra,
   signIn,
   cta,
   variant = "marketing",
@@ -307,7 +313,7 @@ export function SiteHeader({
     <span
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-x-3 rounded-full bg-foreground transition-[opacity,transform] duration-200 motion-reduce:transition-none",
+        "pointer-events-none absolute inset-x-3 rounded-full bg-foreground transition-[opacity,transform] ease-(--kn-ease-out) duration-200 motion-reduce:transition-none",
         minimal ? "-bottom-[9px] h-0.5" : "-bottom-[15px] h-0.5",
         isActive ? "scale-x-100 opacity-100" : "scale-x-50 opacity-0",
       )}
@@ -318,7 +324,7 @@ export function SiteHeader({
   // children (e.g. a CTA a paid user doesn't see) take no gap with them, so there is never a hole.
   const right = (
     <div className="flex flex-none items-center gap-0.5 sm:gap-2">
-      {search && (
+      {search && search.button !== false && (
         <>
           <span className="hidden lg:inline-flex">
             <SearchButton search={search} wide />
@@ -331,6 +337,7 @@ export function SiteHeader({
       {theme && (
         <ThemeToggle theme={theme.value} onThemeChange={(t) => theme.onChange(t === "dark" ? "dark" : "light")} size="md" className="pointer-coarse:min-h-11 pointer-coarse:min-w-11" />
       )}
+      {actions}
       {account ? (
         <span className="flex items-center gap-3 sm:ml-1">{account}</span>
       ) : (
@@ -508,6 +515,7 @@ export function SiteHeader({
           onNavigate={onNavigate}
           search={search}
           signIn={account ? undefined : signIn}
+          extra={drawerExtra}
           cta={cta}
         />
       )}
@@ -536,10 +544,11 @@ export interface SiteDrawerProps {
   search?: SiteHeaderProps["search"];
   signIn?: SiteHeaderProps["signIn"];
   cta?: SiteHeaderProps["cta"];
+  extra?: ReactNode;
 }
 
 /** The small-screen menu: a modal side sheet on <dialog>, links grouped in accordions. */
-export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavigate, search, signIn, cta }: SiteDrawerProps) {
+export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavigate, search, signIn, cta, extra }: SiteDrawerProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -587,7 +596,7 @@ export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavig
       className={cn(
         "fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-[min(360px,100vw)] max-w-none border-l bg-background p-0 text-foreground",
         "backdrop:bg-black/40 backdrop:backdrop-blur-[2px]",
-        "transition-[translate] duration-300 ease-[cubic-bezier(.22,1,.36,1)] starting:open:translate-x-full motion-reduce:transition-none",
+        "transition-[translate] duration-300 ease-(--kn-ease-out) starting:open:translate-x-full motion-reduce:transition-none",
       )}
     >
       <div className="flex h-full flex-col">
@@ -654,6 +663,7 @@ export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavig
           </Accordion>
         </nav>
 
+        {extra && <div className="flex-none border-t px-4 py-3">{extra}</div>}
         {(signIn || cta) && (
           <div className="flex flex-none flex-col gap-2 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {cta &&

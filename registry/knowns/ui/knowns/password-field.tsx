@@ -100,7 +100,7 @@ export function PasswordField({
                   className={cn(
                     "mr-1 inline-flex h-5 select-none items-center gap-1 whitespace-nowrap rounded-[6px] px-1.5 text-[11px] font-medium",
                     "bg-amber-500/14 text-amber-800 dark:text-amber-300",
-                    "animate-[kn-pop_160ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none",
+                    "animate-[kn-pop_160ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
                   )}
                 >
                   <CapsIcon />

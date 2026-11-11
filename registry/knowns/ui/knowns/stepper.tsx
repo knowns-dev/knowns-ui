@@ -77,7 +77,7 @@ export function Stepper({ steps, current, onStepClick, orientation = "horizontal
           const clickable = !!onStepClick && canVisit(status, i, current);
           const lineDone = status === "done" && nextStatus !== null;
           const marker = (
-            <span className={cn("relative z-[1] grid flex-none place-items-center rounded-full font-semibold tabular-nums transition-[background-color,box-shadow] duration-300 ease-[cubic-bezier(.22,1,.36,1)]", dot, DOT[status])}>
+            <span className={cn("relative z-[1] grid flex-none place-items-center rounded-full font-semibold tabular-nums transition-[background-color,box-shadow] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]", dot, DOT[status])}>
               {status === "done" ? <Check /> : status === "error" ? <Bang /> : i + 1}
             </span>
           );
@@ -117,7 +117,7 @@ export function Stepper({ steps, current, onStepClick, orientation = "horizontal
                 >
                   <span
                     className={cn(
-                      "absolute inset-0 origin-left bg-foreground transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+                      "absolute inset-0 origin-left bg-foreground transition-transform duration-500 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
                       vertical && "origin-top",
                       lineDone ? "scale-100" : vertical ? "scale-y-0" : "scale-x-0",
                     )}

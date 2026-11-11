@@ -182,7 +182,7 @@ export function CustomCursor({ children, variant = "arrow", label = "You", color
               <div className="-translate-x-1/2 -translate-y-1/2">
                 <span
                   className={cn(
-                    "grid place-items-center overflow-hidden rounded-full transition-[width,height,background-color,scale] duration-200 ease-out",
+                    "grid place-items-center overflow-hidden rounded-full transition-[background-color,scale] duration-(--kn-dur) ease-(--kn-ease-out)",
                     text ? "h-8 min-w-8 px-3 bg-popover text-popover-foreground shadow-[0_4px_12px_-4px_rgb(0_0_0/0.18)] border [border-color:color-mix(in_srgb,var(--foreground)_9%,transparent)]" : "size-3",
                     pressed && "scale-90",
                   )}

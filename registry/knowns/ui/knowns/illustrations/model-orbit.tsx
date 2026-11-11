@@ -56,7 +56,8 @@ const R = 148;
 const HUB_R = 40;
 const CHIP_R = 28;
 const WIDTH: Record<OrbitSize, number> = { sm: 280, md: 380, lg: 480 };
-const EASE = "cubic-bezier(.22,1,.36,1)";
+// Kept over 300ms on purpose: the arc, the line draw and the flow loop show a mechanism (data moving), so the motion is the content.
+const EASE = "var(--kn-ease-out)";
 
 /** Seat angles (degrees, 0 = up, clockwise) for n models evenly around the ring. */
 export function orbitAngles(n: number): number[] {
@@ -224,7 +225,7 @@ export function ModelOrbit({
                   strokeWidth={1.4}
                   strokeDasharray="100 100"
                   strokeLinecap="round"
-                  style={{ opacity: 0, animation: `knmo-release 500ms ${EASE} forwards` }}
+                  style={{ opacity: 0, animation: `knmo-release 280ms ${EASE} forwards` }}
                 />
                 {/* A spark runs along the ring to the next model. */}
                 {[7, 2.4].map((w) => (
@@ -284,7 +285,7 @@ export function ModelOrbit({
                     style={{ ["--hue" as string]: hueOf(i), transitionDelay: isOn && prev ? "380ms" : "0ms" }}
                     className={cn(
                       "relative grid size-[14cqw] cursor-pointer place-items-center rounded-full text-foreground",
-                      "transition-[opacity,scale,box-shadow] duration-500 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+                      "transition-[opacity,scale,box-shadow] duration-(--kn-dur-slow) ease-(--kn-ease-out) motion-reduce:transition-none",
                       SURFACE,
                       focusRing,
                       isOn
@@ -308,7 +309,7 @@ export function ModelOrbit({
         <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(C)} aria-hidden="true">
           <div
             key={`g${idx}`}
-            className="absolute -inset-[7cqw] rounded-full [animation:knmo-in_600ms_ease-out_both]"
+            className="absolute -inset-[7cqw] rounded-full [animation:knmo-in_280ms_var(--kn-ease-out)_both]"
             style={{ background: `radial-gradient(closest-side, color-mix(in srgb, ${hue} 24%, transparent), transparent)` }}
           />
           <div className={cn("relative grid size-[20cqw] place-items-center rounded-[5.5cqw]", SURFACE)}>

@@ -59,7 +59,7 @@ const Lock = () => (
   </svg>
 );
 const Chevron = ({ open }: { open: boolean }) => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none", open && "rotate-90")}>
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform ease-(--kn-ease-out) motion-reduce:transition-none", open && "rotate-90")}>
     <path d="m6 3.5 4.5 4.5L6 12.5" />
   </svg>
 );
@@ -112,7 +112,7 @@ export function OnboardingChecklist({
     return (
       <section role="status" aria-label={ariaLabel ?? "Setup complete"} className={shell}>
         <div className="flex items-start gap-3">
-          <span aria-hidden="true" className="flex size-8 shrink-0 animate-[kn-pop_.45s_cubic-bezier(.2,.9,.3,1.2)_both] items-center justify-center rounded-full bg-primary text-primary-foreground motion-reduce:animate-none">
+          <span aria-hidden="true" className="flex size-8 shrink-0 animate-[kn-pop_.28s_var(--kn-ease-out)_both] items-center justify-center rounded-full bg-primary text-primary-foreground motion-reduce:animate-none">
             <Check className="size-4" />
           </span>
           <div className="min-w-0 flex-1">

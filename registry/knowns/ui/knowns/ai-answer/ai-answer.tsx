@@ -1,7 +1,7 @@
 "use client";
 /** @registry name="ai-answer" type="ui" title="AI answer" description="Streamed answer with steps, sources, numbered citations that preview their source, copy, regenerate, feedback and follow-ups." */
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
@@ -165,17 +165,6 @@ export function AiAnswer({
   const writing = status === "streaming" || shown < total;
   const finished = !writing && (status === "done" || status === "stopped");
   const blocks = useMemo(() => parseAnswer(visible), [visible]);
-
-  /* Height glides to fit as text grows. */
-  const inner = useRef<HTMLDivElement>(null);
-  const [h, setH] = useState<number | undefined>(undefined);
-  useLayoutEffect(() => {
-    const el = inner.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setH(e.contentRect.height));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   /* Linked highlight between citations and source pills. */
   const [hot, setHot] = useState<number[]>([]);
@@ -377,8 +366,8 @@ export function AiAnswer({
       )}
 
       {/* Answer */}
-      <div className="mt-4 overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none" style={{ height: h }}>
-        <div ref={inner} aria-busy={writing || status === "thinking"} className="flex flex-col gap-2.5 leading-[1.65] text-foreground/90">
+      <div className="mt-4">
+        <div aria-busy={writing || status === "thinking"} className="flex flex-col gap-2.5 leading-[1.65] text-foreground/90">
           {status === "thinking" && !visible ? (
             <div role="img" className="flex flex-col gap-2 py-1" aria-label="Thinking">
               {[92, 78, 64].map((w, i) => (
@@ -551,7 +540,7 @@ function Citation({ n, source, hot, onHot, animate }: { n: number; source?: Answ
           "inline-flex h-[18px] min-w-[18px] items-center justify-center gap-1 rounded-[5px] px-1 text-[10.5px] font-semibold tabular-nums leading-none",
           "bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] text-muted-foreground transition-colors hover:text-foreground",
           hot && "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
-          animate && "animate-[kn-pop_220ms_cubic-bezier(.22,1,.36,1)_both]",
+          animate && "animate-[kn-pop_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]",
           focusRing,
         )}
       >

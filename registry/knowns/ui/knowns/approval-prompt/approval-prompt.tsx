@@ -7,6 +7,7 @@ import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/ru
 import { actorColors, rootAgent } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
 import { Button } from "../button";
+import { CodeBlock } from "../code-block/code-block";
 
 export interface ApprovalPromptProps {
   /** With a run, decisions are emitted to it as `approval.resolve`. */
@@ -112,9 +113,7 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
             </div>
           </div>
           {a.detail && (
-            <pre className="mx-4 mb-3 max-h-48 overflow-auto rounded-lg border bg-muted/40 px-3 py-2.5 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words">
-              {a.detail}
-            </pre>
+            <CodeBlock code={a.detail} label={false} copy={false} wrapToggle={false} defaultWrap maxHeight={192} aria-label={`${a.title}, details`} className="mx-4 mb-3 rounded-lg [&_pre]:py-2.5! [&_pre]:text-[12px]! [&_[data-line]]:px-3!" />
           )}
           <div className="flex justify-end gap-2 border-t bg-muted/30 px-4 py-2.5">
             <Button variant="secondary" onClick={() => decide(a, "denied")}>

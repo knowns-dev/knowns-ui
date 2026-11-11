@@ -11,13 +11,13 @@ export interface AuroraProps extends Omit<BackgroundProps, "color"> {
   color?: string | string[];
 }
 
-const DEFAULT = ["#6366f1", "#0ea5e9", "#8b5cf6"];
+const DEFAULT = ["var(--kn-accent, #6366f1)", "#0ea5e9", "#8b5cf6"];
 
 const CSS = `
 @keyframes knbg-aurora-a { 0% { transform: translate(-6%, -4%) rotate(0deg) scale(1); } 100% { transform: translate(8%, 6%) rotate(18deg) scale(1.12); } }
 @keyframes knbg-aurora-b { 0% { transform: translate(6%, 4%) rotate(0deg) scale(1.05); } 100% { transform: translate(-8%, -5%) rotate(-14deg) scale(0.95); } }
 @keyframes knbg-aurora-c { 0% { transform: translate(0, 6%) scale(0.95); } 100% { transform: translate(-4%, -8%) scale(1.1); } }
-[data-kn-bg="aurora"] .kn-field { will-change: transform; animation: var(--kn-name) var(--kn-dur) cubic-bezier(.45,0,.55,1) infinite alternate; }
+[data-kn-bg="aurora"] .kn-field { will-change: transform; animation: var(--kn-name) var(--knbg-dur) cubic-bezier(.45,0,.55,1) infinite alternate; }
 `;
 
 /** Where each field sits and drifts. */
@@ -66,7 +66,7 @@ export function Aurora({ density, speed, color, mask = "radial", focus, intensit
                   background: `radial-gradient(closest-side, ${withAlpha(c, 0.32 * k)}, ${withAlpha(c, 0.12 * k)} 55%, transparent)`,
                   animationPlayState: s === 0 ? "paused" : undefined,
                   ["--kn-name" as string]: f.name,
-                  ["--kn-dur" as string]: `${(f.dur / Math.max(0.05, s)).toFixed(1)}s`,
+                  ["--knbg-dur" as string]: `${(f.dur / Math.max(0.05, s)).toFixed(1)}s`,
                 }}
               />
             );

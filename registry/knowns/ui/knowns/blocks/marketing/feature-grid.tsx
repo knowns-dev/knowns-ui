@@ -43,11 +43,16 @@ export interface FeatureGridProps {
   align?: "start" | "center";
   /** Section padding: "default" 56/80px (phone/desktop), "tight" 40/56px for a block inside a page or a frame. */
   spacing?: "default" | "tight";
+  /**
+   * Bento only, opt-in: a card with a link is clickable as a whole (the link stretches over it), and its surface
+   * shifts a step on hover (colour only, 120ms). Keep visuals inert when you turn it on, so a click lands on the link.
+   */
+  cardLinks?: boolean;
   className?: string;
 }
 
 /** Minimum visual height per cell size, so large and tall visuals keep their room when cells stack on phones. */
-const VISUAL_MIN: Record<BentoSize, string> = { sm: "min-h-32", wide: "min-h-32", tall: "min-h-60", lg: "min-h-72" };
+const VISUAL_H: Record<BentoSize, string> = { sm: "h-32", wide: "h-32", tall: "min-h-60 flex-1", lg: "min-h-72 flex-1" };
 
 function Mark({ children }: { children: ReactNode }) {
   return (
@@ -57,7 +62,7 @@ function Mark({ children }: { children: ReactNode }) {
   );
 }
 
-export function FeatureGrid({ eyebrow, title, lead, features, variant = "grid", columns = 3, marker, align = "center", spacing = "default", className }: FeatureGridProps) {
+export function FeatureGrid({ eyebrow, title, lead, features, variant = "grid", columns = 3, marker, align = "center", spacing = "default", cardLinks = false, className }: FeatureGridProps) {
   const bento = variant === "bento";
   const lead_ = marker ?? (features.some((f) => f.icon) ? "icon" : "none");
   return (
@@ -66,16 +71,29 @@ export function FeatureGrid({ eyebrow, title, lead, features, variant = "grid", 
       {bento ? (
         <ul className="grid auto-rows-[minmax(200px,auto)] grid-flow-row-dense grid-cols-1 gap-3 @xl:grid-cols-2 @xl:gap-4 @5xl:grid-cols-4">
           {features.map((f) => (
-            <li key={f.title} className={cn("flex flex-col overflow-hidden rounded-2xl border bg-card", bentoSpan(f.size))}>
-              {f.visual && <div className={cn("relative mx-2 mt-2 flex-1 overflow-hidden rounded-lg bg-muted/60", VISUAL_MIN[f.size ?? "sm"])}>{f.visual}</div>}
-              <div className={cn("flex flex-col gap-1.5 px-6 pt-5 pb-6", !f.visual && "flex-1 justify-end")}>
+            <li
+              key={f.title}
+              data-card-link={cardLinks && f.link ? "" : undefined}
+              className={cn(
+                "flex flex-col overflow-hidden rounded-2xl border bg-card",
+                cardLinks && f.link && "relative transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))]",
+                bentoSpan(f.size),
+              )}
+            >
+              {f.visual && <div className={cn("relative mx-2 mt-2 flex-none overflow-hidden rounded-lg bg-muted/60", VISUAL_H[f.size ?? "sm"])}>{f.visual}</div>}
+              <div className={cn("flex flex-col gap-1.5 px-6 pt-5 pb-6", !f.visual ? "flex-1 justify-end" : f.size === "lg" || f.size === "tall" ? "" : "flex-1")}>
                 <h3 className="flex items-center gap-2 text-[16px] leading-6 font-semibold">
                   {f.icon && <Mark>{f.icon}</Mark>}
                   {f.title}
                   {f.badge}
                 </h3>
                 <p className="text-[14px] leading-[22px] text-muted-foreground">{f.text}</p>
-                {f.link && <ArrowLink action={f.link} className="mt-2" />}
+                {f.link && (
+                  // mt-auto: the link sits at the bottom, so links line up across a row whatever the text length.
+                  <div className="mt-auto pt-2">
+                    <ArrowLink action={f.link} className={cn(cardLinks && "after:absolute after:inset-0 after:rounded-2xl after:content-['']")} />
+                  </div>
+                )}
               </div>
             </li>
           ))}

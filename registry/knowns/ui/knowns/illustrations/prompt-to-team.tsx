@@ -52,10 +52,11 @@ export function branchPath(i: number, n: number): string {
 
 const SURFACE =
   "bg-card [border:1px_solid_color-mix(in_srgb,var(--foreground)_10%,transparent)] shadow-[0_1px_2px_rgb(0_0_0/0.05),0_8px_22px_-14px_rgb(0_0_0/0.3)] dark:[background:color-mix(in_srgb,var(--card)_80%,#000)]";
-const EASE = "cubic-bezier(.22,1,.36,1)";
+// The 640ms line draw is kept: drawing the branch is the content. Everything else is within 280ms.
+const EASE = "var(--kn-ease-out)";
 const CSS = `
 @keyframes knpt-caret { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
-@keyframes knpt-send { 0% { transform: scale(1) } 40% { transform: scale(.86) } 100% { transform: scale(1) } }
+@keyframes knpt-send { 0% { transform: scale(1) } 40% { transform: scale(.97) } 100% { transform: scale(1) } }
 ${MOTION_GATE}
 `;
 
@@ -109,7 +110,7 @@ export function PromptToTeam({ prompt = "Find why churn rose in Q3 and draft a f
       <style href="kn-prompt-to-team" precedence="default">
         {CSS}
       </style>
-      <div aria-hidden="true" className="flex flex-col" style={{ opacity: out ? 0 : 1, transition: `opacity 420ms ${EASE}` }}>
+      <div aria-hidden="true" className="flex flex-col" style={{ opacity: out ? 0 : 1, transition: `opacity 280ms ${EASE}` }}>
         {/* The prompt */}
         <div className={cn("mx-auto flex w-[82%] items-center gap-[1.6cqw] rounded-[3cqw] px-[2.2cqw] py-[1.8cqw]", SURFACE)}>
           <svg viewBox="0 0 16 16" className="size-[3cqw] flex-none" fill="none" stroke={AGENT_PALETTE[0]} strokeWidth={1.5} strokeLinecap="round">
@@ -122,7 +123,7 @@ export function PromptToTeam({ prompt = "Find why churn rose in Q3 and draft a f
           </span>
           <span
             className="grid size-[5cqw] flex-none place-items-center rounded-full bg-foreground text-background"
-            style={{ animation: !still && phase === "send" ? `knpt-send 420ms ${EASE}` : undefined, opacity: shown.length === prompt.length ? 1 : 0.35, transition: "opacity 200ms" }}
+            style={{ animation: !still && phase === "send" ? `knpt-send 280ms ${EASE}` : undefined, opacity: shown.length === prompt.length ? 1 : 0.35, transition: "opacity 200ms" }}
           >
             <svg viewBox="0 0 16 16" className="size-[2.4cqw]" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" />
@@ -159,7 +160,7 @@ export function PromptToTeam({ prompt = "Find why churn rose in Q3 and draft a f
                 style={{
                   opacity: teamIn ? 1 : 0,
                   transform: teamIn ? "none" : "translateY(1.6cqw) scale(.96)",
-                  transition: still ? "none" : `opacity 420ms ${EASE} ${120 + i * 110}ms, transform 520ms ${EASE} ${120 + i * 110}ms`,
+                  transition: still ? "none" : `opacity 280ms ${EASE} ${120 + i * 110}ms, transform 280ms ${EASE} ${120 + i * 110}ms`,
                   ["--hue" as string]: hue,
                 }}
               >

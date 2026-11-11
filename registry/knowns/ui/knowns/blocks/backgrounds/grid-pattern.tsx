@@ -26,7 +26,7 @@ export interface GridPatternProps extends BackgroundProps {
 }
 
 const CSS = `
-[data-kn-bg="grid-pattern"] .knbg-gp-sq { transition: opacity 0.7s cubic-bezier(.4,0,.2,1); }
+[data-kn-bg="grid-pattern"] .knbg-gp-sq { transition: opacity 0.7s var(--kn-ease-out); }
 [data-kn-bg="grid-pattern"] .knbg-gp-sq[data-off="true"] { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { [data-kn-bg="grid-pattern"] .knbg-gp-sq { transition: none; } }
 `;

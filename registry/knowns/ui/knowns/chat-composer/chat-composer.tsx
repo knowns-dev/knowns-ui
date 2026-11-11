@@ -408,7 +408,7 @@ export function ChatComposer({
                       {connectedApps.slice(0, 3).map((a) => (
                         <span
                           key={a.id}
-                          className="grid size-[18px] place-items-center rounded-full bg-card p-[3px] shadow-[0_0_0_1.5px_var(--card),0_0_0_2.5px_color-mix(in_srgb,var(--foreground)_10%,transparent)] animate-[kn-pop_220ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none"
+                          className="grid size-[18px] place-items-center rounded-full bg-card p-[3px] shadow-[0_0_0_1.5px_var(--card),0_0_0_2.5px_color-mix(in_srgb,var(--foreground)_10%,transparent)] animate-[kn-pop_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none"
                         >
                           <Logo className="size-full">{a.icon ?? toolIcon(a.name) ?? <AppsGlyph />}</Logo>
                         </span>
@@ -437,7 +437,7 @@ export function ChatComposer({
         ...(frame ? [
           "max-w-[640px] overflow-hidden rounded-2xl bg-card",
           "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
-          "transition-[box-shadow] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
+          "transition-[box-shadow] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
           "has-[textarea:focus-visible]:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_70%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_14%,transparent),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
           "dark:bg-[color-mix(in_srgb,var(--muted)_30%,var(--card))]",
         ] : []),
@@ -469,7 +469,7 @@ export function ChatComposer({
                   key={a.id}
                   className={cn(
                     "group flex h-7 max-w-[240px] items-center gap-1.5 rounded-lg bg-muted/60 pr-0.5 pl-2 text-[12.5px] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]",
-                    mounted.current && "animate-[kn-rise_180ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none",
+                    mounted.current && "animate-[kn-rise_180ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
                   )}
                 >
                   <span aria-hidden className="grid flex-none text-muted-foreground [&_svg]:size-3.5">
@@ -515,7 +515,7 @@ export function ChatComposer({
         {words.length > 0 && (
           <p aria-hidden className="px-1 pb-1 text-[14.5px] leading-6 text-muted-foreground">
             {words.map((w, i) => (
-              <span key={i} className="animate-[kn-word_320ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none">
+              <span key={i} className="animate-[kn-word_320ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
                 {w}{" "}
               </span>
             ))}
@@ -558,7 +558,7 @@ export function ChatComposer({
                 )}
               >
                 {/* Keyed so a new mode cross-fades in rather than snapping. */}
-                <span key={mode} className="flex items-center gap-1.5 animate-[kn-word_220ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none">
+                <span key={mode} className="flex items-center gap-1.5 animate-[kn-word_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
                   <span aria-hidden className="grid [&_svg]:size-3.5">
                     <modeInfo.icon />
                   </span>
@@ -592,7 +592,7 @@ export function ChatComposer({
                   aria-label={`Model: ${current?.name ?? "none"}`}
                   className="px-2! @max-[419px]:w-7 @max-[419px]:px-0! pointer-coarse:@max-[419px]:w-9"
                 >
-                  <span key={current?.id} className="flex items-center gap-1.5 animate-[kn-word_220ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none">
+                  <span key={current?.id} className="flex items-center gap-1.5 animate-[kn-word_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
                     <Logo className="size-3.5">{current?.icon ?? modelIcon(current?.name) ?? <Spark />}</Logo>
                     <span className="max-w-[140px] truncate text-foreground/85 @max-[419px]:hidden">{current?.name}</span>
                     <span className="contents @max-[419px]:hidden">
@@ -622,7 +622,7 @@ export function ChatComposer({
           )}
 
           {busy ? (
-            <TipButton tip="Stop" variant="primary" size="sm" aria-label="Stop" icon={<StopGlyph />} onClick={onStop} className="rounded-full! animate-[kn-pop_200ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none" />
+            <TipButton tip="Stop" variant="primary" size="sm" aria-label="Stop" icon={<StopGlyph />} onClick={onStop} className="rounded-full! animate-[kn-pop_200ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none" />
           ) : (
             <TipButton
               tip="Send"

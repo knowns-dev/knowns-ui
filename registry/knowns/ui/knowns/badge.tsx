@@ -22,7 +22,7 @@ export type BadgeShape = "rounded" | "pill";
 
 const SOFT: Record<BadgeTone, string> = {
   neutral: "bg-muted text-muted-foreground",
-  accent: "bg-indigo-500/12 text-indigo-700 dark:text-indigo-300",
+  accent: "bg-[color:var(--kn-accent,var(--color-indigo-500))]/12 text-[color:var(--kn-accent,var(--color-indigo-700))] dark:text-[color:var(--kn-accent,var(--color-indigo-300))]",
   info: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
   success: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
   warning: "bg-amber-500/14 text-amber-800 dark:text-amber-300",
@@ -30,7 +30,7 @@ const SOFT: Record<BadgeTone, string> = {
 };
 const OUTLINE: Record<BadgeTone, string> = {
   neutral: "border-border text-muted-foreground",
-  accent: "border-indigo-500/35 text-indigo-700 dark:text-indigo-300",
+  accent: "border-[color:var(--kn-accent,var(--color-indigo-500))]/35 text-[color:var(--kn-accent,var(--color-indigo-700))] dark:text-[color:var(--kn-accent,var(--color-indigo-300))]",
   info: "border-sky-500/35 text-sky-700 dark:text-sky-300",
   success: "border-emerald-500/35 text-emerald-700 dark:text-emerald-300",
   warning: "border-amber-500/40 text-amber-700 dark:text-amber-300",
@@ -38,7 +38,7 @@ const OUTLINE: Record<BadgeTone, string> = {
 };
 const SOLID: Record<BadgeTone, string> = {
   neutral: "bg-foreground text-background",
-  accent: "bg-indigo-600 text-white",
+  accent: "bg-[color:var(--kn-accent,var(--color-indigo-600))] text-[color:var(--kn-accent-foreground,white)]",
   info: "bg-sky-600 text-white",
   success: "bg-emerald-600 text-white",
   warning: "bg-amber-500 text-amber-950",
@@ -46,7 +46,7 @@ const SOLID: Record<BadgeTone, string> = {
 };
 const DOT: Record<BadgeTone, string> = {
   neutral: "bg-muted-foreground",
-  accent: "bg-indigo-500",
+  accent: "bg-[color:var(--kn-accent,var(--color-indigo-500))]",
   info: "bg-sky-500",
   success: "bg-emerald-500",
   warning: "bg-amber-500",
@@ -68,7 +68,7 @@ const ICON: Record<BadgeSize, string> = { sm: "size-3", md: "size-3.5", lg: "siz
 const DOT_SIZE: Record<BadgeSize, string> = { sm: "size-1.25", md: "size-1.5", lg: "size-1.75" };
 const REMOVE: Record<BadgeSize, string> = { sm: "size-4 [&_svg]:size-2.5", md: "size-4.5 [&_svg]:size-3", lg: "size-5 [&_svg]:size-3" };
 
-const ease = "transition-[background-color,border-color,color,box-shadow,opacity] duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none";
+const ease = "transition-[background-color,border-color,color,box-shadow,opacity] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none";
 /* Interactive badges: a quiet lift of the fill, using the badge's own text colour so every tone works. */
 const PRESSABLE = "cursor-pointer hover:shadow-[inset_0_0_0_999px_color-mix(in_srgb,currentColor_9%,transparent)] active:shadow-[inset_0_0_0_999px_color-mix(in_srgb,currentColor_15%,transparent)]";
 
@@ -182,7 +182,7 @@ export function Badge({
       className={cn(
         "-my-1 grid flex-none cursor-pointer place-items-center opacity-70",
         pill ? "rounded-full" : "rounded-[4px]",
-        "transition-[background-color,opacity] duration-150 ease-[cubic-bezier(.22,1,.36,1)] hover:bg-[color-mix(in_srgb,currentColor_14%,transparent)] hover:opacity-100",
+        "transition-[background-color,opacity] duration-150 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] hover:bg-[color-mix(in_srgb,currentColor_14%,transparent)] hover:opacity-100",
         "disabled:pointer-events-none pointer-coarse:size-6",
         REMOVE[size],
         focusRing,

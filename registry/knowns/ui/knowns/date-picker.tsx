@@ -203,6 +203,8 @@ interface PanelProps {
   value: Date | null;
   onPick: (d: Date) => void;
   onClear?: () => void;
+  /** Inline: fill the box (the calendar stretches, the footer spans the width at the bottom). */
+  fill?: boolean;
   picks: DateQuickPick[];
   time: boolean;
   minuteStep: number;
@@ -216,12 +218,12 @@ interface PanelProps {
   onTime: (t: { h: number; m: number }) => void;
 }
 
-function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDateDisabled, weekStartsOn, locale, autoFocus, onTime }: PanelProps) {
+function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDateDisabled, weekStartsOn, locale, autoFocus, onTime, fill }: PanelProps) {
   const timeId = useId();
   const blocked = (d: Date) => outOfBounds(d, min, max) || !!isDateDisabled?.(d);
   const keepTime = (d: Date) => (time && value ? withTime(d, { h: value.getHours(), m: value.getMinutes() }) : d);
   return (
-    <div className="flex flex-col sm:flex-row">
+    <div className={cn("flex flex-col sm:flex-row", fill && "flex-1")}>
       {picks.length > 0 && (
         <ul aria-label="Quick picks" className="flex gap-1 overflow-x-auto border-b p-2 [scrollbar-width:none] sm:w-36 sm:flex-col sm:overflow-visible sm:border-r sm:border-b-0">
           {picks.map((p) => {
@@ -246,9 +248,9 @@ function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDa
           })}
         </ul>
       )}
-      <div className="flex flex-col">
+      <div className={cn("flex flex-col", fill && "min-w-0 flex-1")}>
         <Calendar
-          className="p-3"
+          className={fill ? "p-4 [&>div]:w-full" : "p-3"}
           mode="single"
           value={value ? { from: value } : null}
           onComplete={(r) => onPick(keepTime(r.from))}
@@ -277,7 +279,7 @@ function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDa
             />
           </div>
         )}
-        <div className="flex min-h-11 items-center justify-between gap-3 border-t px-3 py-2">
+        <div className={cn("flex min-h-11 items-center justify-between gap-3 border-t px-3 py-2", fill && "mt-auto px-4")}>
           <p className="min-w-0 truncate text-[13px] tabular-nums text-muted-foreground" aria-live="polite">
             {value ? formatDate(value, { locale, time }) : "No date selected"}
           </p>
@@ -393,8 +395,9 @@ export function DatePicker({
     // A bad draft stays so it can be fixed; the field shows why.
   };
 
-  const panel = (autoFocus: boolean, close: () => void) => (
+  const panel = (autoFocus: boolean, close: () => void, fill = false) => (
     <Panel
+      fill={fill}
       value={value}
       onPick={(d) => {
         commit(d);
@@ -417,8 +420,8 @@ export function DatePicker({
 
   if (variant === "inline")
     return (
-      <div role="group" aria-label={label ?? "Choose a date"} className={cn("w-fit rounded-xl border bg-card", className)}>
-        {panel(false, () => {})}
+      <div role="group" aria-label={label ?? "Choose a date"} className={cn("flex w-fit flex-col rounded-xl border bg-card", className)}>
+        {panel(false, () => {}, true)}
       </div>
     );
 

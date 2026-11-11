@@ -141,7 +141,7 @@ const CSS = `
 @keyframes knrp-arrive-once { 0% { opacity: 0; transform: scale(.92) } 15% { opacity: .9; transform: scale(1) } 100% { opacity: 0; transform: scale(1.4) } }
 @keyframes knrp-breathe { 0%, 100% { opacity: .55; transform: scale(.94) } 50% { opacity: .9; transform: scale(1.06) } }
 @keyframes knrp-grow-line { 0%, 8% { stroke-dashoffset: 100; opacity: 1 } 20% { stroke-dashoffset: 0 } 82% { stroke-dashoffset: 0; opacity: 1 } 90%, 100% { stroke-dashoffset: 0; opacity: 0 } }
-@keyframes knrp-grow-tile { 0%, 18% { opacity: 0; transform: scale(0) } 25% { opacity: 1; transform: scale(1.1) } 29% { transform: scale(1) } 82% { opacity: 1; transform: scale(1) } 90%, 100% { opacity: 0; transform: scale(.85) } }
+@keyframes knrp-grow-tile { 0%, 18% { opacity: 0; transform: scale(.92) } 27% { opacity: 1; transform: scale(1) } 82% { opacity: 1; transform: scale(1) } 90%, 100% { opacity: 0; transform: scale(.85) } }
 ${MOTION_GATE}
 `;
 
@@ -325,7 +325,7 @@ export function RunPulse({
                   strokeLinecap="round"
                   strokeDasharray="12 120"
                   strokeDashoffset={12}
-                  style={{ opacity: 0, animation: `knrp-streak var(--period) cubic-bezier(.45,.05,.35,1) calc(var(--period) * ${l.delay.toFixed(3)}) infinite` }}
+                  style={{ opacity: 0, animation: `knrp-streak var(--period) var(--kn-ease-out) calc(var(--period) * ${l.delay.toFixed(3)}) infinite` }}
                 />
               )),
             )}
@@ -341,7 +341,7 @@ export function RunPulse({
                 strokeLinecap="round"
                 strokeDasharray="12 120"
                 strokeDashoffset={12}
-                style={{ opacity: 0, animation: `knrp-shot calc(var(--period) * .38) cubic-bezier(.45,.05,.35,1) both` }}
+                style={{ opacity: 0, animation: `knrp-shot calc(var(--period) * .38) var(--kn-ease-out) both` }}
               />
             )),
           )}
@@ -377,7 +377,7 @@ export function RunPulse({
 
         {growing && (
           <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ ...pct(growing.at), ["--hue" as string]: growing.hue }}>
-            <div className={cn("grid place-items-center", TILE.tool, SURFACE)} style={{ animation: `knrp-grow-tile calc(var(--period) * 4) cubic-bezier(.2,.8,.2,1) infinite` }}>
+            <div className={cn("grid place-items-center", TILE.tool, SURFACE)} style={{ animation: `knrp-grow-tile calc(var(--period) * 4) var(--kn-ease-out) infinite` }}>
               {toolLogo(growing.tool)}
             </div>
           </div>

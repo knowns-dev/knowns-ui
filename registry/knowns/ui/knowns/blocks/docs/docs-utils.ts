@@ -53,6 +53,11 @@ export const PACKAGE_MANAGERS: PackageManager[] = ["npm", "pnpm", "yarn", "bun"]
 const RUNNER: Record<PackageManager, string> = { npm: "npx", pnpm: "pnpm dlx", yarn: "yarn dlx", bun: "bunx --bun" };
 const ADD: Record<PackageManager, string> = { npm: "npm install", pnpm: "pnpm add", yarn: "yarn add", bun: "bun add" };
 
+/** Any package command through the package manager's runner: `npx`, `pnpm dlx`, `yarn dlx` or `bunx --bun`. */
+export function runWith(pm: PackageManager, command: string): string {
+  return `${RUNNER[pm]} ${command}`;
+}
+
 /** `npx shadcn@latest add <targets>` for each package manager. */
 export function shadcnAdd(pm: PackageManager, targets: string[]): string {
   return `${RUNNER[pm]} shadcn@latest add ${targets.join(" ")}`;
@@ -120,4 +125,12 @@ export const VIEWPORT_WIDTH: Record<PreviewViewport, number | null> = { mobile: 
 export function fitScale(width: number, available: number, zoom = 1): number {
   if (width <= 0 || available <= 0) return zoom;
   return Math.min(zoom, available / width, 1);
+}
+
+/** localStorage key for the viewer's chosen preview width, shared by every preview on the site. */
+export const VIEWPORT_KEY = "kn-preview-viewport";
+
+/** A stored viewport back to a valid one; anything unknown is "desktop". */
+export function parseViewport(raw: unknown): PreviewViewport {
+  return raw === "mobile" || raw === "tablet" ? raw : "desktop";
 }

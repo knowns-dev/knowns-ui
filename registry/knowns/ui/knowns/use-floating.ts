@@ -1,5 +1,6 @@
 /** @registry name="knowns-floating" type="lib" title="Floating position" description="useFloating(): portal host, fixed positioning, flip and clamp for tooltips, popovers, menus and comboboxes." deps="knowns-core" */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Ref, type RefObject } from "react";
+import { MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 
 export type FloatingSide = "top" | "bottom" | "left" | "right";
 export type FloatingAlign = "start" | "center" | "end";
@@ -104,6 +105,16 @@ export function setRefs<T>(node: T | null, ...refs: (Ref<T> | undefined)[]) {
 
 type Placed = { width?: number } & Position;
 
+/** How long a closing panel stays mounted: the exit (`--kn-dur-fast`) plus 20ms of room, so the timer never cuts the fade. */
+export const FLOAT_EXIT_MS = MOTION.fast + 20;
+
+/**
+ * The shared enter and exit of every floating panel: a short opacity fade, no travel. The exit is the enter
+ * in reverse on the same curve, about two thirds as long. Set `data-state` to "closed" while `closing`.
+ */
+export const FLOAT_FADE =
+  "transition-opacity duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=closed]:duration-[calc(var(--kn-dur-fast,120ms)*.67)] motion-reduce:transition-none";
+
 /**
  * Keeps a floating panel next to its trigger: fixed positioning from getBoundingClientRect, flip and
  * clamp inside the viewport, follows scroll, resize and size changes of either element.
@@ -121,14 +132,34 @@ export function useFloating<T extends HTMLElement = HTMLElement, F extends HTMLE
   const floatingRef = useRef<F | null>(null) as RefObject<F | null>;
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [pos, setPos] = useState<Placed | null>(null);
+  const [closing, setClosing] = useState(false);
+  const wasOpen = useRef(false);
 
+  // Closing keeps the panel mounted and in place for the exit, then lets go. Reduced motion: no exit.
   useLayoutEffect(() => {
-    if (!open) {
+    if (open) {
+      wasOpen.current = true;
+      setClosing(false);
+      setPortalHost(portalHostFor(triggerRef.current));
+      return;
+    }
+    if (!wasOpen.current) return;
+    wasOpen.current = false;
+    const still = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (still) {
       setPos(null);
       return;
     }
-    setPortalHost(portalHostFor(triggerRef.current));
+    setClosing(true);
+    const t = setTimeout(() => {
+      setClosing(false);
+      setPos(null);
+    }, FLOAT_EXIT_MS);
+    return () => clearTimeout(t);
   }, [open]);
+
+  // Closed since the last commit that was open: already exiting on this very render, so the panel never unmounts between.
+  const exiting = closing || (!open && wasOpen.current);
 
   const update = useCallback(() => {
     const t = triggerRef.current;
@@ -187,9 +218,39 @@ export function useFloating<T extends HTMLElement = HTMLElement, F extends HTMLE
     floatingRef,
     style,
     placement: pos?.placement ?? (side === "auto" ? "bottom" : side),
-    portalHost: open ? portalHost : null,
+    portalHost: open || exiting ? portalHost : null,
+    /** True during the exit: the panel is still mounted, set `data-state="closed"` on it. */
+    closing: exiting,
     /** True once the panel has been placed and is visible (focus it only after this). */
     ready: open && pos !== null,
     update,
   };
+}
+
+/**
+ * Keeps a panel mounted for its exit. `mounted` is true while open and for `FLOAT_EXIT_MS` after; `closing`
+ * is true during that exit (set `data-state="closed"`). Reduced motion unmounts at once.
+ */
+export function useExit(open: boolean, ms = FLOAT_EXIT_MS) {
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
+  useLayoutEffect(() => {
+    if (open) {
+      setMounted(true);
+      setClosing(false);
+      return;
+    }
+    const still = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (still) {
+      setMounted(false);
+      return;
+    }
+    setClosing(true);
+    const t = setTimeout(() => {
+      setMounted(false);
+      setClosing(false);
+    }, ms);
+    return () => clearTimeout(t);
+  }, [open, ms]);
+  return { mounted: mounted || open, closing: closing && !open };
 }

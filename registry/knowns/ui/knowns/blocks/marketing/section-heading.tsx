@@ -74,7 +74,7 @@ export function ArrowLink({ action, className }: { action: MarketingAction; clas
       className={cn("group/arrow inline-flex w-fit items-center gap-1 rounded-lg text-[14px] font-semibold text-foreground", focusRing, className)}
     >
       {action.label}
-      <span aria-hidden="true" className="transition-transform duration-200 ease-out group-hover/arrow:translate-x-0.5 motion-reduce:transition-none">
+      <span aria-hidden="true" className="text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) group-hover/arrow:text-foreground">
         →
       </span>
     </a>

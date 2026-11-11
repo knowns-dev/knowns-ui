@@ -38,7 +38,7 @@ export interface ParallaxCardProps {
   children?: ReactNode;
 }
 
-const DEFAULT_TINT = "#6366f1";
+const DEFAULT_TINT = "var(--kn-accent, #6366f1)";
 
 /** A small feTurbulence tile as a data URI: drawn once by the browser and repeated, no filter per frame. */
 const GRAIN = `url("data:image/svg+xml,${encodeURIComponent(

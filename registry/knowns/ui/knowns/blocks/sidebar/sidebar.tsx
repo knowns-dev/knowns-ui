@@ -29,6 +29,7 @@ import { Avatar } from "../../avatar";
 import { Kbd } from "../../kbd";
 import { Menu, type MenuItem } from "../../menu";
 import { Popover } from "../../popover";
+import { Sheet } from "../../sheet";
 import { Tooltip } from "../../tooltip";
 import { BOOT_ATTR, ancestorsOf, initialOpen, pathTo, isToggleKey, loadJSON, saveJSON, treeKey, visibleRows, workspaceInitials, type SidebarNode } from "./sidebar-utils";
 
@@ -183,25 +184,14 @@ function unboot(key: string) {
 /*
  * Motion, all CSS:
  * - the aside animates its width between 256px and the 56px rail (or 0 when off-canvas); labels fade while it does;
- * - the mobile sheet slides in from the left over a fading backdrop and slides back out on close
- *   (a real exit: the native dialog stays painted through `overlay` / `display` with allow-discrete).
- * Reduced motion: no slide or width animation, opacity only.
+ * (the mobile sheet's slide is the Sheet component's.) Reduced motion: no width animation.
  */
 const MOTION = `
 [data-kn-sidebar-reveal]:not([data-shown]){display:none}
-[data-kn-sidebar-aside]{transition:width 220ms cubic-bezier(.22,1,.36,1)}
+[data-kn-sidebar-aside]{transition:width 220ms var(--kn-ease-out)}
 [data-kn-sidebar-fade]{transition:opacity 160ms ease-out}
-[data-kn-sidebar-sheet]{translate:0;transition:translate 260ms cubic-bezier(.22,1,.36,1),overlay 260ms allow-discrete,display 260ms allow-discrete}
-[data-kn-sidebar-sheet]:not([open]){translate:-100%;transition-duration:200ms;transition-timing-function:cubic-bezier(.4,0,1,1)}
-@starting-style{[data-kn-sidebar-sheet][open]{translate:-100%}}
-[data-kn-sidebar-sheet]::backdrop{background:rgb(0 0 0/.4);opacity:1;transition:opacity 220ms ease-out,overlay 220ms allow-discrete,display 220ms allow-discrete}
-[data-kn-sidebar-sheet]:not([open])::backdrop{opacity:0;transition-duration:180ms}
-@starting-style{[data-kn-sidebar-sheet][open]::backdrop{opacity:0}}
 @media (prefers-reduced-motion:reduce){
   [data-kn-sidebar-aside]{transition:none}
-  [data-kn-sidebar-sheet],[data-kn-sidebar-sheet]:not([open]){translate:0;transition-property:opacity,overlay,display}
-  [data-kn-sidebar-sheet]:not([open]){opacity:0}
-  @starting-style{[data-kn-sidebar-sheet][open]{translate:0;opacity:0}}
 }
 `;
 
@@ -285,35 +275,13 @@ export function Sidebar({ children, label = "Sidebar", collapsible = true, width
 
 function SidebarSheet({ children, label, header, className }: { children: ReactNode; label: string; header?: ReactNode; className?: string }) {
   const { mobileOpen, setMobileOpen, sheetId } = useSidebar();
-  const ref = useRef<HTMLDialogElement>(null);
-  const returnTo = useRef<HTMLElement | null>(null);
-  useIsoLayoutEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    if (mobileOpen && !d.open) {
-      returnTo.current = document.activeElement as HTMLElement | null;
-      d.showModal();
-      // Land on the current page's row rather than the close button: people open the nav to move from there.
-      // Its list scrolled while the sheet was closed (no layout then), so bring it into view now.
-      const row = d.querySelector<HTMLElement>('[aria-current="page"]');
-      row?.focus({ preventScroll: true });
-      row?.scrollIntoView({ block: "center" });
-    }
-    if (!mobileOpen && d.open) {
-      d.close();
-      returnTo.current?.focus?.({ preventScroll: true });
-    }
-  }, [mobileOpen]);
-  // The page behind a modal sheet does not scroll.
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const html = document.documentElement;
-    const before = html.style.overflow;
-    html.style.overflow = "hidden";
-    return () => {
-      html.style.overflow = before;
-    };
-  }, [mobileOpen]);
+  // Land on the current page's row rather than the close button: people open the nav to move from there.
+  // Its list scrolled while the sheet was closed (no layout then), so bring it into view now.
+  const focusCurrent = (d: HTMLDialogElement) => {
+    const row = d.querySelector<HTMLElement>('[aria-current="page"]');
+    row?.focus({ preventScroll: true });
+    row?.scrollIntoView({ block: "center" });
+  };
   const close = (
     <button
       type="button"
@@ -327,22 +295,18 @@ function SidebarSheet({ children, label, header, className }: { children: ReactN
     </button>
   );
   return (
-    <dialog
-      ref={ref}
+    <Sheet
+      bare
+      side="left"
+      open={mobileOpen}
+      onOpenChange={setMobileOpen}
+      label={label}
+      closeOnLink
+      onOpen={focusCurrent}
       id={sheetId}
-      data-kn-sidebar-sheet
-      aria-label={label}
-      onCancel={(e) => {
-        e.preventDefault();
-        setMobileOpen(false);
-      }}
-      // A click on the backdrop lands on the dialog element itself; a followed link closes the sheet too.
-      onClick={(e) => {
-        if (e.target === e.currentTarget || (e.target as Element).closest?.("a[href]")) setMobileOpen(false);
-      }}
       className={cn(
-        // h-dvh: the visible height, so a mobile URL bar never pushes the bottom off-screen. The top inset clears a notch.
-        "group/sb m-0 h-dvh max-h-none w-[min(18rem,calc(100vw-3rem))] max-w-none flex-col overflow-hidden border-r bg-background p-0 pt-[env(safe-area-inset-top)] text-foreground shadow-xl open:flex",
+        // Sheet pins it to both edges: the visible height, so a mobile URL bar never pushes the bottom off-screen.
+        "group/sb w-[min(18rem,calc(100vw-3rem))] bg-background text-foreground shadow-xl",
         className,
       )}
     >
@@ -356,7 +320,7 @@ function SidebarSheet({ children, label, header, className }: { children: ReactN
         <div className="absolute top-2 right-2 z-10">{close}</div>
       )}
       <SurfaceCtx.Provider value={{ rail: false, sheet: true, closeInline: !header }}>{children}</SurfaceCtx.Provider>
-    </dialog>
+    </Sheet>
   );
 }
 
@@ -490,7 +454,7 @@ function Chevron({ open, className }: { open: boolean; className?: string }) {
     <svg
       viewBox="0 0 16 16"
       aria-hidden="true"
-      className={cn("size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none", open && "rotate-90", className)}
+      className={cn("size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200 ease-(--kn-ease-out) motion-reduce:transition-none", open && "rotate-90", className)}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.6"
@@ -530,7 +494,7 @@ export function SidebarGroup({
     <div role="group" aria-labelledby={label ? `${id}-l` : undefined} className={cn("group/grp flex flex-col gap-px", className)}>
       {label && (
         <div className="relative flex h-7 items-center gap-1 px-2">
-          <span aria-hidden="true" className="absolute inset-x-1.5 top-1/2 h-px bg-border opacity-0 transition-opacity group-first/grp:hidden group-data-[rail]/sb:opacity-100" />
+          <span aria-hidden="true" className="absolute inset-x-1.5 top-1/2 h-px bg-border opacity-0 transition-opacity ease-(--kn-ease-out) group-first/grp:hidden group-data-[rail]/sb:opacity-100" />
           {collapsible ? (
             <button
               type="button"
@@ -570,7 +534,7 @@ function Collapse({ id, open, children }: { id?: string; open: boolean; children
   return (
     <div
       id={id}
-      className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
+      className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-(--kn-ease-out) motion-reduce:transition-none", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
       inert={!open}
     >
       <div className="min-h-0 overflow-hidden">{children}</div>

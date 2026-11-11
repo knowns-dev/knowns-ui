@@ -9,6 +9,7 @@
  */
 import type { ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { Sparkline } from "../../chart/sparkline";
 import { NumberTicker } from "../../text-animation/number-ticker";
 import { SectionHeading } from "./section-heading";
 
@@ -73,14 +74,11 @@ export function binHeights(bins: number[]): number[] {
 
 function Visual({ visual }: { visual: StatVisual }) {
   if (visual.kind === "trend") {
-    const pts = trendPoints(visual.values);
-    if (!pts.length) return null;
-    const line = pts.map(([x, y]) => `${x},${y}`).join(" ");
+    if (visual.values.length < 2) return null;
     return (
-      <svg aria-hidden="true" viewBox="0 0 100 40" preserveAspectRatio="none" className="h-10 w-full overflow-visible text-foreground" data-visual="trend">
-        <polygon points={`0,40 ${line} 100,40`} fill="currentColor" opacity={0.07} />
-        <polyline points={line} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity={0.75} />
-      </svg>
+      <div aria-hidden="true" data-visual="trend" className="h-10 w-full text-foreground/75">
+        <Sparkline label="Trend" values={visual.values} color="currentColor" area fluid endDot={false} height={40} />
+      </div>
     );
   }
   const heights = visual.kind === "bars" ? barHeights(visual.values) : binHeights(visual.bins);
@@ -123,7 +121,7 @@ export function StatsBand({ eyebrow, title, lead, stats, footnote, tone = "plain
       {s.context && (
         // The space is always reserved, so showing it never moves the page. Where a mouse is present it fades in
         // on hover or focus; on touch screens it is simply there.
-        <dd className="order-5 text-[13px] leading-5 text-foreground transition-opacity duration-200 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
+        <dd className="order-5 text-[13px] leading-5 text-foreground transition-opacity ease-(--kn-ease-out) duration-200 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
           {s.context}
         </dd>
       )}

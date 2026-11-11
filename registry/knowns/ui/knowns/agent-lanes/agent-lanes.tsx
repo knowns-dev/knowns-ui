@@ -433,7 +433,7 @@ export function AgentLanes({
                       aria-haspopup="dialog"
                       aria-expanded={open?.id === t.id}
                       onClick={(e) => (open?.id === t.id ? close() : openTask(t, e.currentTarget))}
-                      style={{ left, width, top: where.get(t.id)!.y, height: BLOCK_H, ["--hue" as string]: colors.get(actor.id) ?? "#6366f1" }}
+                      style={{ left, width, top: where.get(t.id)!.y, height: BLOCK_H, ["--hue" as string]: colors.get(actor.id) ?? "var(--kn-accent, #6366f1)" }}
                       className={cn(
                         "absolute flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-[9px] border px-2 text-left text-[12.5px] font-medium whitespace-nowrap transition-[filter,box-shadow] hover:brightness-[1.04] dark:hover:brightness-125",
                         "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--hue)]",
@@ -482,7 +482,7 @@ export function AgentLanes({
               const st = statusOf(t);
               if (st !== "running" && st !== "waiting") return null;
               const y = where.get(t.id)!.y;
-              const hue = colors.get(t.actor) ?? "#6366f1";
+              const hue = colors.get(t.actor) ?? "var(--kn-accent, #6366f1)";
               return st === "running" ? (
                 <span
                   key={t.id}

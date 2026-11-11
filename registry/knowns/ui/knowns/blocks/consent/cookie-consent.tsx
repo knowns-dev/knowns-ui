@@ -9,7 +9,7 @@
  * visitor sees no flash.
  */
 import { useEffect, useId, useState } from "react";
-import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../../button";
 import { Dialog } from "../../dialog";
 import { Switch } from "../../switch";
@@ -112,7 +112,7 @@ export function CookieConsent({
             {policy && (
               <>
                 {" "}
-                <a href={policy.href} className="text-foreground underline underline-offset-2 hover:no-underline">
+                <a href={policy.href} className={cn("rounded-sm text-foreground underline underline-offset-2 outline-none hover:no-underline", focusRing)}>
                   {policy.label}
                 </a>
                 .

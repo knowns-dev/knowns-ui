@@ -58,7 +58,7 @@ const CSS_TEXT = `
 @keyframes knsb-spin { to { --knsb-angle: 360deg; } }
 @keyframes knsb-fade { 0%, 70% { opacity: var(--knsb-o); } 100% { opacity: var(--knsb-rest); } }
 [data-kn-shine] {
-  --knsb-accent: #6366f1;
+  --knsb-accent: var(--kn-accent, #6366f1);
   background: var(--knsb-bg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
@@ -68,17 +68,17 @@ const CSS_TEXT = `
 }
 [data-kn-shine][data-mode="hover"] { opacity: var(--knsb-rest); animation-play-state: paused; transition: opacity 200ms ease-out; }
 :hover > [data-kn-shine][data-mode="hover"], :focus-visible > [data-kn-shine][data-mode="hover"], :focus-within > [data-kn-shine][data-mode="hover"] { opacity: var(--knsb-o); animation-play-state: running; }
-[data-kn-shine][data-mode="once"] { animation: knsb-spin var(--knsb-dur) cubic-bezier(.4,0,.2,1) 1 both, knsb-fade var(--knsb-dur) ease-out 1 both; }
+[data-kn-shine][data-mode="once"] { animation: knsb-spin var(--knsb-dur) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)) 1 both, knsb-fade var(--knsb-dur) ease-out 1 both; }
 [data-kn-shine][data-live="false"] { animation-play-state: paused; }
 [data-kn-shine][data-static="true"] { background: var(--knsb-still); animation: none; opacity: var(--knsb-o); }
-.dark [data-kn-shine], [data-theme="dark"] [data-kn-shine] { --knsb-accent: #a5b4fc; }
+.dark [data-kn-shine], [data-theme="dark"] [data-kn-shine] { --knsb-accent: var(--kn-accent, #a5b4fc); }
 @media (prefers-reduced-motion: reduce) {
   [data-kn-shine] { background: var(--knsb-still); animation: none !important; transition: none; opacity: var(--knsb-o); }
 }
 `;
 
 export interface ShineBorderProps {
-  /** "continuous" loops; "hover" runs while the host is hovered or focused; "once" makes one lap on mount, then fades. */
+  /** "hover" (default) runs while the host is hovered or focused; "continuous" loops forever, so opt in for the one thing that must be chosen; "once" makes one lap on mount, then fades. */
   mode?: ShineMode;
   /** Ring width in px: 1, 2 or 3. Default 1. */
   width?: number;
@@ -102,7 +102,7 @@ export interface ShineBorderProps {
 }
 
 export function ShineBorder({
-  mode = "continuous",
+  mode = "hover",
   width = 1,
   duration,
   colors = SHINE_ACCENT,

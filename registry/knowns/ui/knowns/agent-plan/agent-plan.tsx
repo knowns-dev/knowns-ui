@@ -6,6 +6,7 @@ import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
 import { Button } from "../button";
 import { Spinner } from "../spinner";
+import { MotionStyle, usePlay } from "@/registry/knowns/lib/knowns/motion";
 import {
   STATUS_LABEL,
   elapsedOf,
@@ -51,6 +52,11 @@ export interface AgentPlanProps {
   collapsible?: boolean;
   /** Announce step changes to screen readers. Default true. */
   announce?: boolean;
+  /**
+   * Opt-in: each step's marker becomes a checkbox the reader can tick (a demo, a manual checklist). Called with
+   * the step id and whether it should now be done; you update `steps`. Without it the markers are read-only.
+   */
+  onStepToggle?: (id: string, done: boolean) => void;
   /** Clock for elapsed times. Default Date.now. */
   now?: () => number;
   className?: string;
@@ -59,7 +65,6 @@ export interface AgentPlanProps {
 const CSS = `
 @keyframes knpl-in { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
 @keyframes knpl-out { from { opacity: 1; transform: none } to { opacity: 0; transform: translateX(6px) } }
-@keyframes knpl-pop { 0% { transform: scale(.6); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
 `;
 const EASE = "cubic-bezier(.22,1,.36,1)";
 const LEAVE_MS = 280;
@@ -99,7 +104,7 @@ function useTick(on: boolean, now: () => number) {
 
 const Check = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3">
-    <path d="M3.5 8.5l3 3 6-7" />
+    <path className="kn-m-stroke" pathLength={1} d="M3.5 8.5l3 3 6-7" />
   </svg>
 );
 const Cross = () => (
@@ -137,7 +142,8 @@ function Marker({ status, n, small }: { status: PlanStepStatus; n?: number; smal
       </span>
     );
   if (status === "done")
-    return <span className={cn(box, "bg-emerald-500/12 text-emerald-600 motion-safe:animate-[knpl-pop_220ms_cubic-bezier(.22,1,.36,1)] dark:bg-emerald-400/14 dark:text-emerald-400")}><Check /></span>;
+    // kn-m-ring / kn-m-stroke: still by default; a parent with data-kn-m="draw" pops the ring and draws the check.
+    return <span className={cn(box, "kn-m-ring bg-emerald-500/12 text-emerald-600 dark:bg-emerald-400/14 dark:text-emerald-400")}><Check /></span>;
   if (status === "failed") return <span className={cn(box, "bg-red-500/12 text-red-600 dark:bg-red-400/14 dark:text-red-400")}><Cross /></span>;
   if (status === "skipped") return <span className={cn(box, "text-muted-foreground/70")}><Dash /></span>;
   return (
@@ -223,9 +229,10 @@ function useAnnouncement(steps: PlanStep[], on: boolean): string {
   return text;
 }
 
-function StepRow({ row, n, now, fresh }: { row: Row; n: number | undefined; now: number; fresh: boolean }) {
+function StepRow({ row, n, now, fresh, onToggle }: { row: Row; n: number | undefined; now: number; fresh: boolean; onToggle?: (id: string, done: boolean) => void }) {
   const { step } = row;
   const status = statusOf(step);
+  const play = usePlay(status, (a, b) => (b === "done" && a !== "done" ? "draw" : undefined));
   const replaced = Boolean(step.replacedBy);
   const ms = elapsedOf(step, now);
   return (
@@ -236,12 +243,30 @@ function StepRow({ row, n, now, fresh }: { row: Row; n: number | undefined; now:
       aria-label={`${replaced ? "Replaced" : STATUS_LABEL[status]}: ${step.title}`}
       className={cn(
         "relative flex gap-3 py-1.5",
-        fresh && "motion-safe:animate-[knpl-in_300ms_cubic-bezier(.22,1,.36,1)_both]",
-        row.leaving && "pointer-events-none motion-safe:animate-[knpl-out_280ms_cubic-bezier(.22,1,.36,1)_both]",
+        fresh && "motion-safe:animate-[knpl-in_300ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]",
+        row.leaving && "pointer-events-none motion-safe:animate-[knpl-out_280ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]",
       )}
     >
-      <span className="relative flex flex-col items-center pt-px">
-        <Marker status={replaced ? "skipped" : status} n={n} />
+      {/* key + usePlay: the check draws once when this step turns done, never on first render or a re-render. */}
+      <span key={status} data-kn-m={play} className="relative flex flex-col items-center pt-px">
+        {onToggle && !replaced && !row.leaving ? (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={status === "done"}
+            aria-label={`Done: ${step.title}`}
+            onClick={() => onToggle(step.id, status !== "done")}
+            className={cn(
+              "relative grid cursor-pointer place-items-center rounded-full after:absolute after:-inset-1.5 after:content-['']",
+              "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)]",
+              focusRing,
+            )}
+          >
+            <Marker status={status} n={n} />
+          </button>
+        ) : (
+          <Marker status={replaced ? "skipped" : status} n={n} />
+        )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
@@ -306,6 +331,7 @@ export function AgentPlan({
   onCollapsedChange,
   collapsible = true,
   announce = true,
+  onStepToggle,
   now = Date.now,
   className,
 }: AgentPlanProps) {
@@ -338,6 +364,7 @@ export function AgentPlan({
   const anyActive = steps.some((s) => statusOf(s) === "active" || s.steps?.some((x) => statusOf(x) === "active"));
   const t = useTick(anyActive, now);
   const message = useAnnouncement(steps, announce);
+  const finished = usePlay(state, (a, b) => (b === "done" && a !== "done" ? "draw" : undefined));
 
   const pending = approval ? snap?.approvals.find((a) => a.id === approval && !a.decision) : undefined;
   const asking = approval ? Boolean(pending) : Boolean(onApprove) && state === "proposed";
@@ -359,16 +386,24 @@ export function AgentPlan({
     <>
       {collapsible && <Chevron open={!collapsed} />}
       <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-foreground">{title}</span>
+      {/* The plan finishing is rare: the Done badge pops once and its check draws (only on that change, never on mount). */}
+      <span key={state} data-kn-m={finished} className="contents">
       <span
         className={cn(
-          "shrink-0 rounded-full px-1.5 py-px text-[11px] font-medium",
+          "kn-m-ring inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-medium",
           state === "running" && "bg-sky-500/10 text-sky-700 dark:text-sky-300",
           state === "done" && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
           state === "failed" && "bg-red-500/10 text-red-700 dark:text-red-300",
           state === "proposed" && "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-muted-foreground",
         )}
       >
+        {finished && (
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="-ml-0.5 size-2.5">
+            <path className="kn-m-stroke" pathLength={1} d="M3.5 8.5l3 3 6-7" />
+          </svg>
+        )}
         {asking ? "Needs approval" : STATE_TEXT[state]}
+      </span>
       </span>
       <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
         {progress.done}/{progress.total}
@@ -387,6 +422,7 @@ export function AgentPlan({
         className,
       )}
     >
+      <MotionStyle />
       <style href="kn-agent-plan" precedence="default">
         {CSS}
       </style>
@@ -396,12 +432,12 @@ export function AgentPlan({
           aria-expanded={!collapsed}
           aria-controls={bodyId}
           onClick={toggle}
-          className={cn("flex w-full items-center gap-2 rounded-[14px] px-4 pt-3.5 text-left", collapsed ? "pb-3.5" : "pb-2", focusRing)}
+          className={cn("box-content flex min-h-7 w-full items-center gap-2 rounded-[14px] px-4 pt-4 text-left", collapsed ? "pb-4" : "pb-2", focusRing)}
         >
           {header}
         </button>
       ) : (
-        <div className="flex items-center gap-2 px-4 pt-3.5 pb-2">{header}</div>
+        <div className="box-content flex min-h-7 items-center gap-2 px-4 pt-4 pb-2">{header}</div>
       )}
 
       {/* Progress: a hairline track with a bar that grows by transform. */}
@@ -416,10 +452,10 @@ export function AgentPlan({
       >
         <div
           className={cn(
-            "h-full w-full origin-left rounded-full transition-transform duration-500",
+            "h-full w-full origin-left rounded-full transition-transform duration-(--kn-dur-slow) ease-(--kn-ease-inout)",
             state === "failed" ? "bg-red-500/80" : state === "done" ? "bg-emerald-500/85" : "bg-foreground/70",
           )}
-          style={{ transform: `scaleX(${progress.ratio})`, transitionTimingFunction: EASE }}
+          style={{ transform: `scaleX(${progress.ratio})` }}
         />
       </div>
 
@@ -436,7 +472,7 @@ export function AgentPlan({
               {rows.map((row) => {
                 const counted = !row.step.replacedBy && !row.leaving;
                 if (counted) n++;
-                return <StepRow key={row.step.id} row={row} n={counted ? n : undefined} now={t} fresh={fresh.current.has(row.step.id)} />;
+                return <StepRow key={row.step.id} row={row} n={counted ? n : undefined} now={t} fresh={fresh.current.has(row.step.id)} onToggle={onStepToggle} />;
               })}
               {rows.length === 0 && <li className="py-2 text-[12.5px] text-muted-foreground">No steps yet.</li>}
             </ol>

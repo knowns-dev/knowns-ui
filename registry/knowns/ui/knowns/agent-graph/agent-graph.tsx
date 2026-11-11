@@ -19,6 +19,7 @@ import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/ru
 import { STATE_LABEL, actorColors, formatUsd, rootAgent, spanColor } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
 import { layoutScale } from "@/registry/knowns/lib/knowns/utils";
+import { EASE, MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 import { buildTree } from "./tree";
 import { EMPTY_LAYOUT, layoutCenterStable, layoutFlow, layoutTree, type Layout } from "./layout";
 import { layoutRadial } from "./radial";
@@ -89,7 +90,8 @@ export interface AgentGraphProps {
   /**
    * How the graph appears on first layout (and after a reset, a new run, or replayIntro()).
    * "grow": nodes are revealed from You outward, each link drawing into its child before the child
-   * pops in; "fade": a light fade (default); false: no intro. Skipped with reduced motion.
+   * pops in; "fade": a light fade; false: no intro (default). Skipped with reduced motion. "grow" is the one
+   * kn-motion exception here: it explains the mechanism, so it plays on first layout and staggers past 4 items.
    */
   intro?: "grow" | "fade" | false;
   /** "grow": ms between nodes. Default 180; scaled down so the whole intro stays near 2.5s. */
@@ -100,6 +102,7 @@ export interface AgentGraphProps {
 }
 
 const NARROW = 520;
+/** Streak travel along a link: a kn-motion exception, it shows a message moving and reads as a progress signal. */
 const PULSE_MS = 900;
 const FLASH_MS = 700;
 const EDGE = 1.25;
@@ -146,7 +149,7 @@ export function AgentGraph(props: AgentGraphProps) {
     header = "Agent graph",
     renderDetail,
     className,
-    intro = "fade",
+    intro = false,
     introSpeed = 180,
     width: frameW,
     fit = "contain",
@@ -367,7 +370,7 @@ export function AgentGraph(props: AgentGraphProps) {
     if (!layer || !stage) return;
     const v = view.current;
     const still = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    layer.style.transition = animate && !still ? "transform 450ms cubic-bezier(.22,1,.36,1)" : "none";
+    layer.style.transition = animate && !still ? "transform 450ms var(--kn-ease-inout,cubic-bezier(.65,0,.35,1))" : "none";
     layer.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s})`;
     layer.style.setProperty("--kn-s", String(v.s));
     // Semantic zoom: CSS hides sub-labels (and, further out, tool labels); names of agents stay.
@@ -682,14 +685,11 @@ export function AgentGraph(props: AgentGraphProps) {
   // A streak reaching an actor makes its halo flare up in the streak's colour.
   // Web Animations on the ring element: no React render, layered over the breathing.
   const arriveRef = useRef((id: string, color: string) => {
-    const ring = nodeRefs.current.get(id)?.querySelector<HTMLElement>("[data-ring]");
-    if (!ring?.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const glow = (a: number, spread: number, blur: number) =>
-      `0 0 0 ${spread / 3}px color-mix(in srgb, ${color} ${a}%, transparent), 0 0 ${blur}px ${spread}px color-mix(in srgb, ${color} ${a * 0.8}%, transparent)`;
-    ring.animate([{ boxShadow: glow(0, 0, 0) }, { boxShadow: glow(70, 6, 18), offset: 0.18 }, { boxShadow: glow(0, 10, 28) }], {
-      duration: 900,
-      easing: "cubic-bezier(.2,.7,.3,1)",
-    });
+    const flare = nodeRefs.current.get(id)?.querySelector<HTMLElement>("[data-flare]");
+    if (!flare?.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // The glow is drawn once in the streak's colour; only its opacity moves (kn-motion: no box-shadow animation).
+    flare.style.boxShadow = `0 0 0 2px color-mix(in srgb, ${color} 70%, transparent), 0 0 18px 6px color-mix(in srgb, ${color} 56%, transparent)`;
+    flare.animate([{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: MOTION.slow, easing: EASE.out });
   });
   const pulsePathRef = useRef((from: string, to: string) => pathFor(from, to, links.get(pairKey(from, to))?.tree ?? true));
   pulsePathRef.current = (from, to) => pathFor(from, to, links.get(pairKey(from, to))?.tree ?? true);
@@ -727,12 +727,11 @@ export function AgentGraph(props: AgentGraphProps) {
     root.getAnimations?.({ subtree: true }).forEach((an) => an.id === "kn-intro" && an.cancel());
     if (intro === false || matchMedia("(prefers-reduced-motion: reduce)").matches || typeof root.animate !== "function") return;
     const now = performance.now();
-    const EASE = "cubic-bezier(.22,1,.36,1)";
     const nodeEl = (id: string) => root.querySelector<HTMLElement>(`[data-actor="${CSS.escape(id)}"]`);
 
     if (intro === "fade") {
       root.querySelectorAll<HTMLElement>("[data-actor]").forEach((el) => {
-        const an = el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: EASE, fill: "backwards" });
+        const an = el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.base, easing: EASE.out, fill: "backwards" });
         an.id = "kn-intro";
       });
       return;
@@ -746,11 +745,11 @@ export function AgentGraph(props: AgentGraphProps) {
       if (targets.has(id)) order.push(id);
       queue.push(...(tree.children.get(id) ?? []));
     }
-    const POP = 240;
+    const POP = MOTION.slow;
     const n = order.length;
     // Cap the whole reveal near 2.5s: the step shrinks for big graphs.
     const step = Math.max(24, Math.min(introSpeed, n > 1 ? (2500 - POP) / (n - 1) : introSpeed));
-    const draw = Math.min(260, step * 1.4);
+    const draw = Math.min(MOTION.slow, step * 1.4);
     const appear = new Map<string, number>();
     order.forEach((id, i) => {
       const hasParent = !!tree.parent.get(id) && appear.has(tree.parent.get(id)!);
@@ -761,10 +760,10 @@ export function AgentGraph(props: AgentGraphProps) {
       if (!el) return;
       const an = el.animate(
         [
-          { opacity: 0, transform: "scale(0.6)" },
+          { opacity: 0, transform: "scale(0.9)" },
           { opacity: 1, transform: "scale(1)" },
         ],
-        { duration: POP, delay: d, easing: EASE, fill: "backwards" },
+        { duration: POP, delay: d, easing: EASE.out, fill: "backwards" },
       );
       an.id = "kn-intro";
     });
@@ -789,11 +788,11 @@ export function AgentGraph(props: AgentGraphProps) {
             { strokeDasharray: `${len} ${len}`, strokeDashoffset: fromStart ? len : -len },
             { strokeDasharray: `${len} ${len}`, strokeDashoffset: 0 },
           ],
-          { duration: draw, delay: Math.max(0, appear.get(child)! - draw * 0.5), easing: EASE, fill: "backwards" },
+          { duration: draw, delay: Math.max(0, appear.get(child)! - draw * 0.5), easing: EASE.out, fill: "backwards" },
         );
         an.id = "kn-intro";
       } else {
-        const an = el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: Math.max(da, db) + POP, easing: EASE, fill: "backwards" });
+        const an = el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.slow, delay: Math.max(da, db) + POP, easing: EASE.out, fill: "backwards" });
         an.id = "kn-intro";
       }
     });
@@ -801,9 +800,9 @@ export function AgentGraph(props: AgentGraphProps) {
   }, [introTick, width, targets, intro, introSpeed]);
 
   /* ── Join / leave ──
-     A node that joins grows into existence: its parent link draws (~260ms), then the tile grows from
-     0.2 → 1 as the line arrives (~420ms) and the label rises in. A node that leaves shrinks and fades,
-     its link undraws, and only then is it unmounted. WAAPI only; reduced motion → a plain fade. */
+     A node that joins: its parent link draws (280ms), then the tile grows from 0.9 and fades in as the line
+     arrives (280ms) and the label rises 6px. A node that leaves shrinks to 0.9 and fades, its link undraws
+     (shorter than the enter), and only then is it unmounted. WAAPI only; reduced motion: instant. */
   const known = useRef<Set<string> | null>(null);
   const leaving = useRef(new Map<string, { actor: Actor; p: Pt; size: number; d?: string; at: number }>());
   const [, setLeaveTick] = useState(0);
@@ -814,7 +813,6 @@ export function AgentGraph(props: AgentGraphProps) {
     if (!root || !width || targets.size === 0) return;
     const ids = new Set(ordered.map((a) => a.id));
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const EASE = "cubic-bezier(.22,1,.36,1)";
     const prevIds = known.current;
     known.current = ids;
     // First layout (or right after an intro took over): nothing "joins".
@@ -822,20 +820,16 @@ export function AgentGraph(props: AgentGraphProps) {
       introRanAt.current = -1;
       return;
     }
-    if (typeof root.animate !== "function") return;
+    if (reduce || typeof root.animate !== "function") return;
     for (const id of ids) {
       if (prevIds.has(id)) continue;
       const el = root.querySelector<HTMLElement>(`[data-actor="${CSS.escape(id)}"]`);
       if (!el) continue;
-      if (reduce) {
-        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: "backwards" }).id = "kn-join";
-        continue;
-      }
       const parentId = tree.parent.get(id);
       const path = parentId
         ? [...root.querySelectorAll<SVGPathElement>("path[data-a]")].find((x) => (x.dataset.a === id && x.dataset.b === parentId) || (x.dataset.b === id && x.dataset.a === parentId))
         : undefined;
-      const DRAW = 260;
+      const DRAW = MOTION.slow;
       let delay = 0;
       if (path && parentId && prevIds.has(parentId)) {
         const len = path.getTotalLength?.() ?? 0;
@@ -849,15 +843,15 @@ export function AgentGraph(props: AgentGraphProps) {
               { strokeDasharray: `${len} ${len}`, strokeDashoffset: fromStart ? len : -len },
               { strokeDasharray: `${len} ${len}`, strokeDashoffset: 0 },
             ],
-            { duration: DRAW, easing: EASE, fill: "backwards" },
+            { duration: DRAW, easing: EASE.out, fill: "backwards" },
           ).id = "kn-join";
           delay = DRAW * 0.75; // the tile starts growing as the line arrives
         }
       }
       const tile = el.querySelector<HTMLElement>("[data-tile]");
       const label = el.querySelector<HTMLElement>("[data-label]");
-      tile?.animate([{ scale: "0.2", opacity: 0 }, { scale: "1", opacity: 1 }], { duration: 420, delay, easing: EASE, fill: "backwards" });
-      label?.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: delay + 120, easing: EASE, fill: "backwards" });
+      tile?.animate([{ scale: "0.9", opacity: 0 }, { scale: "1", opacity: 1 }], { duration: MOTION.slow, delay, easing: EASE.out, fill: "backwards" });
+      label?.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: MOTION.base, delay: delay + 40, easing: EASE.out, fill: "backwards" });
     }
   });
 
@@ -884,14 +878,13 @@ export function AgentGraph(props: AgentGraphProps) {
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root || !leaving.current.size) return;
-    const EASE = "cubic-bezier(.4,0,1,1)";
     let latest = 0;
     for (const [id, g] of leaving.current) {
       const el = root.querySelector<HTMLElement>(`[data-ghost="${CSS.escape(id)}"]`);
       if (!el || el.dataset.animated) continue;
       el.dataset.animated = "1";
-      el.querySelector<HTMLElement>("[data-tile]")?.animate([{ scale: "1", opacity: 1 }, { scale: "0", opacity: 0 }], { duration: 220, easing: EASE, fill: "forwards" });
-      el.querySelector<HTMLElement>("[data-label]")?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: "forwards" });
+      el.querySelector<HTMLElement>("[data-tile]")?.animate([{ scale: "1", opacity: 1 }, { scale: "0.9", opacity: 0 }], { duration: MOTION.base, easing: EASE.out, fill: "forwards" });
+      el.querySelector<HTMLElement>("[data-label]")?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: MOTION.fast, easing: EASE.out, fill: "forwards" });
       const path = root.querySelector<SVGPathElement>(`path[data-ghost-path="${CSS.escape(id)}"]`);
       const len = path?.getTotalLength?.() ?? 0;
       if (path && len)
@@ -900,15 +893,15 @@ export function AgentGraph(props: AgentGraphProps) {
             { strokeDasharray: `${len} ${len}`, strokeDashoffset: 0 },
             { strokeDasharray: `${len} ${len}`, strokeDashoffset: -len },
           ],
-          { duration: 240, delay: 200, easing: EASE, fill: "forwards" },
+          { duration: MOTION.base, delay: 40, easing: EASE.out, fill: "forwards" },
         );
       latest = Math.max(latest, g.at);
     }
     const t = window.setTimeout(() => {
-      const cutoff = performance.now() - 450;
+      const cutoff = performance.now() - (MOTION.base + 40);
       for (const [id, g] of leaving.current) if (g.at <= cutoff) leaving.current.delete(id);
       setLeaveTick((x) => x + 1);
-    }, 480);
+    }, MOTION.base + 80);
     return () => clearTimeout(t);
   });
 
@@ -931,7 +924,7 @@ export function AgentGraph(props: AgentGraphProps) {
           strokeWidth={w}
           style={{ ["--hue" as string]: hueFor(l.a, l.b) }}
           className={cn(
-            "fill-none [stroke-linecap:round] [stroke-linejoin:round] transition-[stroke,opacity] duration-300",
+            "fill-none [stroke-linecap:round] [stroke-linejoin:round] transition-[stroke,opacity] duration-(--kn-dur) ease-(--kn-ease-out)",
             l.running
               ? "[stroke:color-mix(in_srgb,var(--hue)_22%,color-mix(in_srgb,var(--foreground)_12%,transparent))]"
               : "[stroke:color-mix(in_srgb,var(--foreground)_11%,transparent)]",
@@ -998,7 +991,6 @@ export function AgentGraph(props: AgentGraphProps) {
         <div className="flex min-h-12 items-center justify-between gap-3 border-b [border-color:color-mix(in_srgb,var(--foreground)_6%,transparent)] px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <span aria-hidden="true" className="relative size-[7px] flex-none rounded-full bg-emerald-500">
-              <span className="absolute inset-0 animate-ping rounded-full bg-emerald-500 motion-reduce:hidden" />
             </span>
             <div className="truncate font-semibold">{header}</div>
             {!narrow && (
@@ -1108,7 +1100,7 @@ export function AgentGraph(props: AgentGraphProps) {
                     data-actor={a.id}
                     style={{ left: p.x, top: p.y, ["--hue" as string]: hueOf(a.id) }}
                     className={cn(
-                      "absolute size-0 transition-opacity duration-200 focus-within:z-10",
+                      "absolute size-0 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) focus-within:z-10",
                       focusSet && !focusSet.has(a.id) && "opacity-30",
                       selected === a.id && "z-10",
                     )}
@@ -1137,7 +1129,7 @@ export function AgentGraph(props: AgentGraphProps) {
                       }}
                       className={cn(
                         "absolute left-0 top-0 grid -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center border bg-card text-foreground",
-                        "transition-[border-color,box-shadow,scale] duration-200 hover:scale-105",
+                        "transition-[border-color,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                         // Quiet by default: a faint hairline, a deeper surface and a thin light on the top edge.
                         !isLead && !(a.type === "agent" && state === "busy") && !alert && "[border-color:color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:[border-color:color-mix(in_srgb,var(--foreground)_18%,transparent)]",
                         !alert && "dark:[background:color-mix(in_srgb,var(--card)_70%,#000)]",
@@ -1161,6 +1153,7 @@ export function AgentGraph(props: AgentGraphProps) {
                           state === "busy" && "animate-[kn-breathe_2.4s_ease-in-out_infinite] motion-reduce:animate-none",
                         )}
                       />
+                      <span data-flare aria-hidden="true" className="pointer-events-none absolute -inset-px rounded-[inherit] opacity-0" />
                       <span
                         aria-hidden="true"
                         className={cn(
@@ -1266,7 +1259,7 @@ export function AgentGraph(props: AgentGraphProps) {
                     }
                   }}
                   className={cn(
-                    "absolute z-20 overflow-auto overscroll-contain rounded-2xl border bg-popover p-4 pb-3 text-popover-foreground shadow-xl animate-[kn-rise_180ms_ease-out] motion-reduce:animate-none",
+                    "absolute z-20 overflow-auto overscroll-contain rounded-2xl border bg-popover p-4 pb-3 text-popover-foreground shadow-xl animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)] motion-reduce:animate-none",
                     narrow && "inset-x-2 bottom-2 max-h-[60%]",
                   )}
                 >
@@ -1306,7 +1299,7 @@ export function AgentGraph(props: AgentGraphProps) {
               "absolute z-30 flex items-center gap-px overflow-hidden rounded-[10px] border p-0.5 [border-color:color-mix(in_srgb,var(--foreground)_9%,transparent)]",
               // Translucent, no blur: a node under it (after a manual zoom or pan) still reads through.
               "bg-card/80 shadow-[0_4px_14px_-6px_rgb(0_0_0/0.35)] dark:[background:color-mix(in_srgb,var(--card)_72%,transparent)]",
-              "transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
+              "transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
               overCanvas ? "opacity-40" : "opacity-100",
               zoomCorner === "bottom-left" ? "bottom-2.5 left-2.5" : zoomCorner === "top-right" ? "right-2.5" : "bottom-2.5 right-2.5",
             )}

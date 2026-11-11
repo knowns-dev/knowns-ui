@@ -128,7 +128,7 @@ const Cross = () => (
   </svg>
 );
 const Chevron = ({ open }: { open: boolean }) => (
-  <svg {...g} strokeWidth={1.7} className={cn("size-3 flex-none transition-[rotate] duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none", open && "rotate-90")}>
+  <svg {...g} strokeWidth={1.7} className={cn("size-3 flex-none transition-[rotate] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none", open && "rotate-90")}>
     <path d="M6 4l4 4-4 4" />
   </svg>
 );
@@ -167,7 +167,7 @@ function Shimmer({ children, on }: { children: ReactNode; on: boolean }) {
       {on && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-[color-mix(in_srgb,var(--card)_70%,transparent)] to-transparent animate-[kn-shimmer_1.8s_cubic-bezier(.65,0,.35,1)_infinite] motion-reduce:hidden"
+          className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-[color-mix(in_srgb,var(--card)_70%,transparent)] to-transparent animate-[kn-shimmer_1.8s_ease-in-out_infinite] motion-reduce:hidden"
         />
       )}
     </span>
@@ -196,7 +196,7 @@ function SourceChip({ source, children }: { source: ThinkingSource; children: st
   const cls = cn(
     "inline-flex h-5.5 max-w-44 items-center gap-1.5 rounded-md px-1.5 text-[11.5px] text-muted-foreground",
     "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent)]",
-    "transition-[color,background-color] duration-150 ease-[cubic-bezier(.22,1,.36,1)]",
+    "transition-[color,background-color] duration-150 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
   );
   const body = (
     <>
@@ -378,7 +378,7 @@ export function ThinkingState({
         id={bodyId}
         inert={!open}
         className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
           open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
       >
@@ -396,7 +396,7 @@ export function ThinkingState({
                     className={cn(
                       "relative grid grid-cols-[20px_minmax(0,1fr)] gap-x-2.5",
                       !last && (compact ? "pb-2.5" : "pb-3"),
-                      fresh.includes(step.id) && "animate-[kn-rise_320ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none",
+                      fresh.includes(step.id) && "animate-[kn-rise_320ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
                     )}
                   >
                     {/* Rail */}
@@ -479,7 +479,7 @@ function Reasoning({ text, lines, live, indent, compact }: { text: string; lines
       >
         {stable}
         {added && (
-          <span key={text.length} className="animate-[kn-word_420ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none">
+          <span key={text.length} className="animate-[kn-word_420ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
             {added}
           </span>
         )}

@@ -18,7 +18,7 @@ import { Avatar } from "./avatar";
 import { Badge } from "./badge";
 import { Spinner } from "./spinner";
 import { GlideHighlight, matchIndex, useGlide } from "./menu";
-import { portalHostFor, useFloating } from "./use-floating";
+import { FLOAT_FADE, portalHostFor, useExit, useFloating } from "./use-floating";
 
 /* ── Types ── */
 
@@ -66,6 +66,8 @@ export interface UserMenuProps {
   signOutLabel?: string;
   /** Name and chevron next to the avatar from 640px up. Default false (avatar only). */
   showName?: boolean;
+  /** A 24px avatar in a 32px hit area, the size of the icon buttons beside it in a header. Default false (32px avatar). */
+  compact?: boolean;
   /** Horizontal alignment to the trigger. Default "end" (header right corner). */
   align?: "start" | "end";
   /** Below 640px the panel opens as a bottom sheet. "never" keeps the popover everywhere. */
@@ -280,6 +282,7 @@ export function UserMenu({
   onSignOut,
   signOutLabel = "Sign out",
   showName = false,
+  compact = false,
   align = "end",
   sheet = "auto",
   badge,
@@ -316,6 +319,7 @@ export function UserMenu({
   const list = useRef<HTMLDivElement>(null);
   const typed = useRef({ text: "", timer: undefined as ReturnType<typeof setTimeout> | undefined });
   const fl = useFloating<HTMLButtonElement, HTMLDivElement>({ open: open && !phone, side: "auto", align, offset: 6 });
+  const sheetExit = useExit(open && phone, 260);
   const [sheetHost, setSheetHost] = useState<HTMLElement | null>(null);
   const triggerEl = fl.triggerRef;
 
@@ -342,7 +346,10 @@ export function UserMenu({
     if (!ready) return;
     list.current?.focus({ preventScroll: true });
     setActive((a) => (a >= 0 ? a : stepEntry(entries, -1, 1)));
-    const raf = requestAnimationFrame(() => setShown(true));
+    const raf = requestAnimationFrame(() => {
+      setDragY(0);
+      setShown(true);
+    });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
@@ -474,8 +481,9 @@ export function UserMenu({
     const d = drag.current;
     drag.current = null;
     if (!d) return;
+    // Closing keeps the pulled position: the exit carries it on down to the edge instead of snapping back first.
     if (sheetShouldClose(d.dy, d.v, panel.current?.offsetHeight ?? 400)) close(true);
-    setDragY(0);
+    else setDragY(0);
   };
 
   /* ── Render ── */
@@ -500,12 +508,13 @@ export function UserMenu({
       className={cn(
         "group relative inline-flex items-center gap-2 rounded-full outline-none",
         "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        compact && "size-8 justify-center",
         showName && "sm:rounded-lg sm:py-1 sm:pr-1.5 sm:pl-1 sm:hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]",
         className,
       )}
     >
       <span className="relative inline-flex">
-        <Avatar label={user.name} src={user.image} size="md" shape="circle" decorative />
+        <Avatar label={user.name} src={user.image} size={compact ? "sm" : "md"} shape="circle" decorative />
         {status && (
           <span className="absolute -right-0.5 -bottom-0.5 grid size-3.5 place-items-center rounded-full bg-background">
             <PresenceGlyph status={status} className="size-2.5" />
@@ -522,9 +531,9 @@ export function UserMenu({
     </button>
   );
 
-  let row = 0;
-  const rowStyle = () => ({ transitionDelay: reduced || !shown ? "0ms" : `${Math.min(row++, 8) * 18}ms` });
-  const rowMotion = cn("transition-[opacity,translate] duration-200 ease-[cubic-bezier(.22,1,.36,1)]", shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 motion-reduce:translate-y-0");
+  // The rows do not stagger in: the menu is opened often, so the panel fades as one piece.
+  const rowStyle = () => undefined;
+  const rowMotion = "";
 
   const switchRow = (name: "theme" | "status", i: number) => {
     const options = name === "theme" ? THEMES : PRESENCE;
@@ -547,7 +556,7 @@ export function UserMenu({
         <span className={cn("relative grid grid-cols-3 rounded-lg p-0.5", "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]", isActive && "ring-1 ring-ring/50")}>
           <span
             aria-hidden
-            className="absolute inset-y-0.5 left-0.5 rounded-md bg-background shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[translate] duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none dark:bg-[color-mix(in_srgb,var(--foreground)_22%,var(--background))] dark:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
+            className="absolute inset-y-0.5 left-0.5 rounded-md bg-background shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[translate] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none dark:bg-[color-mix(in_srgb,var(--foreground)_22%,var(--background))] dark:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
             style={{ width: `calc((100% - 4px) / 3)`, translate: `${at * 100}% 0` }}
           />
           {options.map((o) => (
@@ -684,16 +693,16 @@ export function UserMenu({
   );
 
   const popover =
-    open && !phone && fl.portalHost
+    !phone && fl.portalHost
       ? createPortal(
           <div
             ref={fl.floatingRef}
             data-kn-user-menu={baseId}
-            style={{ ...fl.style, transformOrigin: `${align === "end" ? "right" : "left"} ${fl.placement === "top" ? "bottom" : "top"}` }}
+            data-state={fl.closing ? "closed" : "open"}
+            style={fl.style}
             className={cn(
               "z-50 w-[272px] overflow-auto rounded-xl border bg-popover p-1 text-popover-foreground shadow-[0_12px_32px_-8px_rgb(0_0_0/0.25),0_2px_6px_-2px_rgb(0_0_0/0.12)]",
-              "transition-[opacity,scale] duration-150 ease-[cubic-bezier(.22,1,.36,1)]",
-              shown ? "scale-100 opacity-100" : "scale-[.96] opacity-0 motion-reduce:scale-100",
+              FLOAT_FADE,
             )}
           >
             {content}
@@ -703,21 +712,22 @@ export function UserMenu({
       : null;
 
   const bottomSheet =
-    open && phone && sheetHost
+    sheetExit.mounted && phone && sheetHost
       ? createPortal(
           <div data-kn-user-menu={baseId} className="fixed inset-0 z-50">
             <div
               aria-hidden
               onClick={() => !busy && close(true)}
-              className={cn("absolute inset-0 bg-black/40 transition-opacity duration-200", shown ? "opacity-100" : "opacity-0")}
+              className={cn("absolute inset-0 bg-black/40 transition-opacity duration-[var(--kn-dur,180ms)]", shown ? "opacity-100" : "opacity-0")}
             />
             <div
               ref={panel}
-              style={{ translate: `0 ${dragY}px` }}
+              // Inline, so the drag, the enter from the bottom edge and the exit back to it share one property.
+              style={{ translate: shown ? `0 ${dragY}px` : reduced ? "0 0" : "0 100%" }}
               className={cn(
                 "absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl border-t bg-popover px-2 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] text-popover-foreground",
-                !drag.current && "transition-[translate,opacity] duration-250 ease-[cubic-bezier(.22,1,.36,1)]",
-                shown ? "opacity-100" : "translate-y-full opacity-0 motion-reduce:translate-y-0",
+                !drag.current && "transition-[translate,opacity] duration-[var(--kn-dur,180ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
+                shown ? "opacity-100" : "opacity-0",
               )}
             >
               <div onPointerDown={onDragStart} onPointerMove={onDragMove} onPointerUp={onDragEnd} onPointerCancel={onDragEnd} className={cn("flex justify-center py-2", !reduced && "cursor-grab touch-none")}>

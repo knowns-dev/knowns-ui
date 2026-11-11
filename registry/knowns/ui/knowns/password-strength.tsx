@@ -291,7 +291,6 @@ const TONE_TEXT: Record<StrengthScore, string> = {
 };
 
 const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
-const OVERSHOOT = "cubic-bezier(.34,1.56,.64,1)";
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -308,9 +307,9 @@ const Tick = ({ on }: { on: boolean }) => (
       fill="none"
       className={cn(
         "absolute inset-0 size-full transition-[transform,opacity] motion-reduce:transition-none",
-        on ? "scale-100 opacity-100 duration-200" : "scale-[.6] opacity-0 duration-150",
+        on ? "scale-100 opacity-100 duration-200" : "scale-90 opacity-0 duration-150",
       )}
-      style={{ transitionTimingFunction: on ? OVERSHOOT : "ease-out" }}
+      style={{ transitionTimingFunction: "var(--kn-ease-out, cubic-bezier(.22,1,.36,1))" }}
     >
       <circle cx="8" cy="8" r="7" className="fill-emerald-500 dark:fill-emerald-400" />
       <path
@@ -432,7 +431,7 @@ export function PasswordStrength({
         { opacity: 1, offset: 0.25 },
         { transform: "translateX(100%)", opacity: 0 },
       ],
-      { duration: 900, delay: 180, easing: "cubic-bezier(.4,0,.2,1)" },
+      { duration: 900, delay: 180, easing: "cubic-bezier(.22,1,.36,1)" },
     );
   }, [top, shownScore, empty]);
 

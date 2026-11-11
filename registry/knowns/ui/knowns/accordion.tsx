@@ -150,7 +150,7 @@ export function AccordionContent({ children, className }: { children: ReactNode;
       role="region"
       inert={!on}
       className={cn(
-        "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+        "grid transition-[grid-template-rows,opacity] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
         on ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
       )}
     >

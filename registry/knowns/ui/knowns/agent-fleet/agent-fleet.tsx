@@ -506,7 +506,7 @@ function TasksPopover({
           "flex min-h-11 cursor-default flex-col justify-center rounded-lg px-2.5 py-1.5 outline-none",
           "transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--fleet-wire)]",
           s.summary && "cursor-pointer",
-          fresh(s.id) && "animate-[kn-rise_200ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none",
+          fresh(s.id) && "animate-[kn-rise_200ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
         )}
       >
         <span className="flex min-w-0 items-center gap-3">
@@ -542,7 +542,7 @@ function TasksPopover({
         "z-[60] flex flex-col gap-2 overflow-auto rounded-2xl bg-popover p-2 pt-3 text-popover-foreground",
         "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent),0_18px_40px_-14px_rgb(0_0_0/0.4),0_2px_6px_rgb(0_0_0/0.08)]",
         "dark:[background:color-mix(in_srgb,var(--popover)_80%,#000)]",
-        ready && "animate-[kn-rise_160ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none",
+        ready && "animate-[kn-rise_160ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
       )}
     >
       <div className="flex items-baseline justify-between px-2.5">
@@ -896,14 +896,14 @@ export function AgentFleet({
     const SPEED = 1.5; // px per ms
     const dur = (len: number) => Math.max(150, Math.min(340, len / SPEED));
     const schedule = (parentId: string, start: number) => {
-      run(s?.querySelector(`[data-dot="${CSS.escape(parentId)}"]`), [{ transform: "scale(0)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: 180, delay: start });
+      run(s?.querySelector(`[data-dot="${CSS.escape(parentId)}"]`), [{ transform: "scale(.9)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: 180, delay: start });
       geo.wires
         .filter((wi) => wi.parent === parentId)
         .forEach((wi, i) => {
           const t = start + 70 + i * 60;
           const d = dur(wi.len);
           // pathLength=1: the line grows at an even pace along the trunk and around the elbow.
-          run(s?.querySelector(`[data-wire="${CSS.escape(wi.id)}"]`), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: d, delay: t, easing: "cubic-bezier(.4,0,.2,1)" });
+          run(s?.querySelector(`[data-wire="${CSS.escape(wi.id)}"]`), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: d, delay: t, easing: "cubic-bezier(.22,1,.36,1)" });
           run(
             s?.querySelector(`[data-head="${CSS.escape(wi.id)}"]`),
             [
@@ -911,7 +911,7 @@ export function AgentFleet({
               { strokeDashoffset: -0.88, opacity: 1, offset: 0.92 },
               { strokeDashoffset: -0.94, opacity: 0 },
             ],
-            { duration: d, delay: t, easing: "cubic-bezier(.4,0,.2,1)" },
+            { duration: d, delay: t, easing: "cubic-bezier(.22,1,.36,1)" },
           );
           const arrive = t + d;
           const card = col.querySelector(`[data-fleet-node="${CSS.escape(wi.id)}"]`);
@@ -1405,7 +1405,7 @@ export function AgentFleet({
           CARD,
           "block w-full cursor-pointer text-left",
           z.pad,
-          "transition-[opacity,border-color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+          "transition-[opacity,border-color] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
           "hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
           isOpen && "[border-color:color-mix(in_srgb,var(--foreground)_20%,transparent)]",
           dim && "opacity-45 hover:opacity-100 focus-visible:opacity-100",

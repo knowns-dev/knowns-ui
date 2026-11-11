@@ -1,9 +1,9 @@
 "use client";
 /** @registry name="content-core" type="block" title="Content core" description="Shared pieces for the content blocks: article typography and content blocks (headings, lists, quotes, code, callouts, images, tables), covers, author chips, and helpers for reading time, table of contents, reading progress, filters, highlighted matches and a small search." */
 
-import { useState, type ReactNode } from "react";
-import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
-import { JSON_TOKEN_CLASS, jsonTokens } from "@/registry/knowns/lib/knowns/json";
+import type { ReactNode } from "react";
+import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { CodeBlock as CodeBlockBase } from "../../code-block/code-block";
 import { initialsOf, uniqueSlugs, type TocItem } from "./content-utils";
 
 /* ── Content model ── */
@@ -119,7 +119,7 @@ function PlaceholderArt({ seed }: { seed: number }) {
   const ink = "color-mix(in srgb, var(--foreground) 14%, transparent)";
   const dot = "color-mix(in srgb, var(--foreground) 30%, transparent)";
   const muted = "color-mix(in srgb, var(--foreground) 38%, transparent)";
-  const acc = "color-mix(in srgb, #6366f1 78%, var(--foreground))";
+  const acc = "color-mix(in srgb, var(--kn-accent, #6366f1) 78%, var(--foreground))";
   const pct = (n: number) => `${n}%`;
   const x0 = 10 + Math.round(rnd() * 14);
   const x1 = 70 + Math.round(rnd() * 20);
@@ -220,39 +220,9 @@ export function AuthorChip({ author, size = "sm", className }: { author: Content
   );
 }
 
-/** A copy button for code. */
-function CopyCode({ code }: { code: string }) {
-  const [done, setDone] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        void writeClipboard(code).then(() => {
-          setDone(true);
-          setTimeout(() => setDone(false), 1400);
-        });
-      }}
-      className={cn("rounded-[8px] px-1.5 py-0.5 text-[13px] text-muted-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] hover:text-foreground", focusRing)}
-    >
-      <span aria-live="polite">{done ? "Copied" : "Copy"}</span>
-    </button>
-  );
-}
-
-/** A code block with a file name or language, a copy button, and JSON colouring. */
+/** A code block with a file name or language, a copy button and syntax colours. */
 export function CodeBlock({ code, lang, file }: { code: string; lang?: string; file?: string }) {
-  const json = lang === "json";
-  return (
-    <figure className="my-5 overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]">
-      <figcaption className="flex h-9 items-center justify-between gap-2 border-b border-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-3 text-[13px] text-muted-foreground">
-        <span className="truncate font-mono">{file ?? lang ?? "code"}</span>
-        <CopyCode code={code} />
-      </figcaption>
-      <pre className="overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-foreground/90">
-        <code>{json ? jsonTokens(code).map((t, i) => (t.kind === "plain" ? t.text : <span key={i} className={JSON_TOKEN_CLASS[t.kind]}>{t.text}</span>)) : code}</code>
-      </pre>
-    </figure>
-  );
+  return <CodeBlockBase code={code} language={lang} filename={file} wrapToggle={false} className="my-5" />;
 }
 
 const CALLOUT = {

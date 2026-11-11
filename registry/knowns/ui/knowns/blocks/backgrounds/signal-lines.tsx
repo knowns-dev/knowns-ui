@@ -18,7 +18,7 @@ const H = 640;
 
 const CSS = `
 @keyframes knbg-signal { from { stroke-dashoffset: var(--kn-len); } to { stroke-dashoffset: -1; } }
-[data-kn-bg="signal-lines"] .kn-pulse { animation: knbg-signal var(--kn-dur) linear var(--kn-delay) infinite; }
+[data-kn-bg="signal-lines"] .kn-pulse { animation: knbg-signal var(--knbg-dur) linear var(--kn-delay) infinite; }
 @media (prefers-reduced-motion: reduce) { [data-kn-bg="signal-lines"] .kn-pulse { stroke-dashoffset: -0.45; } }
 `;
 
@@ -71,7 +71,7 @@ export function SignalLines({ density, speed, color, pulseColor, mask = "radial"
                   strokeDasharray="0.06 1.06"
                   style={{
                     ["--kn-len" as string]: "0.06",
-                    ["--kn-dur" as string]: `${(t.duration / s).toFixed(2)}s`,
+                    ["--knbg-dur" as string]: `${(t.duration / s).toFixed(2)}s`,
                     ["--kn-delay" as string]: `${(t.delay / s).toFixed(2)}s`,
                   }}
                 />

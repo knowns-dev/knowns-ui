@@ -1,7 +1,13 @@
 /** @registry part-of="knowns-core" */
-/** Join class names, skipping anything that is not a non-empty string (false, null, 0…). */
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+/**
+ * Join class names and resolve Tailwind conflicts, so the last class wins: a `className` you pass beats the
+ * component's own `bg-*`, `text-*`, `rounded-*` or `p-*`. Falsy values (false, null, undefined, 0, "") are skipped.
+ */
 export function cn(...classes: unknown[]) {
-  return classes.filter((c): c is string => typeof c === "string" && c.length > 0).join(" ");
+  return twMerge(clsx(classes as Parameters<typeof clsx>));
 }
 
 /** Shared focus ring for interactive elements. */

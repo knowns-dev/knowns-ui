@@ -173,7 +173,7 @@ export function Avatar({
           aria-hidden="true"
           data-avatar-fallback=""
           className={cn(
-            "absolute inset-0 grid place-items-center transition-opacity duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+            "absolute inset-0 grid place-items-center transition-opacity duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
             photoShown(src, loaded, failed) && "opacity-0",
           )}
         >
@@ -199,7 +199,7 @@ export function Avatar({
             onLoad={() => setLoaded(src)}
             onError={() => setFailed(src)}
             className={cn(
-              "absolute inset-0 size-full bg-background object-cover transition-opacity duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+              "absolute inset-0 size-full bg-background object-cover transition-opacity duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
               loaded === src ? "opacity-100" : "opacity-0",
             )}
           />
@@ -269,7 +269,7 @@ export function AvatarGroup({ children, max, size = "md", shape = "circle", labe
         <span
           key={child.key ?? i}
           className={cn(
-            "relative inline-grid transition-[translate] duration-200 ease-[cubic-bezier(.22,1,.36,1)] hover:z-10 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+            "relative inline-grid transition-[translate] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] hover:z-10 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
             i > 0 && OVERLAP[size],
           )}
         >
@@ -304,7 +304,7 @@ export function AvatarGroup({ children, max, size = "md", shape = "circle", labe
             onClick={onAdd}
             className={cn(
               "grid cursor-pointer place-items-center border border-dashed border-[color-mix(in_srgb,var(--foreground)_24%,transparent)] text-muted-foreground",
-              "transition-[color,background-color,border-color] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
+              "transition-[color,background-color,border-color] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
               "hover:border-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:bg-muted/60 hover:text-foreground",
               "[&>svg]:size-[45%]",
               SIZE[size],

@@ -63,10 +63,70 @@ export interface ApiKey {
   createdAt: Date | string | number;
   lastUsedAt?: Date | string | number | null;
   expiresAt?: Date | string | number | null;
+  /** Live or test. Optional: keys without one show no environment badge. */
+  env?: KeyEnv;
+  /** Who made the key, shown in the details row. */
+  createdBy?: string;
+  /** Where it was last used from: an IP address or a region. */
+  lastUsedFrom?: string;
+  /** Requests or tokens per day, oldest first, for the details sparkline. */
+  usage?: number[];
 }
 
-/** "kn_live_••••a1b2". */
-export const maskKey = (k: Pick<ApiKey, "prefix" | "last4">) => `${k.prefix}_••••${k.last4}`;
+export type KeyEnv = "live" | "test";
+export const ENV_LABEL: Record<KeyEnv, string> = { live: "Live", test: "Test" };
+
+/** The key's environment, or null when it has none. Only the `env` field counts, so keys made before it existed look the same. */
+export const keyEnv = (k: Pick<ApiKey, "env">): KeyEnv | null => k.env ?? null;
+
+/** "kn_live_••••a1b2". With `env` set and not already the end of the prefix, it is added: prefix "kn" and env "live" give "kn_live_••••a1b2". */
+export function maskKey(k: Pick<ApiKey, "prefix" | "last4"> & { env?: KeyEnv }): string {
+  const withEnv = k.env && !k.prefix.endsWith(`_${k.env}`) ? `${k.prefix}_${k.env}` : k.prefix;
+  return `${withEnv}_••••${k.last4}`;
+}
+
+/** Whole days since the key was last used when that is at least `after` days; null when it is not idle, never used, expired or `after` is off. */
+export function idleDays(k: Pick<ApiKey, "lastUsedAt" | "expiresAt">, now: number, after: number | null = 30): number | null {
+  const used = time(k.lastUsedAt);
+  if (used === null || after === null || after <= 0) return null;
+  const exp = time(k.expiresAt);
+  if (exp !== null && exp <= now) return null;
+  const days = Math.floor((now - used) / DAY);
+  return days >= after ? days : null;
+}
+
+/** "Idle, used 41 days ago". */
+export const idleLabel = (days: number) => `Idle, used ${days} day${days === 1 ? "" : "s"} ago`;
+
+export type EnvFilter = "all" | KeyEnv;
+
+/** Keys for an environment filter; "all" returns them untouched. */
+export const filterKeysByEnv = <T extends Pick<ApiKey, "env">>(keys: T[], filter: EnvFilter): T[] => (filter === "all" ? keys : keys.filter((k) => keyEnv(k) === filter));
+
+/** Polyline points for a sparkline in a `w` x `h` box with `pad` px around it. Empty for fewer than two values; flat data sits mid-height. */
+export function sparkPoints(values: number[], w: number, h: number, pad = 2): string {
+  if (values.length < 2) return "";
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  const r = (n: number) => Math.round(n * 10) / 10;
+  return values.map((v, i) => `${r(pad + (i / (values.length - 1)) * (w - pad * 2))},${r(span === 0 ? h / 2 : h - pad - ((v - min) / span) * (h - pad * 2))}`).join(" ");
+}
+
+/* Hold to revoke: the press must last HOLD_MS before it counts. */
+
+export const HOLD_MS = 1200;
+
+/** 0..1 of the hold done after `elapsed` ms. */
+export const holdProgress = (elapsed: number, duration = HOLD_MS) => (duration <= 0 ? 1 : Math.min(1, Math.max(0, elapsed / duration)));
+
+export type HoldPhase = "idle" | "holding" | "done";
+
+/** The phase of a hold that started at `startedAt` (null = not pressed). Done once progress reaches 1. */
+export const holdPhase = (startedAt: number | null, now: number, duration = HOLD_MS): HoldPhase => (startedAt === null ? "idle" : holdProgress(now - startedAt, duration) >= 1 ? "done" : "holding");
+
+/** Keys that start a keyboard hold. A repeat event from holding the key down is not a new press. */
+export const isHoldKey = (e: { key: string; repeat?: boolean }) => (e.key === " " || e.key === "Enter") && !e.repeat;
 
 /** Key names: trimmed, 1 to 60 characters. Null when fine. */
 export function keyNameError(raw: string, taken: string[] = []): string | null {
@@ -257,4 +317,11 @@ export function lastUsed(t: Date | string | number | null | undefined, now: numb
   if (days === 1) return "Yesterday";
   if (days < 30) return `${days} days ago`;
   return shortDate(n, locale);
+}
+
+/** lastUsed() for the middle of a sentence: the relative words go lowercase ("never", "5 days ago"), a date keeps its case ("Sep 29, 2026"). */
+export function lastUsedInline(t: Date | string | number | null | undefined, now: number, locale = "en-US"): string {
+  const n = time(t);
+  const text = lastUsed(t, now, locale);
+  return n === null || Math.floor((now - n) / DAY) < 30 ? text.toLowerCase() : text;
 }

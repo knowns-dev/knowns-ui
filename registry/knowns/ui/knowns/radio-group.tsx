@@ -152,7 +152,7 @@ export function RadioGroup({
                 o.disabled && "cursor-not-allowed opacity-50",
                 card
                   ? cn(
-                      "rounded-[10px] px-3 py-2.5 transition-[background-color,box-shadow] duration-200 ease-out",
+                      "rounded-[10px] px-3 py-2.5 transition-[background-color,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                       on
                         ? "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))] shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_rgb(0_0_0/0.06)]"
                         : "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.04)]",
@@ -167,7 +167,7 @@ export function RadioGroup({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "grid place-items-center rounded-full transition-[background-color,box-shadow] duration-200 ease-out",
+                    "grid place-items-center rounded-full transition-[background-color,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                     on
                       ? "bg-primary shadow-[0_0_0_1px_var(--primary)]"
                       : "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_24%,transparent),0_1px_1px_rgb(0_0_0/0.05)]",
@@ -176,7 +176,7 @@ export function RadioGroup({
                     s.dot,
                   )}
                 >
-                  <span className={cn("rounded-full bg-primary-foreground transition-[scale,opacity] duration-200 ease-out", s.inner, on ? "scale-100 opacity-100" : "scale-0 opacity-0")} />
+                  <span className={cn("rounded-full bg-primary-foreground transition-[scale,opacity] ease-(--kn-ease-out)", s.inner, on ? "scale-100 opacity-100 duration-(--kn-dur)" : "scale-90 opacity-0 duration-(--kn-dur-fast)")} />
                 </span>
               </span>
               <span className="flex min-w-0 flex-col">

@@ -9,14 +9,15 @@
  * ToolCallGroup sums several calls up in one line ("Used 3 tools · 1 failed · 2.7s") and folds open to
  * the calls; a failure opens it, and the failed call, by itself.
  */
-import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react";
 import type { Actor, Span } from "@/registry/knowns/lib/knowns/types";
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
-import { Json } from "@/registry/knowns/lib/knowns/json";
+import { CodeBlock } from "../code-block/code-block";
 import { actorColors, rootAgent } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
 import { toolIcon } from "@/registry/knowns/lib/knowns/icons/tool-icons";
-import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
+import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { Fold, MotionStyle, usePlay } from "@/registry/knowns/lib/knowns/motion";
 
 /* ── Pure helpers (exported for tests) ── */
 
@@ -73,17 +74,17 @@ const Spinner = () => (
 );
 const Check = () => (
   <svg {...S} strokeWidth={1.9} className="size-3.5">
-    <path d="m3.5 8.5 3 3 6-7" />
+    <path d="m3.5 8.5 3 3 6-7" pathLength={1} className="kn-m-stroke" />
   </svg>
 );
 const Cross = () => (
   <svg {...S} className="size-3.5">
     <circle cx="8" cy="8" r="6" />
-    <path d="m6 6 4 4m0-4-4 4" />
+    <path d="m6 6 4 4m0-4-4 4" pathLength={1} className="kn-m-stroke" />
   </svg>
 );
 const Chevron = ({ open }: { open: boolean }) => (
-  <svg {...S} className={cn("size-3.5 flex-none text-muted-foreground motion-safe:transition-transform motion-safe:duration-200", open && "rotate-90")}>
+  <svg {...S} className={cn("size-3.5 flex-none text-muted-foreground transition-transform duration-(--kn-dur) ease-(--kn-ease-inout) motion-reduce:transition-none", open && "rotate-90")}>
     <path d="m6 4 4 4-4 4" />
   </svg>
 );
@@ -93,22 +94,27 @@ const Wrench = () => (
   </svg>
 );
 
+/**
+ * The status glyph. Only a real change plays (kn-motion): a call that finishes draws its check, a call that fails
+ * shakes once and draws the X. First render, the running clock and re-renders with the same status stay still.
+ */
 function StatusMark({ status }: { status: CallStatus }) {
+  const play = usePlay(status, (_, next) => (next === "success" ? "draw" : next === "failure" ? "shake" : undefined));
   if (status === "running")
     return (
-      <span className="flex flex-none text-indigo-600 dark:text-indigo-400" role="img" aria-label="Running">
+      <span key={status} className="flex flex-none text-indigo-600 dark:text-indigo-400" role="img" aria-label="Running">
         <Spinner />
       </span>
     );
   if (status === "success")
     return (
-      <span className="flex flex-none text-emerald-600 dark:text-emerald-400" role="img" aria-label="Done">
+      <span key={status} data-kn-m={play} className="flex flex-none text-emerald-600 dark:text-emerald-400" role="img" aria-label="Done">
         <Check />
       </span>
     );
   return (
-    <span className="flex flex-none items-center gap-1 text-[12.5px] text-muted-foreground">
-      <span className="flex text-red-600 dark:text-red-400" aria-hidden="true">
+    <span key={status} className="flex flex-none items-center gap-1 text-[12.5px] text-muted-foreground">
+      <span data-kn-m={play} className="flex text-red-600 dark:text-red-400" aria-hidden="true">
         <Cross />
       </span>
       Failed
@@ -116,71 +122,38 @@ function StatusMark({ status }: { status: CallStatus }) {
   );
 }
 
-/** Ticks while `on`; a fixed `now` wins (tests, screenshots). */
+/** Ticks once a second while `on` (the running time shows whole seconds); a fixed `now` wins (tests, screenshots). */
 function useClock(on: boolean, fixed?: number) {
   const [t, setT] = useState(() => Date.now());
   useEffect(() => {
     if (!on || fixed !== undefined) return;
     setT(Date.now());
-    const id = setInterval(() => setT(Date.now()), 100);
+    const id = setInterval(() => setT(Date.now()), 1000);
     return () => clearInterval(id);
   }, [on, fixed]);
   return fixed ?? t;
 }
 
-function CopyButton({ value, label }: { value: unknown; label: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await writeClipboard(copyText(value));
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
-      }}
-      aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
-      className={cn("rounded-md px-1.5 py-0.5 text-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground", focusRing)}
-    >
-      {copied ? "Copied" : "Copy"}
-    </button>
-  );
-}
-
-/** A labelled, highlighted value on the detail surface (no box of its own): capped at `max` px with "Show more". */
+/** A labelled value on the detail surface: a flush Code Block (JSON colours, copy, fold past `max` px worth of lines). */
 function Block({ label, value, max, waiting }: { label: string; value: unknown; max: number; waiting?: string }) {
-  const pre = useRef<HTMLPreElement>(null);
-  const [long, setLong] = useState(false);
-  const [more, setMore] = useState(false);
-  const id = useId();
-  useLayoutEffect(() => {
-    const el = pre.current;
-    if (el) setLong(el.scrollHeight > max + 8);
-  }, [value, max]);
-  const has = value !== undefined;
-  return (
-    <div className="min-w-0">
-      <div className="flex h-6 items-center justify-between gap-2">
-        <span id={id} className="text-[12px] font-medium text-muted-foreground">
-          {label}
-        </span>
-        {has && <CopyButton value={value} label={label} />}
-      </div>
-      {has ? (
-        <div className="relative">
-          <pre ref={pre} aria-labelledby={id} style={{ maxHeight: more ? undefined : max }} className="overflow-hidden font-mono text-[12.5px] leading-[1.6] break-words whitespace-pre-wrap">
-            <Json value={value} />
-          </pre>
-          {long && !more && <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[var(--tc-surface)] to-transparent" />}
-          {long && (
-            <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className={cn("mt-1 rounded-md text-[12.5px] font-medium text-muted-foreground hover:text-foreground", focusRing)}>
-              {more ? "Show less" : "Show more"}
-            </button>
-          )}
-        </div>
-      ) : (
+  if (value === undefined) {
+    return (
+      <div className="min-w-0">
+        <div className="flex h-6 items-center text-[12px] font-medium text-muted-foreground">{label}</div>
         <p className="text-[12.5px] text-muted-foreground">{waiting ?? "Nothing"}</p>
-      )}
-    </div>
+      </div>
+    );
+  }
+  return (
+    <CodeBlock
+      flush
+      code={copyText(value)}
+      language={typeof value === "string" ? undefined : "json"}
+      label={label}
+      wrapToggle={false}
+      collapseAfter={Math.max(4, Math.floor(max / 20))}
+      className="min-w-0 [&_figcaption]:min-h-6 [&_figcaption]:border-b-0 [&_figcaption]:py-0 [&_figcaption]:pr-0 [&_figcaption]:pl-0 [&_figcaption_span]:text-[12px] [&_figcaption_button]:h-6 [&_figcaption_button]:px-1.5 [&_pre]:py-0! [&_pre]:leading-[1.6]! [&_[data-line]]:min-h-[1.6em]! [&_[data-line]]:px-0!"
+    />
   );
 }
 
@@ -268,7 +241,9 @@ export function ToolCallCard({
   const to = actors.find((a) => a.id === span.to);
   const toolName = name ?? to?.label ?? span.to;
   const mark = icon ?? (to ? actorIcon(to) : toolIcon(toolName)) ?? <Wrench />;
-  const time = formatMs(callMs(span, now));
+  const elapsed = callMs(span, now);
+  // Running: whole seconds, so one render a second is enough. Finished: the exact time.
+  const time = span.endedAt === undefined && elapsed >= 1000 && elapsed < 60_000 ? `${Math.floor(elapsed / 1000)}s` : formatMs(elapsed);
 
   const detail = (
     <div className="flex flex-col gap-3">
@@ -298,13 +273,14 @@ export function ToolCallCard({
   if (!card) {
     return (
       <div className={cn("min-w-0", COLS, className)} data-status={status}>
+        <MotionStyle />
         <button
           type="button"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-controls={panelId}
           className={cn(
-            "flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left transition-colors duration-150 hover:bg-muted/50",
+            "flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted/50",
             !grouped && (open ? "rounded-t-lg" : "rounded-lg"),
             open && "bg-[var(--tc-surface)] hover:bg-[var(--tc-surface)]",
             focusRing,
@@ -322,11 +298,11 @@ export function ToolCallCard({
           <span className="flex-none text-[12.5px] text-muted-foreground tabular-nums">{time}</span>
           <StatusMark status={status} />
         </button>
-        {open && (
+        <Fold open={open}>
           <div id={panelId} className={cn("bg-[var(--tc-surface)] pt-1 pr-3 pb-3", INDENT, !grouped && "rounded-b-lg")}>
             {detail}
           </div>
-        )}
+        </Fold>
       </div>
     );
   }
@@ -353,6 +329,7 @@ export function ToolCallCard({
       aria-label={`Call from ${from?.label ?? span.from} to ${to?.label ?? span.to}`}
       data-status={status}
     >
+      <MotionStyle />
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-3.5 pb-3">
         <div className="flex min-w-0 flex-1 items-center gap-2 text-[14px]">
           {who(from, span.from)}
@@ -415,12 +392,13 @@ export function ToolCallGroup({ spans: spansProp, run, spanIds, actors: actorsPr
 
   return (
     <div className={cn("min-w-0 overflow-hidden rounded-xl border bg-card text-card-foreground", className)} data-status={status}>
+      <MotionStyle />
       <button
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={panelId}
-        className={cn("flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left transition-colors duration-150 hover:bg-muted/50", focusRing)}
+        className={cn("flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted/50", focusRing)}
       >
         <span className="min-w-0 flex-1 truncate text-[13px]">
           {sum.running || !label ? (
@@ -447,7 +425,7 @@ export function ToolCallGroup({ spans: spansProp, run, spanIds, actors: actorsPr
       <span aria-live="polite" className="sr-only">
         {sum.running ? "" : sum.text}
       </span>
-      {open && (
+      <Fold open={open}>
         <div id={panelId} className="divide-y border-t">
           <InGroup.Provider value={true}>
             {spans.map((s) => (
@@ -455,7 +433,7 @@ export function ToolCallGroup({ spans: spansProp, run, spanIds, actors: actorsPr
             ))}
           </InGroup.Provider>
         </div>
-      )}
+      </Fold>
     </div>
   );
 }

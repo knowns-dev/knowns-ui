@@ -51,6 +51,8 @@ export interface AuthCardProps {
   terms?: ReactNode;
   /** Small print under the card body. */
   footer?: ReactNode;
+  /** Leave out the title and description on the email and code steps, when the host (a Dialog) already shows them. */
+  hideHeading?: boolean;
   className?: string;
 }
 
@@ -76,6 +78,7 @@ export function AuthCard({
   onSent,
   terms,
   footer,
+  hideHeading = false,
   className,
 }: AuthCardProps) {
   const delivery: AuthDelivery = deliveryProp ?? (linkSent ? "both" : "code");
@@ -214,7 +217,7 @@ export function AuthCard({
             {resend}
           </div>
         </div>
-      ) : (
+      ) : hideHeading ? null : (
         <div className="text-center">
           <h1 className="text-[19px] font-semibold tracking-[-0.01em]">{title ?? (mode === "sign-up" ? "Create your account" : "Sign in")}</h1>
           {description && <p className="mt-1.5 text-[13.5px] text-muted-foreground">{description}</p>}
@@ -222,7 +225,7 @@ export function AuthCard({
       )}
 
       {step === "email" && (
-        <div className="mt-6 grid gap-5">
+        <div className={cn("grid gap-5", !hideHeading && "mt-6")}>
           {shownProviders.length > 0 && (
             <>
               <SocialButtons providers={shownProviders} onSelect={(p) => void startProvider(p)} pending={social} disabled={busy} verb={mode === "sign-up" ? "Sign up with" : "Continue with"} />
@@ -262,7 +265,7 @@ export function AuthCard({
       )}
 
       {step === "code" && (
-        <form onSubmit={(e) => (e.preventDefault(), verify())} className="mt-6 grid gap-4" noValidate>
+        <form onSubmit={(e) => (e.preventDefault(), verify())} className={cn("grid gap-4", !hideHeading && "mt-6")} noValidate>
           <p className="text-[13.5px] leading-relaxed">
             {delivery === "both" ? (
               <>

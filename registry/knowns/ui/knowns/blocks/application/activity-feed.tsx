@@ -1,13 +1,25 @@
 "use client";
-/** @registry name="activity-feed" type="block" title="Activity feed" description="A timeline of what people and agents did: grouped by day, filters, expandable details and an N new pill when items arrive while scrolled." */
+/** @registry name="activity-feed" type="block" title="Activity feed" description="A timeline of what people and agents did: unread dots and Mark all read, type tabs with counts, expandable rows, day groups and a live N new update pill." */
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Avatar } from "@/registry/knowns/ui/knowns/avatar";
 import { Button } from "@/registry/knowns/ui/knowns/button";
 import { SegmentedControl } from "@/registry/knowns/ui/knowns/segmented-control";
 import { fullTime, groupByDay, relativeTime } from "./app-feed-utils";
-import { activityTypes, diffSummary, filterActivity, newPillText, newerThanSeen, type ActivityWho } from "./activity-utils";
+import {
+  activityTypes,
+  diffSummary,
+  filterActivity,
+  isUnread,
+  newPillText,
+  newerThanSeen,
+  sweepDelay,
+  typeCounts,
+  unreadCount,
+  unreadIds,
+  type ActivityWho,
+} from "./activity-utils";
 
 export type { ActivityWho } from "./activity-utils";
 
@@ -19,15 +31,45 @@ export type ActivityDetails =
 export interface ActivityItem {
   id: string;
   at: number;
-  /** A short type used by the type filter: "commit", "run", "review". */
+  /** A short type used by the tabs and the avatar badge: "comment", "deploy", "change", "file". */
   type: string;
   actor: { name: string; agent?: boolean; src?: string };
   /** What they did: "merged", "finished a run on". */
   verb: string;
   /** What it was done to: "feat/export-csv". */
   object: string;
+  /** Not read yet. Shows a dot and counts in the header. */
+  unread?: boolean;
+  /** Where it happened, shown muted before the snippet: "atlas-web". */
+  project?: string;
+  /** A line of context. One line in the row, in full when the row is open. */
+  snippet?: string;
   details?: ActivityDetails;
 }
+
+/** A tab label and the badge icon for a type. */
+export interface ActivityTypeMeta {
+  label: string;
+  icon?: ReactNode;
+}
+
+const Glyph = ({ children }: { children: ReactNode }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+    {children}
+  </svg>
+);
+export const ACTIVITY_TYPE_META: Record<string, ActivityTypeMeta> = {
+  comment: { label: "Comments", icon: <Glyph><path d="M5 5h14v10H10l-5 4z" /></Glyph> },
+  change: { label: "Changes", icon: <Glyph><circle cx="7" cy="6" r="2" /><circle cx="17" cy="18" r="2" /><path d="M7 8v4a4 4 0 0 0 4 4h4" /></Glyph> },
+  deploy: { label: "Deploys", icon: <Glyph><path d="M12 19V6m0 0-5 5m5-5 5 5" /></Glyph> },
+  file: { label: "Files", icon: <Glyph><path d="M7 3h7l4 4v14H7z" /></Glyph> },
+  invite: { label: "Invites", icon: <Glyph><circle cx="10" cy="8" r="3" /><path d="M4 20a6 6 0 0 1 12 0M19 8v6M16 11h6" /></Glyph> },
+};
+const FALLBACK_ICON = <Glyph><circle cx="12" cy="12" r="3" /></Glyph>;
+const plural = (t: string) => {
+  const w = t.charAt(0).toUpperCase() + t.slice(1);
+  return /s$/.test(w) ? w : `${w}s`;
+};
 
 const BotMark = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4">
@@ -37,9 +79,9 @@ const BotMark = () => (
     <circle cx="15" cy="13" r="1.6" fill="currentColor" />
   </svg>
 );
-const Chevron = ({ open }: { open: boolean }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" className={cn("size-4 transition-transform motion-reduce:transition-none", open && "rotate-90")} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m9 6 6 6-6 6" />
+const CheckMark = ({ double }: { double?: boolean }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {double ? <path d="m2 13 4 4L15 7m-4 10 1 1L22 7" /> : <path d="m5 12.5 4.5 4.5L19 7.5" />}
   </svg>
 );
 
@@ -49,27 +91,41 @@ export interface ActivityFeedProps {
   now?: number;
   /** Time zone that cuts the days. Default "UTC". */
   timeZone?: string;
-  /** Show the people / agents / type filters. Default true. */
+  /** Show the type tabs and the people / agents switch. Default true. */
   filters?: boolean;
   /** Controlled filters. Leave out to let the feed keep them. */
   who?: ActivityWho;
   onWhoChange?: (who: ActivityWho) => void;
+  /** The selected type: empty is All, one entry is that tab. */
   types?: string[];
   onTypesChange?: (types: string[]) => void;
-  /** Pressed on a row's actor or object. */
+  /** Label and badge icon per type. Merged over the built-in comment, change, deploy, file and invite. */
+  typeMeta?: Record<string, ActivityTypeMeta>;
+  /** Pressed on "Open" in an expanded row. */
   onOpen?: (item: ActivityItem) => void;
+  /** Called with the id of a row that was just read by opening it. */
+  onMarkRead?: (ids: string[]) => void;
+  /** Called with the ids that "Mark all read" cleared. */
+  onMarkAllRead?: (ids: string[]) => void;
+  /** Keep items that arrive behind the pill even when the list is at the top. Default: only when scrolled down. */
+  holdNew?: boolean;
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
   emptyText?: string;
-  /** Accessible name of the feed. */
+  /** Accessible name and title of the feed. */
   label?: string;
   /** Level of the day headings. Default 3: set it so levels do not skip on your page. */
   headingLevel?: 2 | 3 | 4;
   className?: string;
 }
 
-/** A timeline of events, newest first. One scroll area; new items that arrive while scrolled wait behind an "N new" pill. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dateOfKey = (key: string) => `${MONTHS[+key.slice(5, 7) - 1]} ${+key.slice(8, 10)}`;
+const SWEEP_STEP = 40;
+const SWEEP_FADE = 180;
+
+/** A timeline of events, newest first, that tracks what is unread. One scroll area; new items can wait behind a "N new updates" pill. */
 export function ActivityFeed({
   items,
   now: nowProp,
@@ -79,7 +135,11 @@ export function ActivityFeed({
   onWhoChange,
   types: typesProp,
   onTypesChange,
+  typeMeta,
   onOpen,
+  onMarkRead,
+  onMarkAllRead,
+  holdNew = false,
   onLoadMore,
   hasMore,
   loadingMore,
@@ -91,6 +151,7 @@ export function ActivityFeed({
   const H = `h${headingLevel}` as "h2" | "h3" | "h4";
   const [fallbackNow] = useState(() => Date.now());
   const now = nowProp ?? fallbackNow;
+  const meta = useMemo(() => ({ ...ACTIVITY_TYPE_META, ...typeMeta }), [typeMeta]);
   const [whoOwn, setWhoOwn] = useState<ActivityWho>("all");
   const [typesOwn, setTypesOwn] = useState<string[]>([]);
   const who = whoProp ?? whoOwn;
@@ -98,8 +159,9 @@ export function ActivityFeed({
   const setWho = (v: ActivityWho) => (whoProp === undefined && setWhoOwn(v), onWhoChange?.(v));
   const setTypes = (v: string[]) => (typesProp === undefined && setTypesOwn(v), onTypesChange?.(v));
   const allTypes = useMemo(() => activityTypes(items), [items]);
+  const tabKeys = useMemo(() => [...Object.keys(meta).filter((t) => allTypes.includes(t)), ...allTypes.filter((t) => !(t in meta))], [meta, allTypes]);
 
-  // Items that arrive while the reader is scrolled down wait behind a pill instead of shifting the page.
+  // Items that arrive while the reader is scrolled down (or always, with holdNew) wait behind a pill instead of shifting the page.
   const scroller = useRef<HTMLDivElement>(null);
   const seen = useRef<Set<string> | null>(null);
   const [held, setHeld] = useState<ReadonlySet<string>>(new Set());
@@ -109,71 +171,140 @@ export function ActivityFeed({
       const fresh = newerThanSeen(items, seen.current);
       if (fresh.length) {
         const scrolled = (scroller.current?.scrollTop ?? 0) > 24;
-        if (scrolled) setHeld((h) => new Set([...h, ...fresh]));
-        setAnnounce(`${newPillText(fresh.length)} ${fresh.length === 1 ? "activity" : "activities"}`);
+        if (holdNew || scrolled) setHeld((h) => new Set([...h, ...fresh]));
+        setAnnounce(newPillText(fresh.length));
       }
     }
     seen.current = new Set(items.map((i) => i.id));
-  }, [items]);
+  }, [items, holdNew]);
   const visible = useMemo(() => items.filter((i) => !held.has(i.id)), [items, held]);
+  const waiting = useMemo(() => items.filter((i) => held.has(i.id)).sort((a, b) => b.at - a.at), [items, held]);
+  const byWho = useMemo(() => filterActivity(visible, who), [visible, who]);
+  const counts = useMemo(() => typeCounts(byWho, tabKeys), [byWho, tabKeys]);
   const shown = useMemo(() => filterActivity(visible, who, types), [visible, who, types]);
   const groups = useMemo(() => groupByDay(shown, now, timeZone), [shown, now, timeZone]);
-  const pending = items.filter((i) => held.has(i.id)).length;
-  const interactive = pending > 0 || hasMore || shown.some((i) => i.object || i.details);
+  const pending = waiting.length;
   const release = () => {
     setHeld(new Set());
     scroller.current?.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
+  // Read state: the item's own flag, plus what the reader opened or swept here.
+  const tracksRead = !!onMarkAllRead || items.some((i) => i.unread !== undefined);
+  const [read, setRead] = useState<ReadonlySet<string>>(new Set());
+  const [sweep, setSweep] = useState<ReadonlySet<string> | null>(null);
+  const unreadN = unreadCount(visible, read);
+  const markRead = (ids: string[]) => setRead((r) => new Set([...r, ...ids]));
+  const markAll = (instant: boolean) => {
+    const ids = unreadIds(visible, read);
+    if (!ids.length) return;
+    onMarkAllRead?.(ids);
+    if (instant || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return markRead(ids);
+    setSweep(new Set(ids));
+    window.setTimeout(() => {
+      markRead(ids);
+      setSweep(null);
+    }, sweepDelay(ids.length - 1, SWEEP_STEP) + SWEEP_FADE + 40);
+  };
+  // The first unread rows in reading order get the stagger; the rest go together.
+  const sweepOrder = useMemo(() => {
+    const m = new Map<string, number>();
+    if (sweep) for (const g of groups) for (const i of g.items) if (sweep.has(i.id)) m.set(i.id, m.size);
+    return m;
+  }, [sweep, groups]);
+
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-  const toggle = (id: string) =>
+  const toggle = (it: ActivityItem) => {
+    const willOpen = !open.has(it.id);
     setOpen((o) => {
       const n = new Set(o);
-      n.has(id) ? n.delete(id) : n.add(id);
+      willOpen ? n.add(it.id) : n.delete(it.id);
       return n;
     });
-  const toggleType = (t: string) => setTypes(types.includes(t) ? types.filter((x) => x !== t) : [...types, t]);
+    if (willOpen && isUnread(it, read)) {
+      markRead([it.id]);
+      onMarkRead?.([it.id]);
+    }
+  };
+
+  const tabs = useRef<HTMLDivElement>(null);
+  const tabKey = (e: React.KeyboardEvent) => {
+    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+    if (!keys.includes(e.key)) return;
+    e.preventDefault();
+    const els = [...(tabs.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [])];
+    const at = els.indexOf(document.activeElement as HTMLButtonElement);
+    const next = e.key === "Home" ? 0 : e.key === "End" ? els.length - 1 : (at + (e.key === "ArrowRight" ? 1 : -1) + els.length) % els.length;
+    els[next]?.focus();
+    els[next]?.click();
+  };
+  const tabId = useId();
+  const selected = types.length === 0 ? "" : types.length === 1 ? types[0] : null;
+  const tab = (key: string, text: string, n: number) => {
+    const on = selected === key;
+    return (
+      <button
+        key={key || "all"}
+        type="button"
+        role="tab"
+        id={`${tabId}-${key || "all"}`}
+        aria-selected={on}
+        tabIndex={on || (selected === null && key === "") ? 0 : -1}
+        onClick={() => setTypes(key ? [key] : [])}
+        className={cn(
+          "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[8px] px-2.5 text-[13px] font-medium transition-colors",
+          focusRing,
+          on ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+        )}
+      >
+        {text}
+        <span className={cn("text-[12px] tabular-nums", on ? "text-muted-foreground" : "text-muted-foreground/80")}>{n}</span>
+      </button>
+    );
+  };
+
+  const interactiveRow = (i: ActivityItem) => !!(i.object || i.details || i.snippet);
+  const interactive = pending > 0 || hasMore || shown.some(interactiveRow);
 
   return (
     <section aria-label={label} className={cn("flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card", className)}>
+      {tracksRead && (
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+          <p className="min-w-0 flex-1 truncate text-[14px]">
+            <span className="font-medium text-foreground">{label}</span> <span className="text-muted-foreground tabular-nums">{`${unreadN} unread`}</span>
+          </p>
+          <Button variant="quiet" size="sm" icon={<CheckMark double={unreadN > 0} />} disabled={unreadN === 0 || sweep !== null} onClick={(e) => markAll(e.detail === 0)}>
+            {unreadN > 0 ? "Mark all read" : "All caught up"}
+          </Button>
+        </div>
+      )}
       {filters && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3">
-          <SegmentedControl
-            aria-label="Who"
-            size="sm"
-            value={who}
-            onValueChange={(v) => setWho(v as ActivityWho)}
-            options={[
-              { value: "all", label: "Everyone" },
-              { value: "people", label: "People" },
-              { value: "agents", label: "Agents" },
-            ]}
-          />
-          {allTypes.length > 1 && (
-            <div role="group" aria-label="Type" className="flex flex-wrap gap-1.5">
-              {allTypes.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  aria-pressed={types.includes(t)}
-                  onClick={() => toggleType(t)}
-                  className={cn(
-                    "h-7 rounded-[8px] px-2.5 text-[12px] font-medium capitalize transition-colors",
-                    focusRing,
-                    types.includes(t) ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-2">
+          {tabKeys.length > 1 && (
+            <div ref={tabs} role="tablist" aria-label="Type" onKeyDown={tabKey} className="-mx-1 flex min-w-0 gap-0.5 overflow-x-auto px-1">
+              {tab("", "All", counts.all)}
+              {tabKeys.map((t) => tab(t, meta[t]?.label ?? plural(t), counts.byType[t] ?? 0))}
             </div>
           )}
+          <div className="ml-auto">
+            <SegmentedControl
+              aria-label="Who"
+              size="sm"
+              value={who}
+              onValueChange={(v) => setWho(v as ActivityWho)}
+              options={[
+                { value: "all", label: "Everyone" },
+                { value: "people", label: "People" },
+                { value: "agents", label: "Agents" },
+              ]}
+            />
+          </div>
         </div>
       )}
       <p role="status" aria-live="polite" className="sr-only">
         {announce}
       </p>
-      {/* Rows with no object and no details have nothing to focus: the scroll area itself takes focus so the list can still be scrolled with the keyboard. */}
+      {/* Rows with nothing to open have nothing to focus: the scroll area itself takes focus so the list can still be scrolled with the keyboard. */}
       <div
         ref={scroller}
         {...(interactive ? {} : { tabIndex: 0, role: "region", "aria-label": `${label} list` })}
@@ -184,11 +315,19 @@ export function ActivityFeed({
             <button
               type="button"
               onClick={release}
-              className={cn("h-7 rounded-full bg-indigo-600 px-3 text-[12px] font-medium text-white shadow-sm hover:bg-indigo-500", focusRing)}
+              className={cn(
+                "inline-flex h-8 items-center gap-2 rounded-full border border-border bg-card py-0 pr-3 pl-1.5 text-[13px] font-medium text-foreground shadow-md transition-transform ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transform-none",
+                focusRing,
+              )}
             >
-              <span aria-hidden="true">↑ </span>
+              {waiting[0] && (
+                <span aria-hidden="true">
+                  <Avatar label={waiting[0].actor.name} src={waiting[0].actor.src} icon={waiting[0].actor.agent && !waiting[0].actor.src ? <BotMark /> : undefined} size="xs" shape="circle" decorative />
+                </span>
+              )}
               {newPillText(pending)}
-              <span className="sr-only"> activities, show them</span>
+              <span aria-hidden="true">↑</span>
+              <span className="sr-only">, show them</span>
             </button>
           </div>
         )}
@@ -197,10 +336,25 @@ export function ActivityFeed({
         ) : (
           groups.map((g) => (
             <div key={g.key}>
-              <H className="sticky top-0 z-[1] border-b border-border bg-card px-4 py-1.5 text-[12px] font-medium text-muted-foreground">{g.label}</H>
+              <H className="sticky top-0 z-[1] flex gap-1.5 border-b border-border bg-card px-4 py-1.5 text-[12px] text-muted-foreground">
+                <span className="font-medium">{g.label.split(",")[0]}</span>
+                {(g.label === "Today" || g.label === "Yesterday") && <span>{dateOfKey(g.key)}</span>}
+              </H>
               <ul className="divide-y divide-border">
                 {g.items.map((it) => (
-                  <Event key={it.id} item={it} now={now} timeZone={timeZone} open={open.has(it.id)} onToggle={() => toggle(it.id)} onOpen={onOpen} />
+                  <Event
+                    key={it.id}
+                    item={it}
+                    now={now}
+                    timeZone={timeZone}
+                    meta={meta[it.type]}
+                    open={open.has(it.id)}
+                    onToggle={() => toggle(it)}
+                    onOpen={onOpen}
+                    tracksRead={tracksRead}
+                    unread={isUnread(it, read)}
+                    sweepStep={sweepOrder.get(it.id)}
+                  />
                 ))}
               </ul>
             </div>
@@ -222,65 +376,102 @@ function Event({
   item: it,
   now,
   timeZone,
+  meta,
   open,
   onToggle,
   onOpen,
+  tracksRead,
+  unread,
+  sweepStep,
 }: {
   item: ActivityItem;
   now: number;
   timeZone: string;
+  meta?: ActivityTypeMeta;
   open: boolean;
   onToggle: () => void;
   onOpen?: (item: ActivityItem) => void;
+  tracksRead: boolean;
+  unread: boolean;
+  sweepStep?: number;
 }) {
   const id = useId();
   const agent = !!it.actor.agent;
-  return (
-    <li className="px-4 py-3">
-      <div className="grid grid-cols-[auto_1fr_auto] items-start gap-x-3">
+  const sweeping = sweepStep !== undefined;
+  const canOpen = !!(it.object || it.details || it.snippet);
+  const rel = relativeTime(it.at, now);
+  const metaLine = [it.project, it.snippet].filter(Boolean).join(" · ");
+  const body = (
+    <div className="grid grid-cols-[auto_1fr_auto] items-start gap-x-3">
+      <span className="relative mt-0.5 block">
         {agent && !it.actor.src ? (
-          <Avatar label={it.actor.name} icon={<BotMark />} size="sm" shape="square" decorative />
+          <Avatar label={it.actor.name} icon={<BotMark />} size="md" shape="square" decorative />
         ) : (
-          <Avatar label={it.actor.name} src={it.actor.src} size="sm" shape="circle" decorative />
+          <Avatar label={it.actor.name} src={it.actor.src} size="md" shape="circle" decorative />
         )}
-        <p className="min-w-0 text-[14px] leading-6 text-muted-foreground">
+        <span aria-hidden="true" className="absolute -right-1 -bottom-1 grid size-[18px] place-items-center rounded-full border border-border bg-card text-foreground shadow-[0_0_0_2px_var(--card)] [&>svg]:size-3">
+          {meta?.icon ?? FALLBACK_ICON}
+        </span>
+      </span>
+      <div className="min-w-0">
+        <p className="text-[14px] leading-5 text-muted-foreground">
+          {unread && <span className="sr-only">Unread. </span>}
           <span className="font-medium text-foreground">{it.actor.name}</span>
           {agent && <span className="sr-only"> (agent)</span>} {it.verb}
-          {/* An event with no object ("signed up") has nothing to open: no empty button. */}
           {it.object && (
             <>
               {" "}
-              <button type="button" onClick={() => onOpen?.(it)} className={cn("rounded-sm font-medium text-foreground underline-offset-2 hover:underline", focusRing)}>
-                {it.object}
-              </button>
+              <span className="font-medium text-foreground">{it.object}</span>
             </>
           )}
         </p>
-        <div className="flex items-center gap-1">
-          <time dateTime={new Date(it.at).toISOString()} title={fullTime(it.at, timeZone)} className="text-[12px] tabular-nums text-muted-foreground">
-            {relativeTime(it.at, now)}
-          </time>
-          {it.details && (
-            <button
-              type="button"
-              aria-expanded={open}
-              aria-controls={id}
-              aria-label={`${open ? "Hide" : "Show"} details: ${[it.actor.name, it.verb, it.object].filter(Boolean).join(" ")}`}
-              onClick={onToggle}
-              className={cn("grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground", focusRing)}
-            >
-              <Chevron open={open} />
-            </button>
-          )}
-          {/* Rows without details keep the chevron's width, so every time lines up. */}
-          {!it.details && <span aria-hidden="true" className="size-6" />}
-        </div>
+        {metaLine && !open && <p className="mt-0.5 truncate text-[13px] leading-5 text-muted-foreground">{metaLine}</p>}
+        {metaLine && open && it.project && <p className="mt-0.5 truncate text-[13px] leading-5 text-muted-foreground">{it.project}</p>}
       </div>
-      {it.details && (
-        <div id={id} hidden={!open} className="mt-2 pl-9">
-          <Details d={it.details} />
-        </div>
-      )}
+      <div className="flex items-center gap-2 pt-px">
+        <time dateTime={new Date(it.at).toISOString()} title={fullTime(it.at, timeZone)} className="text-[12px] leading-5 tabular-nums text-muted-foreground">
+          {rel === "now" ? "Just now" : rel}
+        </time>
+        {tracksRead && (
+          <span
+            aria-hidden="true"
+            style={sweeping ? { transitionDelay: `${sweepDelay(sweepStep, SWEEP_STEP)}ms` } : undefined}
+            className={cn(
+              "size-2 shrink-0 rounded-full transition-colors duration-[180ms] ease-(--kn-ease-out) motion-reduce:transition-none",
+              unread && !sweeping ? "bg-indigo-500" : "bg-muted-foreground/25",
+            )}
+          />
+        )}
+      </div>
+    </div>
+  );
+  if (!canOpen) return <li className="px-4 py-3">{body}</li>;
+  return (
+    <li>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={onToggle}
+        className={cn("block w-full px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:bg-muted/40", focusRing, "focus-visible:ring-inset")}
+      >
+        {body}
+      </button>
+      <div id={id} hidden={!open} className="px-4 pb-3 pl-[60px]">
+        {it.snippet && <p className="rounded-lg bg-muted/50 px-3 py-2 text-[13px] leading-5 text-foreground/90">{it.snippet}</p>}
+        {it.details && (
+          <div className={it.snippet ? "mt-2" : ""}>
+            <Details d={it.details} />
+          </div>
+        )}
+        {onOpen && it.object && (
+          <div className="mt-2">
+            <Button variant="quiet" size="sm" onClick={() => onOpen(it)}>
+              Open {it.object}
+            </Button>
+          </div>
+        )}
+      </div>
     </li>
   );
 }

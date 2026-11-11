@@ -137,9 +137,12 @@ export function ContextWindow(props: ContextWindowProps) {
     <section aria-labelledby={titleId} className={cn("@container flex flex-col gap-3 rounded-2xl border bg-card p-4 text-foreground", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div id={titleId} className="text-[13px] font-medium text-muted-foreground">
-            {title}
-            {model && <span className="text-muted-foreground"> · {model}</span>}
+          <div id={titleId} className="flex min-h-7 items-center text-[13px] font-medium text-muted-foreground">
+            {/* One inline run inside the 28px header row, so the space before the model is kept. */}
+            <span>
+              {title}
+              {model && <span className="text-muted-foreground"> · {model}</span>}
+            </span>
           </div>
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 tabular-nums">
             {limit ? (
@@ -185,7 +188,7 @@ export function ContextWindow(props: ContextWindowProps) {
                 key={s.id}
                 data-segment={s.id}
                 onMouseEnter={() => setHot(s.id)}
-                className="h-full transition-[width,opacity] duration-500 ease-out first:rounded-l-full motion-reduce:transition-none [&+&]:border-l [&+&]:border-card"
+                className="h-full transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) first:rounded-l-full motion-reduce:transition-none [&+&]:border-l [&+&]:border-card"
                 style={{
                   width: `${(segTokens(s) / span) * 100}%`,
                   background: isReserve(s) ? HATCH(c) : c,
@@ -322,7 +325,8 @@ function Sparkline({ history, limit, warnAt, fullAt, fmt }: { history: number[];
   const [hover, setHover] = useState<number | null>(null);
   const fillId = useId();
   return (
-    <figure className="flex flex-col gap-1">
+    // mt-auto: when the card is taller than its content (a grid row), the usage line sits at the bottom.
+    <figure className="mt-auto flex flex-col gap-1">
       <figcaption className="flex items-baseline justify-between text-[12px] text-muted-foreground">
         <span>Per turn · {history.length} turns{cut.length ? ` · ${cut.length} ${cut.length === 1 ? "compaction" : "compactions"}` : ""}</span>
         <span className="tabular-nums">{hover !== null ? `Turn ${hover + 1}: ${fmt(history[hover])}` : `Now ${fmt(last)}`}</span>

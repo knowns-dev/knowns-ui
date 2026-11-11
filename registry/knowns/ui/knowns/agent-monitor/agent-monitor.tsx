@@ -109,7 +109,7 @@ export interface AgentMonitorProps {
   className?: string;
 }
 
-const EASE = "ease-[cubic-bezier(.22,1,.36,1)]";
+const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 const HAIR = "[border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)]";
 
 /* Quiet surface: hairline, a thin inner top light, a deeper card in dark mode. */
@@ -238,7 +238,7 @@ function Shimmer({ on, children }: { on: boolean; children: ReactNode }) {
       {on && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-[color-mix(in_srgb,var(--card)_75%,transparent)] to-transparent animate-[kn-shimmer_2s_cubic-bezier(.65,0,.35,1)_infinite] motion-reduce:hidden"
+          className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-[color-mix(in_srgb,var(--card)_75%,transparent)] to-transparent animate-[kn-shimmer_2s_ease-in-out_infinite] motion-reduce:hidden"
         />
       )}
     </span>
@@ -513,7 +513,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
       </span>
 
       {/* Header - the same row folds into the 40px bar. */}
-      <div className={cn("flex items-center gap-2.5 px-3 transition-[height] duration-300 motion-reduce:transition-none", EASE, collapsed ? "h-10" : "h-14")}>
+      <div className={cn("flex items-center gap-2.5 px-3 ", collapsed ? "h-10" : "h-14")}>
         <span className="grid size-7 flex-none place-items-center rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_7%,transparent)]">
           <span aria-hidden className="grid size-4 place-items-center text-foreground [&>*]:size-full [&_svg]:size-full">
             {agentIcon}

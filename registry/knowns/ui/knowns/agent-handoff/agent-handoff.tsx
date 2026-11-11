@@ -66,7 +66,7 @@ export interface AgentHandoffProps {
   "aria-label"?: string;
 }
 
-const EASE = "ease-[cubic-bezier(.22,1,.36,1)]";
+const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 const HAIRLINE = "[border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)]";
 
 const PILL: Record<RelayStatus, { text: string; className: string }> = {
@@ -192,7 +192,7 @@ function StreakPath({ d, onDone }: { d: string; onDone: () => void }) {
     if (!el || typeof el.animate !== "function") return onDone();
     // Movement eases out; the fade runs on linear time so the light stays visible all the way.
     const duration = 1300;
-    const move = el.animate([{ strokeDashoffset: 0.16 }, { strokeDashoffset: -1 }], { duration, easing: "cubic-bezier(.33,.9,.4,1)", fill: "forwards" });
+    const move = el.animate([{ strokeDashoffset: 0.16 }, { strokeDashoffset: -1 }], { duration, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
     const fade = el.animate([{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 1, offset: 0.82 }, { opacity: 0 }], { duration, easing: "linear", fill: "forwards" });
     move.onfinish = onDone;
     return () => {
@@ -285,7 +285,7 @@ function Lane({
         <Arrow />
         <Logo actor={to.actor} size="sm" />
         <span className="truncate">{to.name}</span>
-        <span key={count} className="ml-auto pl-2 tabular-nums text-foreground/80 motion-safe:animate-[kn-rise_320ms_cubic-bezier(.22,1,.36,1)_both]">
+        <span key={count} className="ml-auto pl-2 tabular-nums text-foreground/80 motion-safe:animate-[kn-rise_320ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]">
           {count}
         </span>
       </div>
@@ -687,7 +687,7 @@ export function AgentHandoff({
     const t = src ? tool(h.from, src.startedAt, src.endedAt) : undefined;
     const lost = h.items.filter((i) => i.lost).length;
     return (
-      <li key={h.id} className={cn("relative", fresh.has(h.id) && !isDragging && "motion-safe:animate-[kn-rise_480ms_cubic-bezier(.22,1,.36,1)_both]")}>
+      <li key={h.id} className={cn("relative", fresh.has(h.id) && !isDragging && "motion-safe:animate-[kn-rise_480ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]")}>
         <article
           data-handoff={h.id}
           tabIndex={0}
@@ -743,7 +743,7 @@ export function AgentHandoff({
             {open && (
               <ul
                 aria-label="Passed along"
-                className="flex flex-col gap-1 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] p-2 motion-safe:animate-[kn-rise_220ms_cubic-bezier(.22,1,.36,1)_both] dark:bg-[color-mix(in_srgb,#000_25%,transparent)]"
+                className="flex flex-col gap-1 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] p-2 motion-safe:animate-[kn-rise_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] dark:bg-[color-mix(in_srgb,#000_25%,transparent)]"
               >
                 {h.items.map((it) => (
                   <li key={it.id} className="flex flex-col gap-0.5 text-[12.5px] leading-[1.4]">

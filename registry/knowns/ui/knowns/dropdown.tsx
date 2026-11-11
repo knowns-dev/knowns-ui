@@ -126,7 +126,7 @@ const Chevron = ({ className }: { className?: string }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden
-    className={cn("transition-[rotate] duration-200 ease-[cubic-bezier(.22,1,.36,1)] in-aria-expanded:rotate-180 motion-reduce:transition-none", className)}
+    className={cn("transition-[rotate] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] in-aria-expanded:rotate-180 motion-reduce:transition-none", className)}
   >
     <path d="M4.5 6.5L8 10l3.5-3.5" />
   </svg>
@@ -192,7 +192,7 @@ export function DropdownAvatarButton({ name, email, src, avatarIcon, status, com
       {...rest}
       className={cn(
         "group inline-flex max-w-full flex-none cursor-pointer items-center gap-2.5 rounded-[12px] p-1 pr-2 text-left select-none",
-        "transition-[background-color,box-shadow] duration-200 ease-[cubic-bezier(.2,.8,.2,1)]",
+        "transition-[background-color,box-shadow] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
         "hover:bg-[color-mix(in_srgb,var(--muted)_70%,transparent)] aria-expanded:bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]",
         "disabled:pointer-events-none disabled:opacity-45",
         focusRing,

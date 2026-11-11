@@ -1,6 +1,7 @@
 "use client";
 /** @registry name="button" type="ui" title="Button" description="Primary, secondary, ghost and destructive buttons with icons, three sizes and a loading state that stays focusable." */
 
+import { cva } from "class-variance-authority";
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode, Ref } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Spinner } from "./spinner";
@@ -9,9 +10,9 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | 
 export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 const VARIANT: Record<ButtonVariant, string> = {
-  // Dark chip in light mode, light chip in dark mode, with a thin top light for depth.
+  // Dark chip in light mode, light chip in dark mode, with a thin top light for depth. Reads --kn-accent (default --primary).
   primary:
-    "bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(0_0_0/0.14),0_2px_6px_-2px_rgb(0_0_0/0.18)] not-disabled:hover:bg-primary/90 disabled:bg-transparent disabled:text-foreground disabled:shadow-[0_0_0_1px_var(--border)] dark:disabled:shadow-[0_0_0_1px_var(--border)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.6),0_1px_2px_rgb(0_0_0/0.4)]",
+    "bg-[color:var(--kn-accent,var(--primary))] text-[color:var(--kn-accent-foreground,var(--primary-foreground))] shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(0_0_0/0.14),0_2px_6px_-2px_rgb(0_0_0/0.18)] not-disabled:hover:bg-[color:var(--kn-accent,var(--primary))]/90 disabled:bg-transparent disabled:text-foreground disabled:shadow-[0_0_0_1px_var(--border)] dark:disabled:shadow-[0_0_0_1px_var(--border)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.6),0_1px_2px_rgb(0_0_0/0.4)]",
   // Card chip with a hairline ring and a whisper of shadow.
   secondary:
     "bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.05)] not-disabled:hover:bg-[color-mix(in_srgb,var(--muted)_55%,var(--card))] dark:bg-[color-mix(in_srgb,var(--muted)_55%,var(--card))] dark:not-disabled:hover:bg-muted",
@@ -45,20 +46,43 @@ const QUIET_SIZE: Record<ButtonSize, string> = {
   lg: "gap-1.5 rounded-[6px] px-0.5 text-sm [&_svg]:size-[17px]",
 };
 
-/** Classes for the button look, e.g. on a link: `<a className={buttonClass("secondary")}>`. */
-export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize = "md", square = false, className?: string) {
-  const quiet = variant === "quiet";
-  return cn(
+const SIZES = ["xs", "sm", "md", "lg"] as const;
+const CHIPS = ["primary", "secondary", "ghost", "destructive"] as const;
+
+/**
+ * The button look as a cva map: add a variant of your own here (a `brand` entry under `variant`) and use it as
+ * `<Button variant="brand">`, or call it on a link: `<a className={buttonVariants({ variant: "secondary" })}>`.
+ * The primary variant takes its colour from `--kn-accent` (default `--primary`).
+ */
+export const buttonVariants = cva(
+  [
     "inline-flex flex-none cursor-pointer items-center justify-center overflow-hidden font-medium tracking-[0.005em] whitespace-nowrap select-none",
-    "transition-[background-color,color,box-shadow,translate,scale] duration-200 ease-[cubic-bezier(.2,.8,.2,1)]",
-    !quiet && "not-disabled:hover:-translate-y-px not-disabled:active:translate-y-0 not-disabled:active:scale-[.975] motion-reduce:transform-none",
+    "transition-[background-color,color,box-shadow,scale] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
     "disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:flex-none",
     focusRing,
-    VARIANT[variant],
-    quiet ? QUIET_SIZE[size] : SIZE[size],
-    square && !quiet && SQUARE[size],
-    className,
-  );
+  ],
+  {
+    variants: {
+      variant: VARIANT,
+      size: { xs: "", sm: "", md: "", lg: "" },
+      square: { true: "", false: "" },
+    },
+    compoundVariants: [
+      // Chips shrink a touch while pressed (a button is clicked all day: no hover lift); quiet buttons do not.
+      { variant: [...CHIPS], class: "not-disabled:active:scale-[.97] motion-reduce:transform-none" },
+      ...SIZES.flatMap((size) => [
+        { variant: [...CHIPS], size, class: SIZE[size] },
+        { variant: "quiet" as const, size, class: QUIET_SIZE[size] },
+        { variant: [...CHIPS], size, square: true, class: SQUARE[size] },
+      ]),
+    ],
+    defaultVariants: { variant: "primary", size: "md", square: false },
+  },
+);
+
+/** Classes for the button look, e.g. on a link: `<a className={buttonClass("secondary")}>`. */
+export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize = "md", square = false, className?: string) {
+  return cn(buttonVariants({ variant, size, square }), className);
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

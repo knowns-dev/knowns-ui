@@ -308,7 +308,7 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
             "pointer-events-none absolute top-0 left-0 will-change-transform",
             INDICATOR[variant],
             ind ? "opacity-100" : "opacity-0",
-            !ind?.instant && `transition-[transform,width,height,opacity] duration-250 ${EASE} motion-reduce:transition-none`,
+            !ind?.instant && "transition-[transform,opacity] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
           )}
         />
         {children}

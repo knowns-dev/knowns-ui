@@ -69,7 +69,7 @@ const SQUARE: Record<ToggleSize, string> = { sm: "w-7 px-0 pointer-coarse:w-9", 
 
 const BASE = cn(
   "relative inline-flex flex-none cursor-pointer items-center justify-center font-medium whitespace-nowrap select-none",
-  "transition-[background-color,color,box-shadow] duration-150 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+  "transition-[background-color,color,box-shadow] duration-150 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
   "disabled:pointer-events-none disabled:opacity-45 [&_svg]:flex-none",
   focusRing,
 );

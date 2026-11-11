@@ -8,6 +8,7 @@
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { cn, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
+import { CodeBlock } from "../../code-block/code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
 import { installDeps, PACKAGE_MANAGERS, shadcnAdd, type ManualPlan, type PackageManager } from "./docs-utils";
 
@@ -102,8 +103,11 @@ export function CommandBlock({
   onValueChange,
   renderCode,
   wrap = false,
+  alt,
 }: {
   commands: Partial<Record<PackageManager, string>>;
+  /** One more command with its own label after the package managers (e.g. a project's own `npx tool add`). It is only shown when picked. */
+  alt?: { label: string; command: string };
   value?: PackageManager;
   onValueChange?: (pm: PackageManager) => void;
   renderCode?: RenderCode;
@@ -112,27 +116,39 @@ export function CommandBlock({
 }) {
   const pms = PACKAGE_MANAGERS.filter((p) => commands[p]);
   const [own, setOwn] = useState<PackageManager>(pms[0] ?? "npm");
+  const [altOn, setAltOn] = useState(false);
   const pm = value && commands[value] ? value : own;
-  const cmd = commands[pm] ?? "";
+  const cmd = alt && altOn ? alt.command : (commands[pm] ?? "");
   // Wrapped commands break only at spaces: a word joiner after each hyphen (display only; Copy uses `cmd`).
   const shown = wrap ? cmd.replace(/-/g, "-\u2060") : cmd;
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border bg-card" data-lang="bash">
       <div data-md="skip" className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
-        {pms.length > 1 ? (
+        {pms.length > 1 || alt ? (
           <div role="radiogroup" aria-label="Package manager" className="flex gap-0.5">
             {pms.map((p) => (
               <button
                 key={p}
                 type="button"
                 role="radio"
-                aria-checked={pm === p}
-                onClick={() => (setOwn(p), onValueChange?.(p))}
+                aria-checked={!altOn && pm === p}
+                onClick={() => (setAltOn(false), setOwn(p), onValueChange?.(p))}
                 className="rounded-md px-2 py-0.5 font-mono text-[11.5px] text-muted-foreground hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-checked:bg-muted aria-checked:text-foreground"
               >
                 {p}
               </button>
             ))}
+            {alt && (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={altOn}
+                onClick={() => setAltOn(true)}
+                className="rounded-md px-2 py-0.5 font-mono text-[11.5px] text-muted-foreground hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-checked:bg-muted aria-checked:text-foreground"
+              >
+                {alt.label}
+              </button>
+            )}
           </div>
         ) : (
           <span className="px-1 font-mono text-[11.5px] text-muted-foreground">Terminal</span>
@@ -163,9 +179,7 @@ export function FileBlock({ target, code, lang, renderCode }: { target: string; 
         {renderCode ? (
           renderCode(code, lang)
         ) : (
-          <pre tabIndex={0} className="overflow-x-auto p-4 font-mono leading-relaxed text-foreground">
-            <code>{code}</code>
-          </pre>
+          <CodeBlock flush copy={false} wrapToggle={false} code={code} language={lang} trim={false} className="[&_pre]:px-1" />
         )}
         {!open && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />}
       </div>
@@ -235,6 +249,10 @@ export interface DocsInstallProps {
   renderCode?: RenderCode;
   /** Wrap the CLI command instead of scrolling it (long multi-item installs). */
   wrapCommand?: boolean;
+  /** An extra tab after the package managers with its own command, e.g. { label: "shadcn", command: "npx shadcn@latest add ..." }. */
+  alt?: { label: string; command: string };
+  /** The CLI command per package manager, instead of `shadcn add <targets>` (e.g. your own CLI through runWith()). */
+  commands?: Partial<Record<PackageManager, string>>;
   /** More tabs after CLI | Manual (e.g. "With AI"). Kept mounted, so the page's text includes them. */
   extraTabs?: { value: string; label: string; content: ReactNode }[];
   className?: string;
@@ -265,7 +283,7 @@ function Manual({ plan, pm, onPm, renderCode, notes }: { plan: ManualPlan; pm?: 
   );
 }
 
-export function DocsInstall({ targets, manual, packageManager, onPackageManagerChange, cliNotes, manualNotes, locked, footer, renderCode, extraTabs, wrapCommand, className }: DocsInstallProps) {
+export function DocsInstall({ targets, manual, packageManager, onPackageManagerChange, cliNotes, manualNotes, locked, footer, renderCode, extraTabs, wrapCommand, alt, commands, className }: DocsInstallProps) {
   const [tab, setTab] = useState("cli");
   const [plan, setPlan] = useState<ManualPlan | null>(typeof manual === "object" ? manual : null);
   const [error, setError] = useState(false);
@@ -286,10 +304,10 @@ export function DocsInstall({ targets, manual, packageManager, onPackageManagerC
   }, [manual]);
 
   if (locked) return <div className={className}>{locked}</div>;
-  const cmds = Object.fromEntries(PACKAGE_MANAGERS.map((p) => [p, shadcnAdd(p, targets)])) as Record<PackageManager, string>;
+  const cmds = commands ?? (Object.fromEntries(PACKAGE_MANAGERS.map((p) => [p, shadcnAdd(p, targets)])) as Record<PackageManager, string>);
   const cli = (
     <div className="grid gap-3">
-      <CommandBlock commands={cmds} value={packageManager} onValueChange={onPackageManagerChange} renderCode={renderCode} wrap={wrapCommand} />
+      <CommandBlock commands={cmds} value={packageManager} onValueChange={onPackageManagerChange} renderCode={renderCode} wrap={wrapCommand} alt={alt} />
       {cliNotes}
     </div>
   );

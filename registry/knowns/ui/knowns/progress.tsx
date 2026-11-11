@@ -2,26 +2,32 @@
 /** @registry name="progress" type="ui" title="Progress" description="Progress bar and ring, determinate or indeterminate." */
 
 import { useId, type ReactNode } from "react";
+import { cva } from "class-variance-authority";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
-export type ProgressTone = "neutral" | "info" | "success" | "warning" | "danger";
+export type ProgressTone = "neutral" | "accent" | "info" | "success" | "warning" | "danger";
 
 const FILL: Record<ProgressTone, string> = {
-  neutral: "bg-primary",
+  // neutral and accent are the bar's own highlight: --kn-accent, which defaults to --primary.
+  neutral: "bg-[color:var(--kn-accent,var(--primary))]",
+  accent: "bg-[color:var(--kn-accent,var(--primary))]",
   info: "bg-sky-500",
   success: "bg-emerald-500",
   warning: "bg-amber-500",
   danger: "bg-red-500",
 };
 const STROKE: Record<ProgressTone, string> = {
-  neutral: "stroke-primary",
+  neutral: "stroke-[color:var(--kn-accent,var(--primary))]",
+  accent: "stroke-[color:var(--kn-accent,var(--primary))]",
   info: "stroke-sky-500",
   success: "stroke-emerald-500",
   warning: "stroke-amber-500",
   danger: "stroke-red-500",
 };
+/** The fill colours as a cva map: add a tone of your own under `tone`, and pass it as the `tone` prop. */
+export const progressVariants = cva("", { variants: { tone: FILL }, defaultVariants: { tone: "neutral" } });
 const TRACK = "bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)]";
-const EASE = "duration-500 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none";
+const EASE = "duration-500 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none";
 
 /** 0…100 for `value` out of `max`, clamped. NaN, missing or a non-positive max give 0. */
 export function progressPercent(value: number | undefined, max = 100): number {
@@ -87,7 +93,7 @@ export function Progress({
           className={cn(
             "absolute inset-y-0 -left-1/2 w-1/2 rounded-full",
             FILL[tone],
-            "animate-[kn-shimmer_1.5s_cubic-bezier(.65,0,.35,1)_infinite] motion-reduce:translate-x-[150%] motion-reduce:animate-none motion-reduce:opacity-60",
+            "animate-[kn-shimmer_1.5s_ease-in-out_infinite] motion-reduce:translate-x-[150%] motion-reduce:animate-none motion-reduce:opacity-60",
           )}
         />
       ) : (

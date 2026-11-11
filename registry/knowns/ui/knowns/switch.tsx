@@ -1,6 +1,7 @@
 "use client";
 /** @registry name="switch" type="ui" title="Switch" description="On/off toggle with role=switch." */
 
+import { cva } from "class-variance-authority";
 import { useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 
@@ -14,6 +15,17 @@ export interface SwitchProps {
   className?: string;
   "aria-label"?: string;
 }
+
+/** The track as a cva map. The on state takes its colour from `--kn-accent` (default `--primary`). */
+export const switchVariants = cva("relative inline-flex h-5 w-8.5 flex-none cursor-pointer items-center rounded-full p-0.5 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) disabled:cursor-not-allowed disabled:opacity-50", {
+  variants: {
+    on: {
+      true: "bg-[color:var(--kn-accent,var(--primary))]",
+      false: "bg-[color-mix(in_srgb,var(--foreground)_16%,transparent)]",
+    },
+  },
+  defaultVariants: { on: false },
+});
 
 /** On/off toggle (role="switch"). Controlled with `checked`, or uncontrolled with `defaultChecked`. */
 export function Switch({ checked, defaultChecked = false, onCheckedChange, label, disabled, id, className, ...aria }: SwitchProps) {
@@ -32,18 +44,14 @@ export function Switch({ checked, defaultChecked = false, onCheckedChange, label
       aria-label={aria["aria-label"]}
       disabled={disabled}
       onClick={toggle}
-      className={cn(
-        "relative inline-flex h-5 w-8.5 flex-none cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50",
-        on ? "bg-primary" : "bg-[color-mix(in_srgb,var(--foreground)_16%,transparent)]",
-        focusRing,
-      )}
+      className={cn(switchVariants({ on }), focusRing)}
     >
       <span
         aria-hidden="true"
         className={cn(
-          "size-4 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)] transition-[translate] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
+          "size-4 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)] transition-[translate] duration-(--kn-dur) ease-(--kn-ease-inout)",
           on && "translate-x-3.5",
-          on && "dark:bg-[var(--primary-foreground)]",
+          on && "dark:bg-[var(--kn-accent-foreground,var(--primary-foreground))]",
         )}
       />
     </button>

@@ -1,6 +1,6 @@
 "use client";
 /** @registry name="command-menu" type="ui" title="Command menu" description="⌘K palette: fuzzy search with highlights, groups, shortcuts, nested pages, recents and async results - all by keyboard." */
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { Kbd } from "../kbd";
 import { Spinner } from "../spinner";
@@ -72,37 +72,25 @@ export interface CommandMenuProps {
   className?: string;
 }
 
-const EASE = "ease-[cubic-bezier(.22,1,.36,1)]";
+const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 
 /*
- * Motion, all CSS so a closed menu costs nothing:
- * - the panel scales from .98 and fades in; on close it fades out and shrinks back (a real exit: the
- *   native dialog stays painted through `overlay` / `display` with allow-discrete);
- * - the backdrop fades with it;
- * - the list's height follows the number of results;
- * - one highlight glides between rows instead of jumping;
- * - on first open the first rows rise 4px in with a short stagger; an empty result fades in.
- * Reduced motion: opacity only, no scale, no slide, the highlight moves at once.
+ * Motion, all CSS so a closed menu costs nothing. A command menu is opened constantly, so it barely moves:
+ * - the panel fades in and fades out (a real exit: the native dialog stays painted through `overlay` /
+ *   `display` with allow-discrete); the backdrop fades with it;
+ * - no stagger, no height tween and no gliding highlight: the list changes at once as you type and the
+ *   highlight sits on the active row.
+ * Reduced motion: the same fade is the only motion, and it is instant.
  */
 const MOTION = `
-[data-kn-cmd]{opacity:1;scale:1;transition:opacity 180ms cubic-bezier(.22,1,.36,1),scale 220ms cubic-bezier(.22,1,.36,1),overlay 220ms allow-discrete,display 220ms allow-discrete}
-[data-kn-cmd]:not([open]){opacity:0;scale:.98;transition-duration:130ms,150ms,150ms,150ms;transition-timing-function:ease-in}
-@starting-style{[data-kn-cmd][open]{opacity:0;scale:.98}}
-[data-kn-cmd]::backdrop{background:rgb(0 0 0/.4);backdrop-filter:blur(2px);opacity:1;transition:opacity 200ms ease-out,overlay 200ms allow-discrete,display 200ms allow-discrete}
-[data-kn-cmd]:not([open])::backdrop{opacity:0;transition-duration:150ms}
+[data-kn-cmd]{opacity:1;transition:opacity var(--kn-dur-fast,120ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay var(--kn-dur-fast,120ms) allow-discrete,display var(--kn-dur-fast,120ms) allow-discrete}
+[data-kn-cmd]:not([open]){opacity:0;transition-duration:calc(var(--kn-dur-fast,120ms)*.67)}
+@starting-style{[data-kn-cmd][open]{opacity:0}}
+[data-kn-cmd]::backdrop{background:rgb(0 0 0/.4);backdrop-filter:blur(2px);opacity:1;transition:opacity var(--kn-dur-fast,120ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay var(--kn-dur-fast,120ms) allow-discrete,display var(--kn-dur-fast,120ms) allow-discrete}
+[data-kn-cmd]:not([open])::backdrop{opacity:0;transition-duration:calc(var(--kn-dur-fast,120ms)*.67)}
 @starting-style{[data-kn-cmd][open]::backdrop{opacity:0}}
-[data-kn-cmd-h][data-ready]{transition:height 200ms cubic-bezier(.22,1,.36,1)}
-[data-kn-cmd-pill]{transition:transform 160ms cubic-bezier(.22,1,.36,1),height 160ms cubic-bezier(.22,1,.36,1),opacity 120ms}
-[data-kn-cmd-list][data-intro] [data-i]{animation:kn-cmd-rise 260ms cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--kn-i,0) * 18ms + 40ms)}
-[data-kn-cmd-list][data-intro] [data-kn-cmd-pill]{animation:kn-cmd-fade 200ms 60ms both}
-[data-kn-cmd-empty]{animation:kn-cmd-fade 160ms ease-out both}
-@keyframes kn-cmd-rise{from{opacity:0;transform:translateY(4px)}}
-@keyframes kn-cmd-fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){
-  [data-kn-cmd],[data-kn-cmd]:not([open]){scale:1}
-  @starting-style{[data-kn-cmd][open]{scale:1}}
-  [data-kn-cmd-h][data-ready],[data-kn-cmd-pill]{transition:none}
-  [data-kn-cmd-list][data-intro] [data-i]{animation-name:kn-cmd-fade;animation-delay:0ms}
+  [data-kn-cmd],[data-kn-cmd]::backdrop{transition-duration:0s}
 }
 `;
 const isMac = () => typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent);
@@ -214,8 +202,6 @@ export function CommandMenu({
   /* Native modal dialog: focus trap, top layer, Escape → cancel. */
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // The list plays its intro (rows rise in) on each open until the first keystroke.
-  const [intro, setIntro] = useState(false);
   useLayoutEffect(() => {
     const d = dialogRef.current;
     if (!d) return;
@@ -224,17 +210,11 @@ export function CommandMenu({
       setStack([]);
       setQuery("");
       setActive(0);
-      setIntro(true);
       d.showModal();
       inputRef.current?.focus();
     }
     if (!open && d.open) d.close();
   }, [open]);
-  useEffect(() => {
-    if (!intro) return;
-    const t = window.setTimeout(() => setIntro(false), 700);
-    return () => clearTimeout(t);
-  }, [intro]);
 
   /* Async results for the current page (or the root). */
   const loader = page ? page.load : load;
@@ -311,25 +291,7 @@ export function CommandMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
-  /* The list's height follows its content; the wrapper animates to it (not on the first frame of an open). */
-  const heightRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const list = listRef.current;
-    const box = heightRef.current;
-    if (!list || !box || !open) return;
-    delete box.dataset.ready;
-    const set = () => (box.style.height = `${list.offsetHeight}px`);
-    set();
-    const raf = requestAnimationFrame(() => (box.dataset.ready = ""));
-    const ro = new ResizeObserver(set);
-    ro.observe(list);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [open]);
-
-  /* One highlight that glides to the active row. It appears in place (no glide from the top). */
+  /* One highlight, placed on the active row at once (no glide). */
   const pillRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const pill = pillRef.current;
@@ -340,16 +302,10 @@ export function CommandMenu({
       delete pill.dataset.shown;
       return;
     }
-    const first = pill.dataset.shown === undefined;
-    if (first) pill.style.transition = "none";
     pill.style.transform = `translateY(${el.offsetTop}px)`;
     pill.style.height = `${el.offsetHeight}px`;
     pill.style.opacity = "1";
     pill.dataset.shown = "";
-    if (first) {
-      void pill.offsetHeight;
-      pill.style.transition = "";
-    }
   });
 
   const choose = (row: Row) => {
@@ -444,7 +400,6 @@ export function CommandMenu({
           placeholder={page?.placeholder ?? placeholder}
           onChange={(e) => {
             setQuery(e.target.value);
-            setIntro(false);
           }}
           onKeyDown={onKeyDown}
           className="h-full min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-foreground"
@@ -454,14 +409,13 @@ export function CommandMenu({
       </div>
 
       {/* List */}
-      <div ref={heightRef} data-kn-cmd-h="" className="overflow-hidden">
+      <div className="overflow-hidden">
       <div
         ref={listRef}
         id={listId}
         role="listbox"
         aria-label={page ? page.title : "Commands"}
         data-kn-cmd-list=""
-        data-intro={intro ? "" : undefined}
         className="kn-scroll relative max-h-[min(380px,55vh)] overflow-y-auto overscroll-contain p-1.5 [scrollbar-width:thin]"
       >
         <div ref={pillRef} aria-hidden data-kn-cmd-pill="" className="pointer-events-none absolute inset-x-1.5 top-0 rounded-[9px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] opacity-0" />
@@ -509,9 +463,6 @@ export function CommandMenu({
                 role="option"
                 aria-selected={on}
                 aria-disabled={it.disabled || undefined}
-                // Only the first rows animate in: the rest are below the fold, and a long list should cost nothing.
-                data-i={i < 12 ? "" : undefined}
-                style={i < 12 ? ({ "--kn-i": Math.min(i, 8) } as CSSProperties) : undefined}
                 onPointerMove={() => !it.disabled && active !== i && setActive(i)}
                 onClick={() => choose(r)}
                 className={cn(

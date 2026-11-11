@@ -8,10 +8,11 @@
  */
 import { useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { socialOf, type SocialKind } from "@/registry/knowns/lib/knowns/social";
 import { Avatar } from "../../avatar";
 import { SectionHeading } from "./section-heading";
 
-export type SocialKind = "x" | "github" | "linkedin" | "site" | "email";
+export type { SocialKind };
 
 export interface TeamMember {
   name: string;
@@ -21,7 +22,8 @@ export interface TeamMember {
   avatar?: string;
   /** Location or team, shown small under the role. */
   meta?: string;
-  links?: { kind: SocialKind; href: string; label?: string }[];
+  /** Only href is needed: the platform (Discord, X, GitHub...) is detected from the URL. kind and label override. */
+  links?: { href: string; kind?: SocialKind; label?: string }[];
 }
 
 /** The section around the people: heading, then the people, then a footer. Shared by every layout. */
@@ -45,54 +47,31 @@ export interface TeamGridProps extends TeamSectionProps {
   columns?: 2 | 3 | 4;
 }
 
-const KIND_LABEL: Record<SocialKind, string> = { x: "X", github: "GitHub", linkedin: "LinkedIn", site: "Website", email: "Email" };
-
-const ICONS: Record<SocialKind, ReactNode> = {
-  x: <path d="M3.5 3h3.2l3.1 4.3L13.4 3h1.6l-4.5 5.3L15.5 15h-3.2L9 10.5 5.1 15H3.5l4.8-5.6z" fill="currentColor" stroke="none" />,
-  github: <path d="M9 2.5a6.5 6.5 0 0 0-2 12.7c.3 0 .4-.2.4-.4v-1.3c-1.8.4-2.2-.8-2.2-.8-.3-.7-.7-.9-.7-.9-.6-.4 0-.4 0-.4.7 0 1 .7 1 .7.6 1 1.6.7 2 .6 0-.4.2-.7.4-.9-1.4-.2-3-.7-3-3.2 0-.7.3-1.3.7-1.8-.1-.2-.3-.8 0-1.7 0 0 .6-.2 1.8.7a6 6 0 0 1 3.2 0c1.2-.9 1.8-.7 1.8-.7.3.9.1 1.5 0 1.7.4.5.7 1.1.7 1.8 0 2.5-1.6 3-3 3.2.2.2.4.6.4 1.2v1.8c0 .2.1.4.4.4A6.5 6.5 0 0 0 9 2.5z" fill="currentColor" stroke="none" />,
-  linkedin: (
-    <>
-      <rect x="2.5" y="2.5" width="13" height="13" rx="2" />
-      <path d="M6 8v4.5M6 5.6v.1M8.8 12.5V8m0 2.2c0-1.3.9-2.2 2-2.2s1.7.8 1.7 2v2.5" />
-    </>
-  ),
-  site: (
-    <>
-      <circle cx="9" cy="9" r="6.5" />
-      <path d="M2.5 9h13M9 2.5c1.8 1.8 2.6 4 2.6 6.5S10.8 13.7 9 15.5C7.2 13.7 6.4 11.5 6.4 9S7.2 4.3 9 2.5z" />
-    </>
-  ),
-  email: (
-    <>
-      <rect x="2.5" y="4" width="13" height="10" rx="1.8" />
-      <path d="m3 5 6 4.8L15 5" />
-    </>
-  ),
-};
-
-/** Accessible name for a social link, e.g. "Ada Park on GitHub". */
-export const socialLabel = (name: string, l: { kind: SocialKind; label?: string }) => l.label ?? `${name} on ${KIND_LABEL[l.kind]}`;
+/** Accessible name for a social link, e.g. "Ada Park on GitHub". The platform is detected from the URL unless kind is set. */
+export const socialLabel = (name: string, l: { href?: string; kind?: SocialKind; label?: string }) => l.label ?? `${name} on ${socialOf(l.href ?? "", l.kind).label}`;
 
 export function Socials({ m, className }: { m: TeamMember; className?: string }) {
   if (!m.links?.length) return null;
   return (
     <ul className={cn("flex items-center gap-1", className)}>
-      {m.links.map((l) => (
-        <li key={l.kind + l.href}>
-          <a
-            href={l.kind === "email" && !l.href.startsWith("mailto:") ? `mailto:${l.href}` : l.href}
-            target={l.kind === "email" ? undefined : "_blank"}
-            rel={l.kind === "email" ? undefined : "noreferrer"}
-            aria-label={socialLabel(m.name, l)}
-            title={KIND_LABEL[l.kind]}
-            className={cn("grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground", focusRing)}
-          >
-            <svg viewBox="0 0 18 18" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              {ICONS[l.kind]}
-            </svg>
-          </a>
-        </li>
-      ))}
+      {m.links.map((l) => {
+        const s = socialOf(l.href, l.kind);
+        const mail = s.kind === "email";
+        return (
+          <li key={s.kind + l.href}>
+            <a
+              href={mail && !/^mailto:/i.test(l.href) ? `mailto:${l.href}` : l.href}
+              target={mail ? undefined : "_blank"}
+              rel={mail ? undefined : "noreferrer"}
+              aria-label={socialLabel(m.name, l)}
+              title={s.label}
+              className={cn("grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground", focusRing)}
+            >
+              {s.icon}
+            </a>
+          </li>
+        );
+      })}
     </ul>
   );
 }

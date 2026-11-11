@@ -254,7 +254,7 @@ export function FileDrop({
         }}
         className={cn(
           "group flex w-full cursor-pointer flex-col items-center gap-2.5 rounded-xl border border-dashed px-6 py-7 text-center",
-          "transition-[background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(.22,1,.36,1)]",
+          "transition-[background-color,border-color,box-shadow] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
           over
             ? "border-[color-mix(in_srgb,var(--ring)_80%,transparent)] bg-[color-mix(in_srgb,var(--ring)_7%,transparent)] shadow-[0_0_0_4px_color-mix(in_srgb,var(--ring)_12%,transparent)]"
             : "border-[color-mix(in_srgb,var(--foreground)_20%,transparent)] bg-[color-mix(in_srgb,var(--muted)_30%,transparent)] hover:border-[color-mix(in_srgb,var(--foreground)_32%,transparent)] hover:bg-[color-mix(in_srgb,var(--muted)_55%,transparent)]",
@@ -266,7 +266,7 @@ export function FileDrop({
           aria-hidden
           className={cn(
             "grid size-9 place-items-center rounded-[10px] bg-card text-muted-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.05)] [&_svg]:size-4",
-            "transition-[translate,color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+            "transition-[translate,color] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
             over ? "-translate-y-0.5 text-foreground" : "group-hover:text-foreground",
           )}
         >
@@ -299,7 +299,7 @@ export function FileDrop({
       />
       <p aria-live="polite" className={cn("text-[12px]", !note && "-mt-2", note?.error ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
         {note && (
-          <span key={note.n} className="animate-[kn-rise_180ms_cubic-bezier(.22,1,.36,1)_both] motion-reduce:animate-none">
+          <span key={note.n} className="animate-[kn-rise_180ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
             {note.text}
           </span>
         )}

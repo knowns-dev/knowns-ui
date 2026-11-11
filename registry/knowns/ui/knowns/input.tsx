@@ -6,10 +6,8 @@ import {
   cloneElement,
   isValidElement,
   useCallback,
-  useId,
   useRef,
   useState,
-  type ChangeEvent,
   type HTMLAttributes,
   type InputHTMLAttributes,
   type MouseEvent,
@@ -22,22 +20,12 @@ import {
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Kbd } from "./kbd";
 import { Tooltip } from "./tooltip";
-import { useAutosize } from "./chat-composer/use-autosize";
+import { SURFACE } from "./field-class";
+import { Textarea as StandaloneTextarea } from "./textarea";
 
 /* ── Shared look ── */
 
-const SURFACE =
-  "bg-card text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_1px_2px_rgb(0_0_0/0.04)] transition-[box-shadow] duration-200 ease-out dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]";
-
-/** Shared field look: hairline ring, soft focus ring, red when invalid. Put it on a native input, select or textarea. */
-export const fieldClass = cn(
-  "w-full min-w-0 rounded-[9px] text-[13.5px] outline-none",
-  SURFACE,
-  "placeholder:text-muted-foreground",
-  "focus-visible:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_80%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
-  "aria-invalid:shadow-[0_0_0_1px_rgb(239_68_68/0.6),0_0_0_4px_rgb(239_68_68/0.12)]",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-);
+export { fieldClass } from "./field-class";
 
 /** The same look on a wrapper: it lights up while the input inside has focus or is invalid. */
 const frameClass = cn(
@@ -198,60 +186,12 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   ref?: Ref<HTMLTextAreaElement>;
 }
 
-/** With maxLength, a counter sits under the field and turns red at the limit. */
-export function Textarea({ invalid, className, rows = 3, autoGrow, maxRows = 8, maxLength, value, defaultValue, onChange, ref, ...rest }: TextareaProps) {
-  const inner = useRef<HTMLTextAreaElement>(null);
-  const setRef = useMergedRef(inner, ref);
-  const [local, setLocal] = useState(String(defaultValue ?? ""));
-  const text = value !== undefined ? String(value) : local;
-  const none = useRef<HTMLTextAreaElement>(null);
-  useAutosize(autoGrow ? inner : none, text, maxRows);
-  const counterId = useId();
-
-  const change = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    if (value === undefined) setLocal(e.target.value);
-    onChange?.(e);
-  };
-
-  const max = maxLength !== undefined && maxLength >= 0 ? maxLength : undefined;
-  const atLimit = max !== undefined && text.length >= max;
-  const describedBy = [rest["aria-describedby"], max !== undefined ? counterId : undefined].filter(Boolean).join(" ") || undefined;
-
-  const field = (
-    <textarea
-      ref={setRef}
-      rows={autoGrow ? 1 : rows}
-      maxLength={maxLength}
-      value={value}
-      defaultValue={defaultValue}
-      onChange={change}
-      aria-invalid={invalid || undefined}
-      {...rest}
-      aria-describedby={describedBy}
-      className={cn(
-        fieldClass,
-        "px-3 py-2 leading-relaxed",
-        autoGrow ? "resize-none" : "field-sizing-content min-h-16 resize-y",
-        className,
-      )}
-    />
-  );
-  if (max === undefined) return field;
-  return (
-    <span className="flex w-full flex-col gap-1">
-      {field}
-      <span
-        id={counterId}
-        className={cn(
-          "self-end text-[11.5px] tabular-nums transition-colors duration-200 ease-out",
-          atLimit ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
-        )}
-      >
-        <span aria-hidden="true">{countText(text.length, max)}</span>
-        <span className="sr-only">{atLimit ? `Limit reached: ${max} characters` : `${text.length} of ${max} characters`}</span>
-      </span>
-    </span>
-  );
+/**
+ * The Textarea lives in its own item (./textarea). This keeps the props of the first version: `autoGrow` is
+ * `autosize` there, and `maxLength` shows the same "120 / 500" counter.
+ */
+export function Textarea({ autoGrow, maxRows = 8, rows = 3, ...rest }: TextareaProps) {
+  return <StandaloneTextarea autosize={autoGrow} maxRows={maxRows} minRows={autoGrow ? 1 : rows} {...rest} />;
 }
 
 /* ── Field ── */

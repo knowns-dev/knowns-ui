@@ -2,6 +2,7 @@
 /** @registry name="toast" type="ui" title="Toast" description="Notifications with ToastProvider and useToast()." */
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 export type ToastTone = "neutral" | "success" | "warning" | "danger";
@@ -14,7 +15,7 @@ export interface ToastOptions {
   /** ms before it hides; hovering pauses. Default 4500. */
   duration?: number;
 }
-type Item = ToastOptions & { id: number };
+type Item = ToastOptions & { id: number; closing?: boolean };
 
 const ToastCtx = createContext<((t: ToastOptions) => void) | null>(null);
 
@@ -37,10 +38,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const seq = useRef(0);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
+  // Removing plays the exit first (the enter in reverse: it goes back down), then drops the item.
   const remove = useCallback((id: number) => {
     clearTimeout(timers.current.get(id));
     timers.current.delete(id);
-    setItems((xs) => xs.filter((x) => x.id !== id));
+    setItems((xs) => xs.map((x) => (x.id === id ? { ...x, closing: true } : x)));
+    setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== id)), MOTION.fast + 20);
   }, []);
   const arm = useCallback((id: number, ms: number) => timers.current.set(id, setTimeout(() => remove(id), ms)), [remove]);
 
@@ -60,9 +63,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((t) => (
           <li
             key={t.id}
+            data-state={t.closing ? "closed" : "open"}
             onPointerEnter={() => clearTimeout(timers.current.get(t.id))}
             onPointerLeave={() => arm(t.id, 2000)}
-            className="pointer-events-auto flex items-start gap-3 rounded-xl border bg-popover px-3.5 py-3 text-[13px] text-popover-foreground shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] animate-[kn-rise_180ms_ease-out] motion-reduce:animate-none"
+            className="pointer-events-auto flex items-start gap-3 rounded-xl border bg-popover px-3.5 py-3 text-[13px] text-popover-foreground shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] transition-[opacity,translate] duration-[var(--kn-dur,180ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:translate-y-1 starting:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:translate-y-1 data-[state=closed]:opacity-0 data-[state=closed]:duration-[var(--kn-dur-fast,120ms)] motion-reduce:transition-none"
           >
             <span aria-hidden="true" className={cn("mt-1.5 size-1.5 flex-none rounded-full", DOT[t.tone ?? "neutral"])} />
             <div className="min-w-0 flex-1">

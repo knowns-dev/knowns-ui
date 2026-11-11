@@ -8,6 +8,7 @@
  */
 import { useId, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { socialOf, type SocialKind } from "@/registry/knowns/lib/knowns/social";
 import { Button } from "../../button";
 import { Input } from "../../input";
 import { SegmentedControl } from "../../segmented-control";
@@ -20,11 +21,13 @@ export interface FooterColumn {
 }
 
 export interface FooterSocial {
-  /** Accessible name, e.g. "GitHub". */
-  label: string;
   href: string;
-  /** A 16px icon. */
-  icon: ReactNode;
+  /** Force a platform. Default: detected from the URL (Discord, X, GitHub, LinkedIn...). */
+  kind?: SocialKind;
+  /** Accessible name. Default: the platform name, e.g. "Discord". */
+  label?: string;
+  /** A 16px icon. Default: the platform mark. */
+  icon?: ReactNode;
 }
 
 export type FooterStatus = "operational" | "degraded" | "outage";
@@ -172,10 +175,8 @@ export function SiteFooter({
   const st = status ? STATUS[status.state ?? "operational"] : null;
   const statusInner = st && (
     <>
-      <span aria-hidden="true" className="relative inline-flex size-2">
-        <span className={cn("absolute inset-0 rounded-full opacity-50 motion-safe:animate-ping [animation-duration:2.4s]", st.dot)} />
-        <span className={cn("relative size-2 rounded-full", st.dot)} />
-      </span>
+      {/* A still dot: a status that is fine does not need to pulse on every page. */}
+      <span aria-hidden="true" className={cn("inline-block size-2 rounded-full", st.dot)} />
       {status?.label ?? st.label}
     </>
   );
@@ -246,19 +247,22 @@ export function SiteFooter({
               ))}
             {socials.length > 0 && (
               <ul aria-label="Social links" className="flex items-center gap-1">
-                {socials.map((s) => (
-                  <li key={s.href}>
-                    <a
-                      href={s.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={s.label}
-                      className={cn("grid size-8 place-items-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-10 [&_svg]:size-4", focusRing)}
-                    >
-                      {s.icon}
-                    </a>
-                  </li>
-                ))}
+                {socials.map((s) => {
+                  const p = socialOf(s.href, s.kind);
+                  return (
+                    <li key={s.href}>
+                      <a
+                        href={s.href}
+                        target={p.kind === "email" ? undefined : "_blank"}
+                        rel={p.kind === "email" ? undefined : "noreferrer"}
+                        aria-label={s.label ?? p.label}
+                        className={cn("grid size-8 place-items-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-10 [&_svg]:size-4", focusRing)}
+                      >
+                        {s.icon ?? p.icon}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

@@ -22,7 +22,7 @@ export interface GradientFloorProps extends Omit<BackgroundProps, "color" | "den
   ref?: Ref<GradientFloorHandle>;
 }
 
-const DEFAULT = ["#6366f1", "#8b5cf6"];
+const DEFAULT = ["var(--kn-accent, #6366f1)", "#8b5cf6"];
 const MAX_WAVES = 8;
 
 /* ── The bus: any piece can send a wave to the floors on the page ── */
@@ -44,9 +44,9 @@ const CSS = `
 @keyframes knbg-floor-a { 0% { transform: translateX(-7%) scaleY(0.9); } 100% { transform: translateX(8%) scaleY(1.08); } }
 @keyframes knbg-floor-b { 0% { transform: translateX(8%) scaleY(1.06); } 100% { transform: translateX(-9%) scaleY(0.86); } }
 @keyframes knbg-floor-breathe { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
-[data-kn-bg="gradient-floor"] .kn-rise { animation: knbg-floor-rise 1.5s cubic-bezier(.2,.7,.2,1) both; }
+[data-kn-bg="gradient-floor"] .kn-rise { animation: knbg-floor-rise 1.5s var(--kn-ease-out) both; }
 [data-kn-bg="gradient-floor"] .kn-breathe { animation: knbg-floor-breathe var(--kn-breathe) ease-in-out infinite; }
-[data-kn-bg="gradient-floor"] .kn-a, [data-kn-bg="gradient-floor"] .kn-b { transform-origin: 50% 100%; will-change: transform; animation: var(--kn-name) var(--kn-dur) cubic-bezier(.45,0,.55,1) infinite alternate; }
+[data-kn-bg="gradient-floor"] .kn-a, [data-kn-bg="gradient-floor"] .kn-b { transform-origin: 50% 100%; will-change: transform; animation: var(--kn-name) var(--knbg-dur) cubic-bezier(.45,0,.55,1) infinite alternate; }
 [data-kn-bg="gradient-floor"] .kn-wave { position: absolute; bottom: 0; border-radius: 50%; pointer-events: none; will-change: transform, opacity; opacity: 0; }
 `;
 
@@ -91,11 +91,11 @@ export function GradientFloor({ speed, color, mask = "none", focus, intensity, p
     host.appendChild(el);
     const a = el.animate(
       [
-        { transform: "translateX(-50%) scale(0.18)", opacity: 0 },
-        { transform: "translateX(-50%) scale(0.5)", opacity: clamp(0.5 + 0.4 * st, 0, 1), offset: 0.22 },
+        { transform: "translateX(-50%) scale(0.9)", opacity: 0 },
+        { transform: "translateX(-50%) scale(0.95)", opacity: clamp(0.5 + 0.4 * st, 0, 1), offset: 0.22 },
         { transform: "translateX(-50%) scale(1.15)", opacity: 0 },
       ],
-      { duration: 1500 / Math.max(0.3, cur.s), easing: "cubic-bezier(.2,.6,.3,1)", fill: "both" },
+      { duration: 1500 / Math.max(0.3, cur.s), easing: "cubic-bezier(.22,1,.36,1)", fill: "both" },
     );
     a.onfinish = a.oncancel = () => el.remove();
   }, []);
@@ -118,11 +118,11 @@ export function GradientFloor({ speed, color, mask = "none", focus, intensity, p
         <div className="kn-breathe absolute inset-0 opacity-[0.85] dark:opacity-100" style={{ background: `linear-gradient(to top, ${withAlpha(c1, 0.34 * k)}, ${withAlpha(c2, 0.08 * k)} 58%, transparent)`, animationPlayState: hold, ["--kn-breathe" as string]: dur(9) }} />
         <div
           className="kn-a absolute opacity-[0.9] dark:opacity-100"
-          style={{ left: "-12%", bottom: 0, width: "66%", height: "100%", background: `radial-gradient(ellipse closest-side at 50% 100%, ${withAlpha(c1, 0.78 * k)}, ${withAlpha(c1, 0.26 * k)} 52%, transparent)`, animationPlayState: hold, ["--kn-name" as string]: "knbg-floor-a", ["--kn-dur" as string]: dur(14) }}
+          style={{ left: "-12%", bottom: 0, width: "66%", height: "100%", background: `radial-gradient(ellipse closest-side at 50% 100%, ${withAlpha(c1, 0.78 * k)}, ${withAlpha(c1, 0.26 * k)} 52%, transparent)`, animationPlayState: hold, ["--kn-name" as string]: "knbg-floor-a", ["--knbg-dur" as string]: dur(14) }}
         />
         <div
           className="kn-b absolute opacity-[0.9] dark:opacity-100"
-          style={{ left: "44%", bottom: 0, width: "68%", height: "88%", background: `radial-gradient(ellipse closest-side at 50% 100%, ${withAlpha(c2, 0.66 * k)}, ${withAlpha(c2, 0.22 * k)} 52%, transparent)`, animationPlayState: hold, ["--kn-name" as string]: "knbg-floor-b", ["--kn-dur" as string]: dur(19) }}
+          style={{ left: "44%", bottom: 0, width: "68%", height: "88%", background: `radial-gradient(ellipse closest-side at 50% 100%, ${withAlpha(c2, 0.66 * k)}, ${withAlpha(c2, 0.22 * k)} 52%, transparent)`, animationPlayState: hold, ["--kn-name" as string]: "knbg-floor-b", ["--knbg-dur" as string]: dur(19) }}
         />
         <div ref={waves} className="absolute inset-0" />
       </div>

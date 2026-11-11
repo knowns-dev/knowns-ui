@@ -113,7 +113,7 @@ export function AnnouncementBar({
       inert={!open}
       className={cn(
         "grid w-full",
-        !instant && "transition-[grid-template-rows] duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+        !instant && "transition-[grid-template-rows] duration-300 ease-(--kn-ease-out) motion-reduce:transition-none",
         open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         className,
       )}
@@ -164,7 +164,7 @@ export function AnnouncementBar({
               type="button"
               aria-label="Dismiss announcement"
               onClick={dismiss}
-              className={cn("absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-[8px] opacity-80 transition-[background-color,opacity] hover:opacity-100", t.close, focusRing)}
+              className={cn("absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-[8px] opacity-80 transition-[background-color,opacity] ease-(--kn-ease-out) hover:opacity-100", t.close, focusRing)}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" className="size-3.5">
                 <path d="m4 4 8 8M12 4l-8 8" />

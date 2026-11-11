@@ -26,7 +26,7 @@ export function gridDuration(speed?: number): number {
 
 const CSS = `
 @keyframes knbg-grid-run { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, var(--kn-cell), 0); } }
-[data-kn-bg="perspective-grid"] .kn-floor { animation: knbg-grid-run var(--kn-dur) linear infinite; will-change: transform; }
+[data-kn-bg="perspective-grid"] .kn-floor { animation: knbg-grid-run var(--knbg-dur) linear infinite; will-change: transform; }
 `;
 
 /**
@@ -83,7 +83,7 @@ export function PerspectiveGrid({ density, speed, color, mask = "none", focus, i
                       backgroundPosition: "center 0",
                       animationPlayState: dur === 0 ? "paused" : undefined,
                       "--kn-cell": `${cell}px`,
-                      "--kn-dur": `${dur || 1}s`,
+                      "--knbg-dur": `${dur || 1}s`,
                     } as CSSProperties
                   }
                 />

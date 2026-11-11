@@ -78,7 +78,7 @@ function cursorColors(actors: Actor[]): Map<string, string> {
   return new Map(ordered.map((a, i) => [a.id, AGENT_PALETTE[CURSOR_ORDER[i % CURSOR_ORDER.length]]]));
 }
 
-const EASE = "ease-[cubic-bezier(.22,1,.36,1)]";
+const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 const HAIRLINE = "[border-color:color-mix(in_srgb,var(--foreground)_9%,transparent)]";
 
 function useReducedMotion() {

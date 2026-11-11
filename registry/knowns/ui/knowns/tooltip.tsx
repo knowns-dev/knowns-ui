@@ -4,7 +4,7 @@
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { useFloating, type FloatingAlign, type FloatingSide } from "./use-floating";
+import { FLOAT_FADE, useFloating, type FloatingAlign, type FloatingSide } from "./use-floating";
 
 export interface TooltipProps {
   /** The hint. Keep it short; it is read as the trigger's description. */
@@ -24,6 +24,10 @@ export interface TooltipProps {
   className?: string;
 }
 
+/** When a tooltip last closed: the next one within a moment opens at once, with no fade (a toolbar sweep). */
+let lastClosed = 0;
+const WARM_MS = 400;
+
 const isExpanded = (v: unknown) => v === true || v === "true";
 
 /**
@@ -39,16 +43,22 @@ export function Tooltip({ content, description, children, side = "top", align = 
   const child = isValidElement(children) ? (children as ReactElement<Record<string, unknown>>) : null;
   const suppressed = disabled || (child ? isExpanded(child.props["aria-expanded"]) : false);
   const open = want && !suppressed;
-  const { triggerRef, floatingRef, style, placement, portalHost } = useFloating<HTMLSpanElement, HTMLDivElement>({ open, side, align, offset: 6 });
+  const { triggerRef, floatingRef, style, placement, portalHost, closing } = useFloating<HTMLSpanElement, HTMLDivElement>({ open, side, align, offset: 6 });
+  const warm = useRef(false);
 
   const show = (now = false) => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setWant(true), now ? 0 : delay);
+    warm.current = Date.now() - lastClosed < WARM_MS;
+    timer.current = setTimeout(() => setWant(true), now || warm.current ? 0 : delay);
   };
   const hide = (now = false) => {
     clearTimeout(timer.current);
-    if (now) setWant(false);
-    else timer.current = setTimeout(() => setWant(false), closeDelay);
+    const close = () => {
+      lastClosed = Date.now();
+      setWant(false);
+    };
+    if (now) close();
+    else timer.current = setTimeout(close, closeDelay);
   };
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -79,20 +89,21 @@ export function Tooltip({ content, description, children, side = "top", align = 
       aria-describedby={child ? undefined : describedBy}
     >
       {trigger}
-      {open &&
-        portalHost &&
+      {portalHost &&
         createPortal(
           <div
             ref={floatingRef}
             id={id}
             role="tooltip"
             data-side={placement}
+            data-state={closing ? "closed" : "open"}
+            data-warm={warm.current || undefined}
             style={style}
             className={cn(
               "pointer-events-none z-[70] w-max max-w-64 rounded-[8px] bg-foreground px-2 py-1 text-xs leading-[1.35] font-medium text-background",
               "shadow-[0_6px_20px_-8px_rgb(0_0_0/0.35)]",
-              "transition-[opacity,translate] duration-150 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
-              "starting:opacity-0 data-[side=top]:starting:translate-y-0.5 data-[side=bottom]:starting:-translate-y-0.5 data-[side=left]:starting:translate-x-0.5 data-[side=right]:starting:-translate-x-0.5",
+              FLOAT_FADE,
+              "data-[warm=true]:transition-none",
             )}
           >
             {content}

@@ -19,7 +19,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { setRefs, useFloating } from "./use-floating";
+import { FLOAT_FADE, setRefs, useExit, useFloating } from "./use-floating";
 
 export interface MenuItem {
   id: string;
@@ -255,7 +255,7 @@ export function MenuSwitch({ on, className }: { on: boolean; className?: string 
       aria-hidden
       className={cn(
         "relative inline-flex h-4 w-7 flex-none items-center rounded-full p-0.5",
-        "transition-colors duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+        "transition-colors duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
         on ? "bg-primary" : "bg-[color-mix(in_srgb,var(--foreground)_16%,transparent)]",
         className,
       )}
@@ -263,7 +263,7 @@ export function MenuSwitch({ on, className }: { on: boolean; className?: string 
       <span
         className={cn(
           "size-3 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)]",
-          "transition-[translate] duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
+          "transition-[translate] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
           on && "translate-x-3 dark:bg-[var(--primary-foreground)]",
         )}
       />
@@ -278,7 +278,7 @@ const SubChevron = () => (
 );
 
 /**
- * One highlight that glides between rows of a scrolling list. Returns the offset and height of the row
+ * One highlight that follows the active row of a scrolling list. Returns the offset and height of the row
  * with id `activeId` (null hides it) and keeps that row scrolled into view. Shared by Menu and Combobox.
  */
 export function useGlide(list: RefObject<HTMLElement | null>, activeId: string | null, ...deps: unknown[]) {
@@ -301,7 +301,7 @@ export function useGlide(list: RefObject<HTMLElement | null>, activeId: string |
   return hi;
 }
 
-/** The gliding highlight element; render it first inside a `relative` list. */
+/** The highlight element, placed instantly on the active row (a menu is a high-frequency list: no glide). Render it first inside a `relative` list. */
 export function GlideHighlight({ hi, danger }: { hi: ReturnType<typeof useGlide>; danger?: boolean }) {
   return (
     <div
@@ -311,7 +311,6 @@ export function GlideHighlight({ hi, danger }: { hi: ReturnType<typeof useGlide>
         "pointer-events-none absolute inset-x-1 top-0 rounded-[8px]",
         danger ? "bg-red-500/[0.09] dark:bg-red-500/15" : "bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]",
         hi ? "opacity-100" : "opacity-0",
-        !hi?.instant && "transition-[translate,height,opacity,background-color] duration-150 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none",
       )}
     />
   );
@@ -340,6 +339,8 @@ interface Tree {
 }
 
 interface PanelProps {
+  /** The exit is playing: fade out, take no input. Only the root panel exits; a submenu closes at once (it opens and closes on every hover and arrow key, so it stays instant). */
+  closing?: boolean;
   tree: Tree;
   items: MenuItem[] | MenuSection[];
   depth: number;
@@ -543,6 +544,7 @@ function MenuPanel(p: PanelProps) {
             ref={fl.floatingRef}
             id={depth > 0 ? `${p.listId}-panel` : undefined}
             data-kn-menu={tree.id}
+            data-state={p.closing ? "closed" : "open"}
             style={{
               ...fl.style,
               width: typeof p.width === "number" ? p.width : fl.style.width,
@@ -554,7 +556,7 @@ function MenuPanel(p: PanelProps) {
               "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_12px_32px_-12px_rgb(0_0_0/0.3),0_2px_6px_rgb(0_0_0/0.06)]",
               p.width === undefined && "w-max max-w-[min(320px,calc(100vw-16px))] min-w-[200px]",
               depth > 0 && "min-w-[180px]",
-              fl.ready && "animate-[kn-rise_150ms_ease-out_both] motion-reduce:animate-none",
+              FLOAT_FADE,
               tree.className,
             )}
           >
@@ -733,6 +735,7 @@ export function Menu({
 }: MenuProps) {
   const [own, setOwn] = useState(false);
   const open = openProp ?? own;
+  const { mounted, closing } = useExit(open);
   const openRef = useRef(open);
   openRef.current = open;
   const onOpenChangeRef = useRef(onOpenChange);
@@ -871,8 +874,9 @@ export function Menu({
       {context &&
         typeof document !== "undefined" &&
         createPortal(<span ref={pointEl} aria-hidden style={{ position: "fixed", left: point.x, top: point.y, width: 0, height: 0, pointerEvents: "none" }} />, document.body)}
-      {open && (
+      {mounted && (
         <MenuPanel
+          closing={closing}
           tree={tree}
           items={items}
           depth={0}

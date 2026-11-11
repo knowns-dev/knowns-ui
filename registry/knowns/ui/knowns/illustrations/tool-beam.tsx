@@ -66,7 +66,7 @@ export function beamLayout(left: number, right: number): BeamSeat[] {
 
 const CSS = `
 @keyframes kntb-flow { from { stroke-dashoffset: 0 } to { stroke-dashoffset: -100 } }
-@keyframes kntb-dot { 0%, 100% { transform: scale(.8); opacity: .6 } 50% { transform: scale(1.15); opacity: 1 } }
+@keyframes kntb-dot { 0%, 100% { transform: scale(.9); opacity: .6 } 50% { transform: scale(1.15); opacity: 1 } }
 @keyframes kntb-halo { 0%, 100% { opacity: .5; transform: scale(.96) } 50% { opacity: .85; transform: scale(1.04) } }
 [data-kn-ill="tool-beam"] [data-beam][data-hold="true"] * { animation-play-state: paused !important; }
 ${MOTION_GATE}
@@ -131,7 +131,7 @@ export function ToolBeam({ left = DEFAULT_LEFT, right = DEFAULT_RIGHT, hub, hubL
             const on = focus === t.key;
             const hold = held.has(t.key);
             return (
-              <g key={t.key} data-beam={t.key} data-hold={hold} style={{ opacity: dim ? 0.25 : 1, transition: "opacity 300ms cubic-bezier(.22,1,.36,1)" }}>
+              <g key={t.key} data-beam={t.key} data-hold={hold} style={{ opacity: dim ? 0.25 : 1, transition: "opacity 300ms var(--kn-ease-out)" }}>
                 <path d={t.seat.d} stroke="currentColor" strokeOpacity={on ? 0.28 : 0.13} strokeWidth={on ? 1.6 : 1.25} />
                 {/* Two pulses per beam: a soft wide one and a bright core, running the same dash. */}
                 {[6, 2].map((w) => (
@@ -190,7 +190,7 @@ export function ToolBeam({ left = DEFAULT_LEFT, right = DEFAULT_RIGHT, hub, hubL
               style={{ ...pct(t.seat.at), ["--hue" as string]: t.hue }}
               className={cn(
                 "absolute grid size-[9.4cqw] -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-[2.8cqw]",
-                "transition-[opacity,scale,box-shadow] duration-300 ease-[cubic-bezier(.22,1,.36,1)] hover:scale-105 motion-reduce:transition-none",
+                "transition-[opacity,scale,box-shadow] duration-300 ease-(--kn-ease-out) hover:scale-105 motion-reduce:transition-none",
                 SURFACE,
                 focusRing,
                 dim && "opacity-40",

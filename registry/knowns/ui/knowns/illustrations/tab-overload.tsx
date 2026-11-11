@@ -28,7 +28,7 @@ const DEFAULT = ["Docs", "Inbox", "Board", "Logs"];
 const TOKENS = new Set(["foreground", "primary", "ring", "chart-1", "chart-2", "chart-3", "chart-4", "chart-5"]);
 
 const accentOf = (c: string | undefined) => {
-  const v = (c ?? "#6366f1").trim();
+  const v = (c ?? "var(--kn-accent, #6366f1)").trim();
   return v.startsWith("--") ? `var(${v})` : TOKENS.has(v) ? `var(--${v})` : v;
 };
 
@@ -87,7 +87,7 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
       aria-label={label ?? `Overlapping browser windows: ${titles.join(", ")}`}
       onPointerLeave={() => enter(null)}
       className={cn("relative isolate aspect-[4/3] w-full overflow-hidden select-none", className)}
-      style={{ ["--kn-accent" as string]: accent } as CSSProperties}
+      style={{ ["--kn-ill" as string]: accent } as CSSProperties}
     >
       <style href="kn-ill-tab-overload" precedence="default">
         {`${MOTION_GATE}\n${CSS}`}
@@ -101,8 +101,8 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
             key={i}
             onPointerEnter={() => enter(i)}
             className={cn(
-              "kn-tab-win absolute overflow-hidden rounded-[2.6cqw] border bg-card transition-[transform,box-shadow,opacity,border-color] duration-[420ms] ease-[cubic-bezier(.2,.7,.2,1)]",
-              on ? "shadow-[0_2.4cqw_6cqw_-2cqw_color-mix(in_srgb,var(--kn-accent)_45%,transparent)]" : "shadow-[0_0.6cqw_1.6cqw_-0.8cqw_rgb(0_0_0/0.18)]",
+              "kn-tab-win absolute overflow-hidden rounded-[2.6cqw] border bg-card transition-[transform,box-shadow,opacity,border-color] duration-(--kn-dur-slow) ease-(--kn-ease-out)",
+              on ? "shadow-[0_2.4cqw_6cqw_-2cqw_color-mix(in_srgb,var(--kn-ill)_45%,transparent)]" : "shadow-[0_0.6cqw_1.6cqw_-0.8cqw_rgb(0_0_0/0.18)]",
             )}
             style={{
               left: `${b.left}%`,
@@ -111,7 +111,7 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
               height: `${b.height}%`,
               zIndex: on ? n + 1 : i,
               transform: on ? "translateY(-2.4cqw) scale(1.025)" : "none",
-              borderColor: on ? "color-mix(in srgb, var(--kn-accent) 55%, var(--border))" : undefined,
+              borderColor: on ? "color-mix(in srgb, var(--kn-ill) 55%, var(--border))" : undefined,
             }}
           >
             {/* Tab strip: three dots and the window's tab. */}
@@ -123,10 +123,10 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
               </span>
               <span
                 className={cn(
-                  "ml-[1.5cqw] flex h-[5.2cqw] items-center rounded-t-[1.4cqw] border border-b-0 px-[2.4cqw] text-[2.6cqw] leading-none font-medium whitespace-nowrap transition-colors duration-[420ms]",
+                  "ml-[1.5cqw] flex h-[5.2cqw] items-center rounded-t-[1.4cqw] border border-b-0 px-[2.4cqw] text-[2.6cqw] leading-none font-medium whitespace-nowrap transition-colors duration-(--kn-dur-slow)",
                   on ? "bg-card text-foreground" : "bg-transparent text-muted-foreground",
                 )}
-                style={on ? { boxShadow: "inset 0 0.5cqw 0 var(--kn-accent)" } : undefined}
+                style={on ? { boxShadow: "inset 0 0.5cqw 0 var(--kn-ill)" } : undefined}
               >
                 {titles[i] ?? `Tab ${i + 1}`}
               </span>
@@ -136,8 +136,8 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
               {lines.map((w, j) => (
                 <span
                   key={j}
-                  className="h-[1.9cqw] rounded-full transition-colors duration-[420ms]"
-                  style={{ width: `${w}%`, background: on && j === 0 ? "color-mix(in srgb, var(--kn-accent) 70%, transparent)" : "color-mix(in srgb, var(--foreground) 11%, transparent)" }}
+                  className="h-[1.9cqw] rounded-full transition-colors duration-(--kn-dur-slow)"
+                  style={{ width: `${w}%`, background: on && j === 0 ? "color-mix(in srgb, var(--kn-ill) 70%, transparent)" : "color-mix(in srgb, var(--foreground) 11%, transparent)" }}
                 />
               ))}
               <span className="mt-[1cqw] h-[9cqw] w-[44%] rounded-[1.6cqw]" style={{ background: "color-mix(in srgb, var(--foreground) 7%, transparent)" }} />
