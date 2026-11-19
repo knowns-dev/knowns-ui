@@ -9,6 +9,7 @@ import { AGENT_PALETTE, formatUsd, readableInk, rootAgent, STATE_LABEL } from "@
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
 import { cn, focusRing, layoutScale, localRect } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "../button";
+import { CursorPointer, CursorTag } from "./cursor-parts";
 import { SegmentedControl } from "../segmented-control";
 import {
   approach,
@@ -36,6 +37,7 @@ import {
 
 export type { CursorComment, CursorDoc, CursorTable, DocBlock, Presence, Resolution, ResizeSuggestion, Suggestion, TextSuggestion } from "./cursors-model";
 export { cellId } from "./cursors-model";
+export { CursorPointer, CursorTag, type CursorTagProps } from "./cursor-parts";
 
 export type CursorsTab = "doc" | "table";
 
@@ -706,26 +708,20 @@ export function AgentCursors({
                     }}
                     className="absolute left-0 top-0 opacity-0 transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) will-change-transform"
                   >
-                    <svg width="20" height="22" viewBox="0 0 20 22" className="-translate-x-[2px] -translate-y-[2px] drop-shadow-[0_1px_2px_rgb(0_0_0/0.2)]">
-                      <path d="M2.5 2 17.5 10.4l-6.6 1.7-3.3 6.9z" fill={t.color} stroke="white" strokeWidth="1" strokeLinejoin="round" />
-                    </svg>
+                    <CursorPointer color={t.color} />
                   </div>
-                  <div
+                  <CursorTag
                     ref={(el) => {
                       if (el) tagEls.current.set(a.id, el);
                       else tagEls.current.delete(a.id);
                     }}
-                    className={cn("absolute left-0 top-0 flex max-w-[190px] flex-col rounded-lg border bg-popover px-2 py-1 text-popover-foreground opacity-0 data-on-text:bg-popover/92 data-on-text:backdrop-blur-sm shadow-[0_4px_12px_-4px_rgb(0_0_0/0.18)] transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) will-change-transform", HAIRLINE)}
-                  >
-                    <span className="flex items-center gap-1.5 text-[11.5px] leading-4 font-medium">
-                      <span className="size-1.5 flex-none rounded-full" style={{ background: away ? "var(--muted-foreground)" : t.color }} />
-                      <span className="truncate">{a.label}</span>
-                    </span>
-                    <span className="flex gap-1 pl-3 text-[10.5px] leading-4 whitespace-nowrap text-muted-foreground">
-                      <span className="truncate">{status(a)}</span>
-                      {a.spend != null && <span className="flex-none tabular-nums">· {formatUsd(a.spend)}</span>}
-                    </span>
-                  </div>
+                    name={a.label}
+                    status={status(a)}
+                    trailing={a.spend != null ? <span className="flex-none tabular-nums">· {formatUsd(a.spend)}</span> : undefined}
+                    color={t.color}
+                    away={away}
+                    className="absolute left-0 top-0 opacity-0 data-on-text:bg-popover/92 data-on-text:backdrop-blur-sm transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) will-change-transform"
+                  />
                 </Fragment>
               );
             })}

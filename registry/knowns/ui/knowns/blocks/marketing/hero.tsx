@@ -9,7 +9,7 @@
  * The parts (Eyebrow, Title, Lead, Actions, Facts, Backdrop) are exported for the other hero layouts:
  * hero-split, hero-product and hero-statement (Knowns UI Pro), which build on this file.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { isValidElement, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { WordRotate } from "../../text-animation/word-rotate";
 import { ActionButton, type MediaFrameProps } from "./section-heading";
@@ -24,8 +24,11 @@ export interface HeroFact {
 }
 
 export interface HeroCopy {
-  /** A short line above the headline, e.g. "Changelog: run replays". With href it is a link; badge is a word in the accent. */
-  eyebrow?: { label: ReactNode; href?: string; badge?: string };
+  /**
+   * A short line above the headline, e.g. "Changelog: run replays". With href it is a link; badge is a word in the accent.
+   * Or your own element in its place, such as an AnnouncementPill that opens into a changelog card.
+   */
+  eyebrow?: { label: ReactNode; href?: string; badge?: string } | ReactElement;
   title: ReactNode;
   /** The headline's element. Default "h1"; use "h2" when the hero is not the page's main heading (a demo, a section). */
   as?: "h1" | "h2" | "h3";
@@ -61,6 +64,7 @@ export const isFrameProps = (m: unknown): m is MediaFrameProps =>
 /* ── Parts ── */
 
 export function Eyebrow({ eyebrow }: { eyebrow: NonNullable<HeroCopy["eyebrow"]> }) {
+  if (isValidElement(eyebrow)) return eyebrow;
   const inner = (
     <>
       {eyebrow.badge && <span className="text-[color:var(--kn-accent,var(--primary))]">{eyebrow.badge}</span>}

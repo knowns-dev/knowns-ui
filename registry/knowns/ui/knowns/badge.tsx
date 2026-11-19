@@ -16,7 +16,7 @@ import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Tooltip } from "./tooltip";
 
 export type BadgeTone = "neutral" | "accent" | "info" | "success" | "warning" | "danger";
-export type BadgeVariant = "soft" | "outline" | "solid";
+export type BadgeVariant = "soft" | "outline" | "solid" | "overlay";
 export type BadgeSize = "sm" | "md" | "lg";
 export type BadgeShape = "rounded" | "pill";
 
@@ -43,6 +43,15 @@ const SOLID: Record<BadgeTone, string> = {
   success: "bg-emerald-600 text-white",
   warning: "bg-amber-500 text-amber-950",
   danger: "bg-red-600 text-white",
+};
+/* For a badge that sits on a photo or a thumbnail: an opaque surface, tone ink and a hairline ring, no shadow. */
+const OVERLAY: Record<BadgeTone, string> = {
+  neutral: "bg-background text-muted-foreground ring-1 ring-border",
+  accent: "bg-background text-[color:var(--kn-accent,var(--color-indigo-700))] ring-1 ring-[color:var(--kn-accent,var(--color-indigo-500))]/35 dark:text-[color:var(--kn-accent,var(--color-indigo-300))]",
+  info: "bg-background text-sky-700 ring-1 ring-sky-600/30 dark:text-sky-300",
+  success: "bg-background text-emerald-700 ring-1 ring-emerald-600/30 dark:text-emerald-300",
+  warning: "bg-background text-amber-800 ring-1 ring-amber-600/30 dark:text-amber-300",
+  danger: "bg-background text-red-700 ring-1 ring-red-600/30 dark:text-red-300",
 };
 const DOT: Record<BadgeTone, string> = {
   neutral: "bg-muted-foreground",
@@ -112,7 +121,7 @@ function RemoveGlyph() {
 }
 
 /**
- * A small label for state or metadata: soft, outline or solid, in six tones. Optional dot, icon,
+ * A small label for state or metadata: soft, outline, solid or overlay (an opaque surface for sitting on media), in six tones. Optional dot, icon,
  * click action and × remove. For values people type or pick (filters, recipients), use Tag.
  */
 export function Badge({
@@ -139,6 +148,7 @@ export function Badge({
     variant === "soft" && SOFT[tone],
     variant === "outline" && cn("border", OUTLINE[tone]),
     variant === "solid" && SOLID[tone],
+    variant === "overlay" && OVERLAY[tone],
     (onClick || onRemove) && ease,
     disabled && "opacity-50",
   );

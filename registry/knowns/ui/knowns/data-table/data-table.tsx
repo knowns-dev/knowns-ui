@@ -155,6 +155,12 @@ const ColumnsGlyph = () => (
   </svg>
 );
 
+const ChevronGlyph = ({ dir }: { dir: "left" | "right" }) => (
+  <svg viewBox="0 0 16 16" aria-hidden className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d={dir === "left" ? "M10 3.5 5.5 8l4.5 4.5" : "M6 3.5 10.5 8 6 12.5"} />
+  </svg>
+);
+
 const textOf = (n: ReactNode, fallback: string) => (typeof n === "string" || typeof n === "number" ? String(n) : fallback);
 
 /**
@@ -548,34 +554,36 @@ export function DataTable<T>({
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination. Under 28rem it is one line: the range and two icon buttons. */}
       {pg && (
-        <div className={cn("flex flex-wrap items-center gap-3 rounded-b-2xl border-t px-4 py-2.5 text-[12.5px] text-muted-foreground", HAIR)}>
-          <span className="tabular-nums">{sorted.length ? `${pg.from}–${pg.to} of ${sorted.length}` : "0 rows"}</span>
-          <label className="flex items-center gap-1.5">
-            Rows
-            <select
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-              className={cn("h-7 rounded-[7px] bg-card px-1.5 text-[12.5px] text-foreground shadow-[0_0_0_1px_var(--border)]", focusRing)}
-            >
-              {pageSizes.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <span className="flex-1" />
-          <span className="tabular-nums">
-            Page {pg.page + 1} of {pg.pageCount}
-          </span>
-          <Button size="sm" variant="secondary" disabled={pg.page === 0} onClick={() => setPage(pg.page - 1)} aria-label="Previous page">
-            Previous
-          </Button>
-          <Button size="sm" variant="secondary" disabled={pg.page >= pg.pageCount - 1} onClick={() => setPage(pg.page + 1)} aria-label="Next page">
-            Next
-          </Button>
+        <div className="@container/dtf">
+          <div className={cn("flex items-center gap-3 rounded-b-2xl border-t px-4 py-2.5 text-[12.5px] text-muted-foreground", HAIR)}>
+            <span className="tabular-nums">{sorted.length ? `${pg.from}–${pg.to} of ${sorted.length}` : "0 rows"}</span>
+            <label className="hidden items-center gap-1.5 @md/dtf:flex">
+              Rows
+              <select
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+                className={cn("h-7 rounded-[7px] bg-card px-1.5 text-[12.5px] text-foreground shadow-[0_0_0_1px_var(--border)]", focusRing)}
+              >
+                {pageSizes.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="flex-1" />
+            <span className="hidden tabular-nums @md/dtf:inline">
+              Page {pg.page + 1} of {pg.pageCount}
+            </span>
+            <Button size="sm" variant="secondary" icon={<span className="@md/dtf:hidden"><ChevronGlyph dir="left" /></span>} disabled={pg.page === 0} onClick={() => setPage(pg.page - 1)} aria-label="Previous page">
+              <span className="hidden @md/dtf:inline">Previous</span>
+            </Button>
+            <Button size="sm" variant="secondary" iconRight={<span className="@md/dtf:hidden"><ChevronGlyph dir="right" /></span>} disabled={pg.page >= pg.pageCount - 1} onClick={() => setPage(pg.page + 1)} aria-label="Next page">
+              <span className="hidden @md/dtf:inline">Next</span>
+            </Button>
+          </div>
         </div>
       )}
     </div>

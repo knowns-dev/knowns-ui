@@ -190,7 +190,7 @@ export function AppShell({
           <SidebarFooter className="group-data-[rail]/sb:hidden">{sidebarFooter}</SidebarFooter>
         )}
       </Sidebar>
-      <SidebarInset className={cn(fill && "min-h-0 overflow-y-auto")}>
+      <SidebarInset className={cn(fill && "relative min-h-0 overflow-y-auto")}>
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-[color-mix(in_srgb,var(--background)_88%,transparent)] px-3 backdrop-blur-md sm:px-4">
           <SidebarTrigger className="-ml-1" />
           {breadcrumb && breadcrumb.length > 0 && (

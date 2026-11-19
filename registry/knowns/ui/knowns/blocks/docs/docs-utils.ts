@@ -129,6 +129,31 @@ export function fitScale(width: number, available: number, zoom = 1): number {
 }
 
 /** localStorage key for the viewer's chosen preview width, shared by every preview on the site. */
+/** The height a framed page gets before it has reported one, when no inline preview was ever measured (a width restored from storage). */
+export const FRAME_FIRST_HEIGHT = 720;
+
+/**
+ * The height of a preview iframe. `posted` is what the framed page reported (null until it does), `floor` the
+ * inline preview's height, and `measured` whether that inline preview was ever on screen. Without a measure the
+ * floor is not known, so the frame starts at FRAME_FIRST_HEIGHT and then takes the page's own height, instead of
+ * a page that fills its window (h-screen) feeding the minimum back to itself.
+ */
+export function frameHeight(reported: number | null, floor: number, measured: boolean): number {
+  // A 0 is the page before its content mounted, not a height: it must not drop the frame to the floor, because a page
+  // that fills its window (h-screen) would then report the floor back and stay there.
+  const posted = reported !== null && reported > 0 ? reported : null;
+  if (measured) return Math.max(floor, posted ?? floor);
+  return Math.max(240, posted ?? FRAME_FIRST_HEIGHT);
+}
+
+/**
+ * The CSS height a demo may fill in full screen, in the demo's own (zoomed) units: the window minus the toolbar, the
+ * preview padding and the demo controls row, divided by the zoom. Used for `--kn-demo-h`.
+ */
+export function demoHeightCss(toolbar: number, padding: number, panel: number, zoom = 1): string {
+  return `calc((100dvh - ${toolbar + padding + panel}px) / ${zoom})`;
+}
+
 export const VIEWPORT_KEY = "kn-preview-viewport";
 
 /** A stored viewport back to a valid one; anything unknown is "desktop". */

@@ -5,12 +5,12 @@
  * Replay, Fullscreen). The live preview renders inline; picking a phone or tablet width
  * or the other theme loads it in an iframe from `frame`, so media queries and the theme really apply.
  */
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { CodeBlock } from "../../code-block/code-block";
 import { SegmentedControl } from "../../segmented-control";
 import { Tooltip } from "../../tooltip";
-import { fitScale, parseViewport, VIEWPORT_KEY, VIEWPORT_WIDTH, type PreviewViewport } from "./docs-utils";
+import { demoHeightCss, fitScale, frameHeight, parseViewport, VIEWPORT_KEY, VIEWPORT_WIDTH, type PreviewViewport } from "./docs-utils";
 
 export type PreviewTheme = "light" | "dark";
 
@@ -213,21 +213,30 @@ function CopyCode({ text }: { text: string }) {
   );
 }
 
+/** The toolbar of the card, h-11: what full screen subtracts from the window height. */
+const FULL_TOOLBAR = 44;
+
 /** Iframe that grows to its page's height (the framed page posts `{ type: "kn-frame-height", height }`). */
-function Frame({ src, width, zoom, minHeight }: { src: string; width: number | null; zoom: number; minHeight: number }) {
+function Frame({ src, width, zoom, minHeight, measured, fill }: { src: string; width: number | null; zoom: number; minHeight: number; measured: boolean; fill?: boolean }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const box = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(minHeight);
+  const [posted, setPosted] = useState<number | null>(null);
+  const tellRef = useRef<() => void>(() => {});
+  const height = frameHeight(posted, minHeight, measured);
   const [avail, setAvail] = useState(0);
   useEffect(() => {
     const on = (e: MessageEvent) => {
       if (e.source !== ref.current?.contentWindow) return;
       const h = (e.data as { type?: string; height?: number } | null)?.height;
-      if ((e.data as { type?: string })?.type === "kn-frame-height" && typeof h === "number") setHeight(Math.max(minHeight, Math.ceil(h)));
+      if ((e.data as { type?: string })?.type === "kn-frame-height") {
+        // The page is up (it posts once it mounts): tell it the full-screen height now, in case it missed the first one.
+        tellRef.current();
+        if (typeof h === "number") setPosted(Math.ceil(h));
+      }
     };
     window.addEventListener("message", on);
     return () => window.removeEventListener("message", on);
-  }, [minHeight]);
+  }, []);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
@@ -235,17 +244,33 @@ function Frame({ src, width, zoom, minHeight }: { src: string; width: number | n
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // Full screen: the frame fills the window under the toolbar (FULL_TOOLBAR) instead of keeping its inline height.
+  const [vh, setVh] = useState(0);
+  useEffect(() => {
+    if (!fill) return;
+    const on = () => setVh(window.innerHeight);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [fill]);
+  // In full screen the framed page is told its window height, so a canvas-like demo in it can fill it (--kn-frame-h there).
+  const filled = fill && vh ? Math.max(240, (vh - FULL_TOOLBAR - 32) / (width ? fitScale(width, avail - 32, zoom) : zoom)) : null;
+  const tell = useCallback(() => ref.current?.contentWindow?.postMessage({ type: "kn-frame-fill", height: filled }, location.origin), [filled]);
+  tellRef.current = tell;
+  useEffect(tell, [tell]);
   const w = width ?? (avail ? avail / zoom : 0);
   const scale = width ? fitScale(width, avail - 32, zoom) : zoom;
+  const h = fill && vh ? Math.max(240, (vh - FULL_TOOLBAR - 32) / scale) : height;
   return (
     <div ref={box} className="flex justify-center overflow-hidden py-4">
-      <div style={{ width: w * scale, height: height * scale }} className={cn("relative shrink-0", width && "rounded-xl shadow-[0_0_0_1px_var(--border)]")}>
+      <div style={{ width: w * scale, height: h * scale }} className={cn("relative shrink-0", width && "rounded-xl shadow-[0_0_0_1px_var(--border)]")}>
         <iframe
           ref={ref}
           src={src}
           title="Preview"
           loading="lazy"
-          style={{ width: w, height, transform: `scale(${scale})` }}
+          onLoad={tell}
+          style={{ width: w, height: h, transform: `scale(${scale})` }}
           className={cn("absolute top-0 left-0 origin-top-left border-0 bg-background", width && "rounded-xl")}
         />
       </div>
@@ -308,6 +333,8 @@ export function DocsPreview({
   const opener = useRef<HTMLElement | null>(null);
   const preview = useRef<HTMLDivElement>(null);
   const [inlineHeight, setInlineHeight] = useState(minHeight);
+  // Whether the inline preview was ever measured taller than the floor: a width restored from storage opens framed, with nothing measured.
+  const [measured, setMeasured] = useState(false);
 
   const framed = Boolean(frame) && (viewport !== "desktop" || theme !== pageTheme);
   const showTheme = Boolean(frame) && (themeSwitch ?? true);
@@ -316,7 +343,11 @@ export function DocsPreview({
   useEffect(() => {
     if (framed || !preview.current) return;
     const el = preview.current;
-    const ro = new ResizeObserver(() => setInlineHeight(Math.max(minHeight, el.offsetHeight)));
+    const ro = new ResizeObserver(() => {
+      setInlineHeight(Math.max(minHeight, el.offsetHeight));
+      // A reading at or under the floor is the first paint before the demo laid out, not a measure.
+      if (el.offsetHeight > 240) setMeasured(true);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, [framed, minHeight]);
@@ -353,10 +384,34 @@ export function DocsPreview({
   // Full-height (fullscreen) previews fill the viewport, so only the inline box follows the panel's height.
   const fit = useActiveHeight(codeOn ? "code" : "preview", tabs && !full);
 
+  // The demo controls row under the preview takes room in full screen: measured, so --kn-demo-h leaves it out.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelH, setPanelH] = useState(0);
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!full || !el || typeof ResizeObserver === "undefined") return setPanelH(0);
+    const ro = new ResizeObserver(() => setPanelH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [full, panel, framed]);
+
   const body = framed ? (
-    <Frame key={`${viewport}-${theme}-${run}`} src={frame!({ viewport, theme })} width={VIEWPORT_WIDTH[viewport]} zoom={zoom} minHeight={Math.max(240, inlineHeight)} />
+    <Frame key={`${viewport}-${theme}-${run}`} src={frame!({ viewport, theme })} width={VIEWPORT_WIDTH[viewport]} zoom={zoom} minHeight={Math.max(240, inlineHeight)} measured={measured} fill={full} />
   ) : (
-    <div ref={preview} style={zoom !== 1 ? { zoom } : undefined} className={cn(!flush && "p-3 sm:p-4")}>
+    <div
+      ref={preview}
+      /* In full screen, --kn-full-h is the height left under the toolbar (in this zoom's units): a preview that is itself an iframe can use it, e.g. h-[var(--kn-full-h,720px)]. --kn-demo-h is what is left for the demo itself, after the padding and the controls row: a canvas-like demo sizes to it, e.g. h-[var(--kn-demo-h,560px)], and keeps its inline height outside full screen. */
+      style={
+        zoom !== 1 || full
+          ? {
+              ...(zoom !== 1 ? { zoom } : {}),
+              ...(full
+                ? ({ "--kn-full-h": `calc((100dvh - ${FULL_TOOLBAR}px) / ${zoom})`, "--kn-demo-h": demoHeightCss(FULL_TOOLBAR, flush ? 0 : 32, panelH, zoom) } as CSSProperties)
+                : {}),
+            }
+          : undefined
+      }
+      className={cn(!flush && (full ? "p-4" : "p-3 sm:p-4"))}>
       <div key={run} style={minHeight ? { minHeight } : undefined}>
         {children}
       </div>
@@ -478,7 +533,7 @@ export function DocsPreview({
           >
             {body}
             {panel && !framed && (
-              <div data-docs-preview-panel="" className={cn("border-t px-3 py-3 sm:px-4", full && "sticky bottom-0 mt-auto bg-background")}>
+              <div ref={panelRef} data-docs-preview-panel="" className={cn("border-t px-3 py-3 sm:px-4", full && "sticky bottom-0 mt-auto bg-background")}>
                 {panel}
               </div>
             )}

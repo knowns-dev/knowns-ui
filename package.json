@@ -1,6 +1,6 @@
 {
   "name": "knowns-ui",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "private": true,
   "description": "Knowns UI: the UI kit for AI products, as a shadcn registry (Free items).",
   "license": "MIT",

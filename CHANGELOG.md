@@ -2,6 +2,62 @@
 
 Free changes in full. Pro changes are listed by title; see https://ui.knowns.dev/changelog for them.
 
+## 0.9.4 (2026-11-20) - AI whiteboard and an AI CMS
+
+A whiteboard a person and an AI build together, with questions asked on the board, an AI CMS template and blocks, a JSON inspector, chart morphs and new marketing pieces.
+
+### Added
+
+- **Announcement Pill** `announcement-pill`
+  A New pill for above a hero headline that grows in place into a small changelog card: a date, a title, two lines, an image or up to three points, and a link. Hover or keyboard focus previews it, click or Enter keeps it open with a close button, and Esc or a click outside closes it and returns focus to the pill. The card overlays the page, so the hero never moves. `fromChangelogEntry` turns a changelog-feed entry into the card. Free.
+- **Badge overlay variant** `badge`
+  `variant="overlay"` is a badge for sitting on a photo or thumbnail: an opaque surface, the tone's ink and a hairline ring, with no shadow. It works in all six tones.
+- **Context Memory** `context-memory`
+  A long conversation folds into a few memory notes and the next run recalls the right one. The lines fly into the shelf as the counter ticks down, and a line is drawn from the recalled note to the new run. It is a 4:3 card for bento grids, a wide three-part scene from 560px, and a compact single-card dashboard mode (`quiet`). It takes `notes`, `thread`, `recall`, `prompt`, `answer`, `mode` (loop or once) and `quiet`, pauses offscreen and in hidden tabs, and shows the finished frame under reduced motion. Free.
+- **JSON Inspector** `json-inspector`
+  Read a JSON payload as a tree: fold any level, search keys and values across the whole document with a match count and next and previous, and copy the focused node's path (`data.items[0].id`) or its value. Arrow keys, Home and End move the focus, `c` and `p` copy, `/` jumps to search. Only the rows in view are rendered, so thousands of lines stay fast. Raw text that does not parse shows the message, the line and column, and the lines around it with a mark. Free.
+
+### Changed
+
+- **Data table footer on narrow tables** `data-table`
+  Under 28rem the paging footer is one line: the range ("1–8 of 8") and two icon buttons. The Rows select and "Page 1 of 1" show from 28rem. It follows the table's own width, not the window's.
+- **Demos fill the window in full screen** `docs-preview`
+  In full screen the preview now sets `--kn-demo-h`, the window height left after the toolbar, the padding, the demo controls row and the zoom. A canvas-like demo can size to it with `h-[var(--kn-demo-h,560px)]` and keeps its own height everywhere else.
+- **Hero eyebrow takes an element** `hero`
+  The `eyebrow` of every hero layout also takes your own element, such as an Announcement Pill, in place of the built-in line.
+
+### Fixed
+
+- **Docs preview fills the window in full screen** `docs-preview`
+  In full screen the framed preview now fills the window under the toolbar, at every width and zoom, instead of keeping its inline height. A preview that is itself an iframe can use the new `--kn-full-h` variable (`h-[var(--kn-full-h,720px)]`).
+- **Phone width restored on load** `docs-preview`, `app-shell`
+  A preview that opens in a width remembered from the last visit starts at a full height instead of 240px, then follows its page. An App Shell with `layout="fill"` now contains its absolutely placed children, so hidden live-region text no longer adds a second scrollbar to a framed page.
+
+### Pro
+
+- A co-writer writing live (Pro): https://ui.knowns.dev/changelog#0.9.4-prose-diff-author
+- A Hand tool to pan the whiteboard (Pro): https://ui.knowns.dev/changelog#0.9.4-whiteboard-hand-tool
+- AI CMS template (Pro): https://ui.knowns.dev/changelog#0.9.4-cms-template-ai-cms
+- AI collaborator on the board (Pro): https://ui.knowns.dev/changelog#0.9.4-ai-collaborator
+- AI in the post editor (Pro): https://ui.knowns.dev/changelog#0.9.4-post-editor-ai
+- AI whiteboard (Pro): https://ui.knowns.dev/changelog#0.9.4-ai-whiteboard
+- Ask on the board: question actions that build linked guide panels (Pro): https://ui.knowns.dev/changelog#0.9.4-board-ask
+- Board context and math objects (Pro): https://ui.knowns.dev/changelog#0.9.4-board-context-math
+- Chart Morph (Pro): https://ui.knowns.dev/changelog#0.9.4-chart-morph
+- Content table (Pro): https://ui.knowns.dev/changelog#0.9.4-cms-content-table
+- Editorial desk block (Pro): https://ui.knowns.dev/changelog#0.9.4-cms-editorial-desk
+- JSON Inspector diff and schema hints (Pro): https://ui.knowns.dev/changelog#0.9.4-json-inspector-pro
+- Media library (Pro): https://ui.knowns.dev/changelog#0.9.4-media-library
+- Post editor (Pro): https://ui.knowns.dev/changelog#0.9.4-cms-post-editor
+- Revision history (Pro): https://ui.knowns.dev/changelog#0.9.4-revision-history
+- SEO panel (Pro): https://ui.knowns.dev/changelog#0.9.4-cms-seo-panel
+- Testimonials Faces (Pro): https://ui.knowns.dev/changelog#0.9.4-testimonials-faces
+- Underline stretches of text (Pro): https://ui.knowns.dev/changelog#0.9.4-prompt-editor-marks
+- Canvases refit when their box changes height (Pro): https://ui.knowns.dev/changelog#0.9.4-canvas-refit-on-resize
+- Cover thumbnail and SEO ring in the content table (Pro): https://ui.knowns.dev/changelog#0.9.4-content-table-cover-seo
+- Media library search by description, AI tags and focal point (Pro): https://ui.knowns.dev/changelog#0.9.4-media-library-ai-search-tags-focal
+- Prompt editor handle (Pro): https://ui.knowns.dev/changelog#0.9.4-cms-prompt-editor-handle
+
 ## 0.9.3 (2026-11-19) - Agent inbox and live app screens
 
 A human-in-the-loop inbox, activity capsules, media and call surfaces, three new templates and a quiz set, plus strict index fixes across the kit.
