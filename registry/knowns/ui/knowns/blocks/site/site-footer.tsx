@@ -74,7 +74,7 @@ export function looksLikeEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 }
 
-const linkClass = cn("rounded-[6px] text-[13.5px] text-muted-foreground transition-colors duration-150 hover:text-foreground", focusRing);
+const linkClass = cn("rounded-[6px] text-[13.5px] text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:text-foreground", focusRing);
 
 function FooterLink({ link, onNavigate, className }: { link: NavLink; onNavigate?: SiteFooterProps["onNavigate"]; className?: string }) {
   return (
@@ -256,7 +256,7 @@ export function SiteFooter({
                         target={p.kind === "email" ? undefined : "_blank"}
                         rel={p.kind === "email" ? undefined : "noreferrer"}
                         aria-label={s.label ?? p.label}
-                        className={cn("grid size-8 place-items-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-10 [&_svg]:size-4", focusRing)}
+                        className={cn("grid size-8 place-items-center rounded-[8px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground pointer-coarse:size-10 [&_svg]:size-4", focusRing)}
                       >
                         {s.icon ?? p.icon}
                       </a>

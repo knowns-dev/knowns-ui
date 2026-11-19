@@ -178,7 +178,10 @@ export function signalTraces(w: number, h: number, count: number, seed = 7, cell
       }
     }
     const d = pts.map(([px, py], j) => `${j ? "L" : "M"}${px} ${py}`).join(" ");
-    traces.push({ d, from: pts[0], to: pts[pts.length - 1], duration: 5 + rng() * 5, delay: -rng() * 10 });
+    const from = pts[0];
+    const to = pts[pts.length - 1];
+    if (!from || !to) continue;
+    traces.push({ d, from, to, duration: 5 + rng() * 5, delay: -rng() * 10 });
   }
   return traces;
 }
@@ -280,7 +283,9 @@ export function rotateSquares(cells: GridCell[], cols: number, rows: number, rng
     let i = Math.floor(rng() * total);
     for (let tries = 0; taken.has(i) && tries < 8; tries++) i = Math.floor(rng() * total);
     if (taken.has(i)) continue;
-    taken.delete(key(next[at]));
+    const moved = next[at];
+    if (!moved) continue;
+    taken.delete(key(moved));
     taken.add(i);
     next[at] = [i % Math.floor(cols), Math.floor(i / Math.floor(cols))];
   }
@@ -305,7 +310,7 @@ export function bayerMatrix(n: 2 | 4 | 8 = 8): Float32Array {
     const next = new Array<number>(size * 2 * size * 2);
     for (let y = 0; y < size; y++)
       for (let x = 0; x < size; x++) {
-        const v = 4 * m[y * size + x];
+        const v = 4 * (m[y * size + x] ?? 0);
         next[y * 2 * size + x] = v;
         next[y * 2 * size + x + size] = v + 2;
         next[(y + size) * 2 * size + x] = v + 3;
@@ -315,8 +320,82 @@ export function bayerMatrix(n: 2 | 4 | 8 = 8): Float32Array {
     size *= 2;
   }
   const out = new Float32Array(n * n);
-  for (let i = 0; i < out.length; i++) out[i] = (m[i] + 0.5) / (n * n);
+  for (let i = 0; i < out.length; i++) out[i] = ((m[i] ?? 0) + 0.5) / (n * n);
   return out;
+}
+
+/**
+ * Ordered dither of one channel value (0 to 255) to one of `levels` evenly spaced steps (2 to 8). `t` is
+ * the Bayer threshold in (0, 1). The step is floor(v / 255 * (levels - 1) + t), so a value between two
+ * steps lands on the upper one for a share of cells equal to its distance from the lower one.
+ */
+export function ditherChannel(v: number, t: number, levels: number): number {
+  const n = Math.max(2, Math.min(8, Math.round(levels))) - 1;
+  const step = Math.min(n, Math.floor((Math.max(0, Math.min(255, v)) / 255) * n + t));
+  return Math.round((step / n) * 255);
+}
+
+/** How an image is thresholded: each RGB channel on its own, or the luminance only (chroma kept as it is). */
+export type DitherTone = "channel" | "luma";
+
+/**
+ * Dithers an RGBA image in place, one Bayer threshold per cell. "channel" quantises R, G and B separately
+ * against it: colour is limited to a palette, but near a step the channels can round in different
+ * directions, which shows as pink or green speckle. "luma" dithers only the luminance (Rec. 709) and
+ * rescales the cell's own colour to that brightness, so the hue never flips between neighbours and only the
+ * lightness is patterned. Alpha is left alone. `thr` is a bayerMatrix of size `matrix`.
+ */
+export function ditherImage(data: Uint8ClampedArray, cols: number, rows: number, thr: Float32Array, matrix: 2 | 4 | 8, levels: number, tone: DitherTone = "channel"): void {
+  const m = matrix - 1;
+  const shift = matrix === 8 ? 3 : matrix === 4 ? 2 : 1;
+  for (let y = 0; y < rows; y++) {
+    const row = (y & m) << shift;
+    for (let x = 0; x < cols; x++) {
+      const t = thr[row + (x & m)] ?? 0.5;
+      const i = (y * cols + x) * 4;
+      const r = data[i] ?? 0;
+      const g = data[i + 1] ?? 0;
+      const b = data[i + 2] ?? 0;
+      if (tone === "luma") {
+        const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const d = ditherChannel(l, t, levels);
+        if (l < 1) {
+          data[i] = data[i + 1] = data[i + 2] = d;
+        } else {
+          // Scale the colour to the dithered brightness. Past white the channels clip, so push the
+          // excess into the others as grey rather than let one channel carry the hue.
+          const k = d / l;
+          const rr = r * k;
+          const gg = g * k;
+          const bb = b * k;
+          const over = Math.max(0, Math.max(rr, gg, bb) - 255);
+          const lift = over / 3;
+          data[i] = Math.min(255, Math.round(rr + lift));
+          data[i + 1] = Math.min(255, Math.round(gg + lift));
+          data[i + 2] = Math.min(255, Math.round(bb + lift));
+        }
+      } else {
+        data[i] = ditherChannel(r, t, levels);
+        data[i + 1] = ditherChannel(g, t, levels);
+        data[i + 2] = ditherChannel(b, t, levels);
+      }
+    }
+  }
+}
+
+/**
+ * Where an image lands in a box: [x, y, w, h] in the box's units. "cover" fills the box and crops, "contain"
+ * fits inside it. `pos` is the focal point as fractions of the free space; [0.5, 0.5] is centred.
+ */
+export function imageRect(imgW: number, imgH: number, boxW: number, boxH: number, fit: "cover" | "contain" = "cover", pos: [number, number] = [0.5, 0.5]): [number, number, number, number] {
+  if (imgW <= 0 || imgH <= 0 || boxW <= 0 || boxH <= 0) return [0, 0, Math.max(0, boxW), Math.max(0, boxH)];
+  const k = fit === "cover" ? Math.max(boxW / imgW, boxH / imgH) : Math.min(boxW / imgW, boxH / imgH);
+  const w = imgW * k;
+  const h = imgH * k;
+  const px = Math.max(0, Math.min(1, pos[0]));
+  const py = Math.max(0, Math.min(1, pos[1]));
+  // + 0 turns a -0 (free space times a 0 focal point) into 0.
+  return [(boxW - w) * px + 0, (boxH - h) * py + 0, w, h];
 }
 
 /** Soft radial falloff: 1 at the centre, easing to 0 at `radius`. */
@@ -520,7 +599,7 @@ export function holeFieldRects(
         // Rounded-rectangle signed distance: negative inside, 0 on the edge.
         const s = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
         const i = y * cols + x;
-        const a = dist[i];
+        const a = dist[i] ?? Infinity;
         if (a === Infinity || k === 0) {
           if (s < a) dist[i] = s;
           continue;
@@ -533,8 +612,86 @@ export function holeFieldRects(
   }
   const hole = new Float32Array(cols * rows);
   for (let i = 0; i < hole.length; i++) {
-    const d = Math.min(1, Math.max(0, dist[i] / f));
+    const d = Math.min(1, Math.max(0, (dist[i] ?? 0) / f));
     hole[i] = d * d * (3 - 2 * d);
   }
   return hole;
+}
+
+/* ── Rain field ── */
+
+export interface RainStreak {
+  /** Grid column the streak falls down. */
+  col: number;
+  /** Head position in CSS px from the top. Starts above the field for a streak that has not arrived yet. */
+  y: number;
+  /** Fall speed in CSS px per second. */
+  speed: number;
+  /** Tail length in CSS px. */
+  len: number;
+  /** Head brightness, 0.25 to 1: far layers are dimmer. */
+  glow: number;
+  /** Depth layer: 0 near, 1 middle, 2 far. Far streaks fall slower and dimmer. */
+  layer: 0 | 1 | 2;
+}
+
+/** Speed and brightness of the three depth layers: far streaks are slower and dimmer, which gives the field depth in one colour. */
+export const RAIN_LAYERS = [
+  { speed: 1, glow: 1 },
+  { speed: 0.7, glow: 0.62 },
+  { speed: 0.45, glow: 0.38 },
+] as const;
+
+/** How many streaks fall across `cols` columns: about one column in two at medium density, never fewer than 3. */
+export function rainCount(cols: number, density = 1): number {
+  return Math.max(3, Math.min(cols, Math.round(cols * 0.5 * density)));
+}
+
+/** A fresh streak: a random column, a speed in [60, 260] px/s, a length in `range` and a head brightness. `y` is left to the caller. */
+function rainStreak(rng: () => number, cols: number, range: [number, number]): RainStreak {
+  const [lo, hi] = range;
+  const r = rng();
+  const layer: 0 | 1 | 2 = r < 0.3 ? 0 : r < 0.65 ? 1 : 2;
+  return { col: Math.floor(rng() * Math.max(1, cols)), y: 0, speed: (60 + rng() * 200) * RAIN_LAYERS[layer].speed, len: lo + rng() * Math.max(0, hi - lo), glow: (0.7 + rng() * 0.3) * RAIN_LAYERS[layer].glow, layer };
+}
+
+/** The starting streaks, spread over the whole height so the first frame (and a still frame) already looks full. */
+export function makeRain(n: number, cols: number, h: number, range: [number, number], seed = 17): RainStreak[] {
+  const rng = mulberry32(seed);
+  return Array.from({ length: n }, () => {
+    const s = rainStreak(rng, cols, range);
+    s.y = rng() * (h + s.len);
+    return s;
+  });
+}
+
+/**
+ * Moves every streak down by speed × dt (in place, no allocation). A streak whose tail has left the bottom comes back
+ * above the top as a new one: a new column, speed and length, so the pattern never repeats.
+ */
+export function stepRain(streaks: RainStreak[], dt: number, h: number, cols: number, range: [number, number], rng: () => number): void {
+  for (const s of streaks) {
+    s.y += s.speed * dt;
+    if (s.y - s.len > h) {
+      const n = rainStreak(rng, cols, range);
+      s.col = n.col;
+      s.speed = n.speed;
+      s.len = n.len;
+      s.glow = n.glow;
+      s.layer = n.layer;
+      s.y = -rng() * h * 0.25;
+    }
+  }
+}
+
+/** Brightness of a tail cell at `d` (0 at the head, 1 at the end of the tail): a quick fade then a long faint trail. */
+export function rainAlpha(d: number): number {
+  const t = Math.min(1, Math.max(0, 1 - d));
+  return t ** 1.6;
+}
+
+/** Size of the working copy of a picture: the same shape, its longest side no more than `max`. Never enlarges. */
+export function workingSize(w: number, h: number, max: number) {
+  const k = Math.min(1, max / Math.max(w, h, 1));
+  return { w: Math.max(1, Math.round(w * k)), h: Math.max(1, Math.round(h * k)), scaled: k < 1 };
 }

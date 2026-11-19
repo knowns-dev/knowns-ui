@@ -8,6 +8,7 @@ import { BadgeGroup } from "../badge";
 import { Button } from "../button";
 import { Spinner } from "../spinner";
 import { Tooltip } from "../tooltip";
+import { ThinkingMark, type ThinkingIndicatorVariant } from "./thinking-indicator";
 import {
   announceDelay,
   domainOf,
@@ -82,6 +83,8 @@ export interface ThinkingStateProps {
   maxSources?: number;
   /** "panel" (default): a quiet framed panel. "compact": no frame, smaller, to sit above or inside an answer. */
   variant?: "panel" | "compact";
+  /** Swap the header dot for a moving mark while thinking: "grid", "chain", "ring" or "bars" (see ThinkingIndicator). Default: the breathing dot. */
+  indicator?: ThinkingIndicatorVariant;
   className?: string;
 }
 
@@ -128,7 +131,7 @@ const Cross = () => (
   </svg>
 );
 const Chevron = ({ open }: { open: boolean }) => (
-  <svg {...g} strokeWidth={1.7} className={cn("size-3 flex-none transition-[rotate] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none", open && "rotate-90")}>
+  <svg {...g} strokeWidth={1.7} className={cn("size-3 flex-none transition-[rotate] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none", open && "rotate-90")}>
     <path d="M6 4l4 4-4 4" />
   </svg>
 );
@@ -196,7 +199,7 @@ function SourceChip({ source, children }: { source: ThinkingSource; children: st
   const cls = cn(
     "inline-flex h-5.5 max-w-44 items-center gap-1.5 rounded-md px-1.5 text-[11.5px] text-muted-foreground",
     "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent)]",
-    "transition-[color,background-color] duration-150 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
+    "transition-[color,background-color] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
   );
   const body = (
     <>
@@ -252,6 +255,7 @@ export function ThinkingState({
   onDone,
   maxSources = 4,
   variant = "panel",
+  indicator,
   className,
 }: ThinkingStateProps) {
   const running = status === "thinking";
@@ -354,17 +358,21 @@ export function ThinkingState({
         onClick={() => setOpen(!open)}
         className={cn(
           "group -mx-1 flex max-w-[calc(100%+0.5rem)] items-center gap-2 rounded-md px-1 py-0.5 text-left",
-          "text-muted-foreground transition-colors duration-150 hover:text-foreground",
+          "text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:text-foreground",
           focusRing,
         )}
       >
+        {running && indicator ? (
+          <ThinkingMark variant={indicator} size={compact ? 14 : 16} />
+        ) : (
         <span
           aria-hidden
           className={cn(
             "size-1.5 flex-none rounded-full",
-            running ? "bg-indigo-500 [--hue:var(--color-indigo-500)] motion-safe:animate-[kn-breathe_1.8s_ease-in-out_infinite]" : status === "failed" ? "bg-red-500" : status === "stopped" ? "bg-muted-foreground/50" : "bg-emerald-500/80",
+            running ? "bg-[color:var(--kn-accent,var(--primary))] [--hue:var(--kn-accent,var(--primary))] motion-safe:animate-[kn-breathe_1.8s_ease-in-out_infinite]" : status === "failed" ? "bg-red-500" : status === "stopped" ? "bg-muted-foreground/50" : "bg-emerald-500/80",
           )}
         />
+        )}
         <span className={cn("min-w-0 flex-none truncate font-medium max-w-[70%]", running && "text-foreground/85", status === "failed" && "text-red-600 dark:text-red-400")}>
           <Shimmer on={running}>{headline}</Shimmer>
         </span>
@@ -378,7 +386,7 @@ export function ThinkingState({
         id={bodyId}
         inert={!open}
         className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+          "grid transition-[grid-template-rows,opacity] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
           open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
       >
@@ -396,18 +404,18 @@ export function ThinkingState({
                     className={cn(
                       "relative grid grid-cols-[20px_minmax(0,1fr)] gap-x-2.5",
                       !last && (compact ? "pb-2.5" : "pb-3"),
-                      fresh.includes(step.id) && "animate-[kn-rise_320ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
+                      fresh.includes(step.id) && "animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none",
                     )}
                   >
                     {/* Rail */}
                     {!last && <span aria-hidden className="absolute top-6 bottom-0.5 left-[9.5px] w-px bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]" />}
                     <span
                       aria-hidden
-                      style={s === "running" ? ({ "--hue": "var(--color-indigo-500)" } as CSSProperties) : undefined}
+                      style={s === "running" ? ({ "--hue": "var(--kn-accent,var(--primary))" } as CSSProperties) : undefined}
                       className={cn(
                         "relative mt-px grid size-5 place-items-center rounded-full bg-card",
                         "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_11%,transparent)]",
-                        s === "running" ? "text-indigo-600 dark:text-indigo-300" : s === "failed" ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
+                        s === "running" ? "text-[color:var(--kn-accent,var(--primary))]" : s === "failed" ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
                         logo ? "p-[3px] [&>*]:size-full" : "[&>svg]:size-3",
                       )}
                     >
@@ -479,7 +487,7 @@ function Reasoning({ text, lines, live, indent, compact }: { text: string; lines
       >
         {stable}
         {added && (
-          <span key={text.length} className="animate-[kn-word_420ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
+          <span key={text.length} className="animate-[kn-word_var(--kn-dur-slow)_var(--kn-ease-out)_both] motion-reduce:animate-none">
             {added}
           </span>
         )}

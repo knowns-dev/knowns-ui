@@ -7,7 +7,11 @@ export interface FuzzyMatch {
   ranges: [number, number][];
 }
 
-const isWordStart = (text: string, i: number) => i === 0 || /[\s\-_/.:]/.test(text[i - 1]) || (/[a-z]/.test(text[i - 1]) && /[A-Z]/.test(text[i]));
+const isWordStart = (text: string, i: number) => {
+  if (i === 0) return true;
+  const prev = text[i - 1] ?? "";
+  return /[\s\-_/.:]/.test(prev) || (/[a-z]/.test(prev) && /[A-Z]/.test(text[i] ?? ""));
+};
 
 const merge = (idx: number[]): [number, number][] => {
   const out: [number, number][] = [];
@@ -44,7 +48,8 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatch | null {
     for (let i = from; i < t.length; i++) {
       if (t[i] !== ch) continue;
       if (pick === -1) pick = i;
-      if (isWordStart(text, i) || (idx.length && i === idx[idx.length - 1] + 1)) {
+      const lastPick = idx[idx.length - 1];
+      if (isWordStart(text, i) || (lastPick !== undefined && i === lastPick + 1)) {
         pick = i;
         break;
       }
@@ -56,10 +61,11 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatch | null {
   let score = 0;
   for (let k = 0; k < idx.length; k++) {
     const i = idx[k];
+    if (i === undefined) continue;
     score += 10;
     if (isWordStart(text, i)) score += 8;
     if (k > 0) {
-      const gap = i - idx[k - 1] - 1;
+      const gap = i - (idx[k - 1] ?? i - 1) - 1;
       score += gap === 0 ? 6 : -Math.min(gap, 6);
     }
   }

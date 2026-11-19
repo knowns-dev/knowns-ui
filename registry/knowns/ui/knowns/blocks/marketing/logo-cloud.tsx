@@ -67,9 +67,9 @@ export function LogoMark({ logo, color, dense, className }: { logo: Logo; color?
     word
   );
   const look = cn(
-    "flex min-w-0 items-center justify-center gap-2 px-2 text-foreground transition-[filter,opacity] duration-200 ease-out motion-reduce:transition-none",
+    "flex min-w-0 items-center justify-center gap-2 px-2 text-foreground transition-[filter,opacity] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
     dense ? "h-10 sm:h-16" : "h-16",
-    !color && "opacity-60 grayscale hover:opacity-100 hover:grayscale-0 focus-visible:opacity-100 focus-visible:grayscale-0",
+    !color && "opacity-75 grayscale hover:opacity-100 hover:grayscale-0 focus-visible:opacity-100 focus-visible:grayscale-0",
     className,
   );
   if (logo.href)

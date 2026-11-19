@@ -65,7 +65,7 @@ export function Socials({ m, className }: { m: TeamMember; className?: string })
               rel={mail ? undefined : "noreferrer"}
               aria-label={socialLabel(m.name, l)}
               title={s.label}
-              className={cn("grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground", focusRing)}
+              className={cn("grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-foreground/5 hover:text-foreground", focusRing)}
             >
               {s.icon}
             </a>

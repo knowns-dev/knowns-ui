@@ -32,7 +32,7 @@ export function normalize(sizes: number[]): number[] {
   const total = sizes.reduce((s, v) => s + v, 0);
   if (total <= 0) return normalize(sizes.map(() => 1));
   const out = sizes.map((v) => round((v / total) * 100));
-  out[out.length - 1] = round(out[out.length - 1] + (100 - out.reduce((s, v) => s + v, 0)));
+  out[out.length - 1] = round((out[out.length - 1] ?? 0) + (100 - out.reduce((s, v) => s + v, 0)));
   return out;
 }
 

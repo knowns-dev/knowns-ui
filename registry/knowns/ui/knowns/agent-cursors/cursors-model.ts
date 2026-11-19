@@ -195,7 +195,7 @@ export function layoutTags(boxes: TagBox[], frame: { w: number; h: number }, opt
       // A tag reads as the pointer's only while it stays close to the tip.
       spots.push(...candidates.filter((c) => Math.abs(c.top - b.y) <= MAX_REACH && Math.min(Math.abs(c.left - b.x), Math.abs(c.left + b.w - b.x)) <= MAX_REACH));
     }
-    let best: (typeof spots)[number] & { cost: number; onText: boolean } = { ...spots[0], cost: Infinity, onText: false };
+    let best: (typeof spots)[number] & { cost: number; onText: boolean } = { ...(spots[0] ?? { left: b.x + 10, top: b.y + 16, side: "right" as const }), cost: Infinity, onText: false };
     for (const sp of spots) {
       const inside = sp.left >= 0 && sp.top >= 0 && sp.left + b.w <= frame.w && sp.top + b.h <= frame.h;
       const r = { left: clamp(sp.left, 0, Math.max(0, frame.w - b.w)), top: clamp(sp.top, 0, Math.max(0, frame.h - b.h)), w: b.w, h: b.h };

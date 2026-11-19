@@ -114,7 +114,8 @@ export function groupOptions<T extends Pick<ComboboxOption, "group">>(options: T
 
 /** Trigger text for a multi-select: first label plus "+N". */
 export function summarize(labels: string[]): { first: string; more: number } | null {
-  return labels.length ? { first: labels[0], more: labels.length - 1 } : null;
+  const first = labels[0];
+  return first !== undefined ? { first, more: labels.length - 1 } : null;
 }
 
 /** Add or remove `value` (multiple), keeping the order values were chosen in. */
@@ -176,7 +177,7 @@ const TAGS_RING = cn(
 );
 const DOT: Record<ComboboxDotTone, string> = {
   neutral: "bg-muted-foreground/70",
-  accent: "bg-indigo-500",
+  accent: "bg-[color:var(--kn-accent,var(--primary))]",
   info: "bg-sky-500",
   success: "bg-emerald-500",
   warning: "bg-amber-500",
@@ -733,7 +734,7 @@ export function Combobox(props: ComboboxProps) {
                   type="button"
                   disabled={selected.length === 0}
                   onClick={() => commit([])}
-                  className="h-7 cursor-pointer rounded-[8px] px-2.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
+                  className="h-7 cursor-pointer rounded-[8px] px-2.5 text-[12.5px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
                 >
                   Clear
                 </button>
@@ -741,7 +742,7 @@ export function Combobox(props: ComboboxProps) {
                   type="button"
                   data-last=""
                   onClick={() => close(true)}
-                  className="h-7 cursor-pointer rounded-[8px] bg-foreground px-3 text-[12.5px] font-medium text-background transition-opacity hover:opacity-90 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  className="h-7 cursor-pointer rounded-[8px] bg-foreground px-3 text-[12.5px] font-medium text-background transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:opacity-90 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   Done
                 </button>

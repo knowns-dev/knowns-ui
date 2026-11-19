@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import { useLive } from "@/registry/knowns/ui/knowns/illustrations/use-in-view";
+import { EASE } from "@/registry/knowns/lib/knowns/motion-utils";
 import { BackgroundFrame } from "./background-frame";
 import { intensityScale, speedScale, tokenColor, withAlpha, type BackgroundProps } from "./bg-utils";
 
@@ -45,8 +46,8 @@ const CSS = `
 @keyframes knbg-floor-b { 0% { transform: translateX(8%) scaleY(1.06); } 100% { transform: translateX(-9%) scaleY(0.86); } }
 @keyframes knbg-floor-breathe { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
 [data-kn-bg="gradient-floor"] .kn-rise { animation: knbg-floor-rise 1.5s var(--kn-ease-out) both; }
-[data-kn-bg="gradient-floor"] .kn-breathe { animation: knbg-floor-breathe var(--kn-breathe) ease-in-out infinite; }
-[data-kn-bg="gradient-floor"] .kn-a, [data-kn-bg="gradient-floor"] .kn-b { transform-origin: 50% 100%; will-change: transform; animation: var(--kn-name) var(--knbg-dur) cubic-bezier(.45,0,.55,1) infinite alternate; }
+[data-kn-bg="gradient-floor"] .kn-breathe { animation: knbg-floor-breathe var(--kn-breathe) var(--kn-ease-inout, cubic-bezier(.65,0,.35,1)) infinite; }
+[data-kn-bg="gradient-floor"] .kn-a, [data-kn-bg="gradient-floor"] .kn-b { transform-origin: 50% 100%; will-change: transform; animation: var(--kn-name) var(--knbg-dur) var(--kn-ease-inout, cubic-bezier(.65,0,.35,1)) infinite alternate; }
 [data-kn-bg="gradient-floor"] .kn-wave { position: absolute; bottom: 0; border-radius: 50%; pointer-events: none; will-change: transform, opacity; opacity: 0; }
 `;
 
@@ -66,8 +67,8 @@ export function GradientFloor({ speed, color, mask = "none", focus, intensity, p
   const s = speedScale(speed);
   const k = intensityScale(intensity);
   const list = (Array.isArray(color) ? color : color ? [color] : DEFAULT).slice(0, 2).map((c) => tokenColor(c));
-  const c1 = list[0];
-  const c2 = list[1] ?? list[0];
+  const c1 = list[0] ?? "";
+  const c2 = list[1] ?? c1;
   const rise = clamp(height, 0.2, 1) * 100;
 
   // Latest values for the pulse function the bus and the ref share (no re-subscribe on every render).
@@ -95,7 +96,7 @@ export function GradientFloor({ speed, color, mask = "none", focus, intensity, p
         { transform: "translateX(-50%) scale(0.95)", opacity: clamp(0.5 + 0.4 * st, 0, 1), offset: 0.22 },
         { transform: "translateX(-50%) scale(1.15)", opacity: 0 },
       ],
-      { duration: 1500 / Math.max(0.3, cur.s), easing: "cubic-bezier(.22,1,.36,1)", fill: "both" },
+      { duration: 1500 / Math.max(0.3, cur.s), easing: EASE.out, fill: "both" },
     );
     a.onfinish = a.oncancel = () => el.remove();
   }, []);

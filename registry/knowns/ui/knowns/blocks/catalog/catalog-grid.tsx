@@ -4,7 +4,9 @@
 import { createContext, startTransition, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Toggle } from "../../toggle-group";
-import { categoryCounts, countLabel, filterCatalog, orderCategories, pickLiveRowGroups, sampleScale, type LiveCard } from "./catalog-utils";
+import { SegmentedControl } from "../../segmented-control";
+import { Input } from "../../input";
+import { CATALOG_TIERS, categoryCounts, countLabel, filterCatalog, orderCategories, pickLiveRowGroups, sampleScale, tierCounts, type CatalogTier, type LiveCard } from "./catalog-utils";
 
 export interface CatalogItem {
   id: string;
@@ -76,6 +78,27 @@ export interface CatalogGridProps {
   live?: boolean;
   /** Most live previews mounted at once; the least recently seen is unmounted first. Default 12. */
   maxLive?: number;
+  /**
+   * When a live preview mounts. "view" (default): when the card scrolls into view, a row at a time. "hover": only
+   * while a card is hovered or has focus inside it, and it unmounts on leave or blur; nothing at load, so no demo
+   * code runs until someone points at a card. Both: never on touch, narrow screens, Save-Data or reduced motion.
+   */
+  liveOn?: "view" | "hover";
+  /** A search box over the titles. Controlled with `query`, or uncontrolled. */
+  search?: boolean;
+  query?: string;
+  onQueryChange?: (query: string) => void;
+  /** Tier pills (All, New, Free, Pro) with counts, from each item's `isNew` and `pro`. Controlled with `tier`. */
+  tiers?: boolean;
+  tier?: CatalogTier;
+  onTierChange?: (tier: CatalogTier) => void;
+  /**
+   * "tabs" (default): category tabs over one grid. "sections": no tabs, one titled section per category with its
+   * count, so a long catalogue reads as a page. Empty sections are dropped.
+   */
+  layout?: "tabs" | "sections";
+  /** Link for a section title in "sections" layout, e.g. its category page. */
+  sectionHref?: (category: string) => string | undefined;
   className?: string;
 }
 
@@ -102,7 +125,7 @@ function useLiveAllowed(enabled: boolean): boolean {
   return enabled && ok;
 }
 
-type LiveCtx = { observe: (id: string, el: Element) => () => void; mounted: ReadonlySet<string> };
+type LiveCtx = { mode: "view"; observe: (id: string, el: Element) => () => void; mounted: ReadonlySet<string> } | { mode: "hover" };
 const Live = createContext<LiveCtx | null>(null);
 
 /** One IntersectionObserver for the grid; mounts cards that come near the viewport, at most `max` at once (LRU). */
@@ -196,7 +219,7 @@ function useLiveManager(allowed: boolean, max: number): LiveCtx | null {
       io.current?.unobserve(el);
     };
   }, []);
-  return useMemo(() => (allowed ? { observe, mounted } : null), [allowed, observe, mounted]);
+  return useMemo(() => (allowed ? ({ mode: "view", observe, mounted } as const) : null), [allowed, observe, mounted]);
 }
 
 /** The live preview layer: laid out at `width`, scaled to the card, faded in over the poster. */
@@ -229,7 +252,7 @@ function contentBox(el: HTMLElement, scale: number): { w: number; h: number; x: 
   return { x: (x0 - o.left) / scale, y: (y0 - o.top) / scale, w: (x1 - x0) / scale, h: (y1 - y0) / scale };
 }
 
-function LivePreview({ width, render, align = "top" }: { width: number | "fit"; render: () => ReactNode; align?: "top" | "center" }) {
+function LivePreview({ width, render, align = "top", onShown }: { width: number | "fit"; render: () => ReactNode; align?: "top" | "center"; onShown?: (shown: boolean) => void }) {
   const box = useRef<HTMLSpanElement>(null);
   const inner = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -266,18 +289,49 @@ function LivePreview({ width, render, align = "top" }: { width: number | "fit"; 
   const fitScale = size && nat ? sampleScale(size, nat) : 0;
   applied.current = fitScale || 1;
   const ready = width === "fit" ? fitScale > 0 : true;
+  // A lazy preview mounts empty first (and a docs page mounts hidden until its example is placed): wait until something
+  // visible has painted in it, so the layer never fades in over the poster while still blank.
+  const [has, setHas] = useState(false);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    let raf = 0;
+    const check = () => {
+      raf = 0;
+      if (el.querySelector("[data-live-slot] > *") && contentBox(el, 1)) {
+        setHas(true);
+        mo.disconnect();
+      }
+    };
+    const mo = new MutationObserver(() => {
+      if (!raf) raf = requestAnimationFrame(check);
+    });
+    mo.observe(el, { childList: true, subtree: true, attributes: true });
+    check();
+    return () => {
+      mo.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+  const visible = shown && ready && has;
+  useEffect(() => {
+    onShown?.(visible);
+    return () => onShown?.(false);
+  }, [visible, onShown]);
   return (
     <span
       ref={box}
       aria-hidden="true"
       inert
       data-catalog-live=""
+      // A live page inside a card: its headings are not this page's sections (kept out of "On this page" and the page markdown).
+      data-toc="false"
+      data-docs-preview-body=""
       className={cn(
         // Same inner padding as the poster (12px). The fade at the bottom edge is a static overlay on the card
         // (a mask here would re-composite the animating preview on every frame).
         // contain: strict keeps each live card's layout, paint and style work inside its own box.
-        "pointer-events-none absolute inset-3 overflow-hidden [contain:strict] transition-opacity duration-200 ease-out motion-reduce:transition-none",
-        shown && ready ? "opacity-100" : "opacity-0",
+        "pointer-events-none absolute inset-3 overflow-hidden [contain:strict]",
       )}
     >
       {width === "fit" && (
@@ -293,7 +347,9 @@ function LivePreview({ width, render, align = "top" }: { width: number | "fit"; 
             willChange: "transform",
           }}
         >
-          {render()}
+          <span data-live-slot="" className="contents">
+            {render()}
+          </span>
         </span>
       )}
       {width !== "fit" && size && scale > 0 && (
@@ -301,7 +357,9 @@ function LivePreview({ width, render, align = "top" }: { width: number | "fit"; 
           className={cn("absolute top-0 left-0 grid origin-top-left justify-items-center", align === "top" ? "items-start" : "items-center")}
           style={{ width, height: size.h / scale, transform: `scale(${scale})`, willChange: "transform" }}
         >
-          <span className="block w-full">{render()}</span>
+          <span data-live-slot="" className="block w-full">
+            {render()}
+          </span>
         </span>
       )}
     </span>
@@ -328,18 +386,31 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
   const count = countLabel(item.count, countNoun);
   const live = useContext(Live);
   const thumbRef = useRef<HTMLSpanElement>(null);
-  const observe = live?.observe;
+  const observe = live?.mode === "view" ? live.observe : undefined;
   const hasPreview = Boolean(item.preview);
+  // "hover" mode: live while the pointer is on the card (a mouse only) or focus is inside it.
+  const [hot, setHot] = useState(false);
+  const hover = live?.mode === "hover";
+  // A true crossfade: the poster is never touched. The live layer (backdrop and preview as one) fades in over it once it has content, and fades back out on leave before it unmounts, so no frame is emptier than the poster.
+  const [shownLive, setShownLive] = useState(false);
   useEffect(() => {
     const el = thumbRef.current;
     if (!observe || !hasPreview || !el) return;
     return observe(item.id, el);
   }, [observe, hasPreview, item.id]);
-  const isLive = Boolean(item.preview && live?.mounted.has(item.id));
+  const isLive = Boolean(item.preview && (live?.mode === "hover" ? hot : live?.mode === "view" && live.mounted.has(item.id)));
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (isLive) return setMounted(true);
+    const t = window.setTimeout(() => setMounted(false), 140);
+    return () => window.clearTimeout(t);
+  }, [isLive]);
   const inline = Boolean(item.inline && item.preview);
+  // Extras go in visually hidden text after the visible title, count and description, so the accessible name starts with what is shown (WCAG 2.5.3, label in name).
+  const extras = [item.kind ?? null, item.pro ? "Pro" : item.proVariants ? "Pro variants" : null, item.isNew ? "New" : null, count].filter(Boolean).join(", ");
   const body = (
     <>
-      <span ref={thumbRef} className="relative block aspect-[16/10] w-full overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] transition-[box-shadow,background-color] duration-200 ease-out group-hover:bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))] group-hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_16%,transparent)]">
+      <span ref={thumbRef} className="relative block aspect-[16/10] w-full overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] transition-[box-shadow,background-color] duration-(--kn-dur) ease-(--kn-ease-out) group-hover:bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))] group-hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_16%,transparent)]">
         <span className="absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full">{inline ? <span className="block w-full">{item.preview?.({ live: isLive })}</span> : item.thumb}</span>
 
 
@@ -351,30 +422,36 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
           {count && <span className="ml-auto flex-none text-[12.5px] leading-5 text-muted-foreground tabular-nums">{item.count}</span>}
         </span>
         {item.description && <span className="mt-0.5 block truncate text-[13px] leading-5 text-muted-foreground">{item.description}</span>}
+        {extras && <span className="sr-only">{`, ${extras}`}</span>}
       </span>
     </>
   );
   const cls = cn("group flex w-full min-w-0 flex-col rounded-[12px] text-left transition-transform duration-(--kn-dur) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transition-none motion-reduce:active:scale-100", focusRing);
   // Outside the link (a preview has links of its own), over the thumbnail, click-through.
-  const overlay = isLive && item.preview && !inline && (
-    <span className="pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground">
-      <LivePreview width={item.previewWidth ?? 720} align={item.previewAlign} render={() => item.preview?.({ live: true })} />
+  const overlay = mounted && item.preview && !inline && (
+    <span className={cn("pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground transition-opacity ease-(--kn-ease-out) motion-reduce:transition-none", isLive && shownLive ? "opacity-100 duration-(--kn-dur)" : "opacity-0 duration-(--kn-dur-fast)")}>
+      <LivePreview width={item.previewWidth ?? 720} align={item.previewAlign} render={() => item.preview?.({ live: true })} onShown={setShownLive} />
       {item.previewWidth !== "fit" && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] to-transparent" />}
       <span aria-hidden="true" className="absolute inset-0 rounded-[12px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]" />
     </span>
   );
-  const label = [item.title, item.kind ?? null, item.pro ? "Pro" : item.proVariants ? "Pro variants" : null, item.isNew ? "New" : null, count].filter(Boolean).join(", ");
   const card = item.href ? (
-    <a href={item.href} aria-label={label} className={cls} onClick={onSelect ? () => onSelect(item) : undefined}>
+    <a href={item.href} className={cls} onClick={onSelect ? () => onSelect(item) : undefined}>
       {body}
     </a>
   ) : (
-    <button type="button" aria-label={label} className={cls} onClick={() => onSelect?.(item)}>
+    <button type="button" className={cls} onClick={() => onSelect?.(item)}>
       {body}
     </button>
   );
   return (
-    <div className="relative flex w-full min-w-0">
+    <div
+      className="relative flex w-full min-w-0"
+      onPointerEnter={hover ? (e) => e.pointerType === "mouse" && setHot(true) : undefined}
+      onPointerLeave={hover ? () => setHot(false) : undefined}
+      onFocus={hover ? () => setHot(true) : undefined}
+      onBlur={hover ? (e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setHot(false) : undefined}
+    >
       {card}
       {overlay}
       {item.kind && (
@@ -409,25 +486,77 @@ export function CatalogGrid({
   size = "card",
   live: liveProp = true,
   maxLive = 12,
+  liveOn = "view",
+  search = false,
+  query: queryProp,
+  onQueryChange,
+  tiers = false,
+  tier: tierProp,
+  onTierChange,
+  layout = "tabs",
+  sectionHref,
   className,
 }: CatalogGridProps) {
   const liveAllowed = useLiveAllowed(liveProp && items.some((i) => i.preview));
-  const liveCtx = useLiveManager(liveAllowed, maxLive);
+  const viewCtx = useLiveManager(liveAllowed && liveOn === "view", maxLive);
+  const liveCtx = useMemo<LiveCtx | null>(() => (liveAllowed && liveOn === "hover" ? { mode: "hover" } : viewCtx), [liveAllowed, liveOn, viewCtx]);
   const [own, setOwn] = useState(defaultCategory);
+  const [ownQuery, setOwnQuery] = useState("");
+  const [ownTier, setOwnTier] = useState<CatalogTier>("all");
   const category = categoryProp ?? own;
+  const query = queryProp ?? ownQuery;
+  const tier = tierProp ?? ownTier;
   const setCategory = (c: string) => {
     if (categoryProp === undefined) setOwn(c);
     onCategoryChange?.(c);
   };
+  const setQuery = (q: string) => {
+    if (queryProp === undefined) setOwnQuery(q);
+    onQueryChange?.(q);
+  };
+  const setTier = (t: CatalogTier) => {
+    if (tierProp === undefined) setOwnTier(t);
+    onTierChange?.(t);
+  };
+  const sections = layout === "sections";
   const cats = useMemo(() => orderCategories(items, order), [items, order]);
-  const counts = useMemo(() => categoryCounts(items, cats), [items, cats]);
-  const shown = useMemo(() => filterCatalog(items, category), [items, category]);
+  // Pills count what the search matches; tabs and sections count what both filters leave.
+  const tierBase = useMemo(() => filterCatalog(items, "all", query), [items, query]);
+  const tierN = useMemo(() => tierCounts(tierBase), [tierBase]);
+  const base = useMemo(() => filterCatalog(items, "all", query, tier), [items, query, tier]);
+  const counts = useMemo(() => categoryCounts(base, cats), [base, cats]);
+  const shown = useMemo(() => filterCatalog(base, sections ? "all" : category), [base, sections, category]);
   const labelOf = (id: string) => (id === "all" ? "All" : (labels[id] ?? id));
+  const gridCls = size === "page" ? "grid grid-cols-1 gap-x-6 gap-y-8 @[640px]:grid-cols-2 @[1080px]:grid-cols-3" : "grid grid-cols-2 gap-x-4 gap-y-6 @[640px]:grid-cols-3 @[1080px]:grid-cols-5";
+  const grid = (list: typeof shown) => (
+    <ul data-size={size} className={gridCls}>
+      {list.map((item) => (
+        <li key={item.id} className="flex min-w-0">
+          <CatalogCard item={item} countNoun={countNoun} onSelect={onSelect} />
+        </li>
+      ))}
+    </ul>
+  );
+  const status = [query.trim() || tier !== "all" || (!sections && category !== "all") ? `${shown.length} shown` : ""].filter(Boolean).join("");
 
   return (
     <Live.Provider value={liveCtx}>
     <section aria-label="Catalog" className={cn("@container w-full", className)}>
-      {tabs && cats.length > 1 && (
+      {(search || tiers) && (
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          {tiers && (
+            <SegmentedControl
+              size="sm"
+              aria-label="Tier"
+              value={tier}
+              onValueChange={(v) => setTier(v as CatalogTier)}
+              options={CATALOG_TIERS.map((t) => ({ value: t, label: (<>{t === "all" ? "All" : t === "new" ? "New" : t === "free" ? "Free" : "Pro"} <span className="ml-0.5 text-muted-foreground tabular-nums">{tierN[t]}</span></>) }))}
+            />
+          )}
+          {search && <Input type="search" aria-label="Search" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} className="w-full sm:ml-auto sm:max-w-[240px]" />}
+        </div>
+      )}
+      {!sections && tabs && cats.length > 1 && (
         <div role="group" aria-label="Category" className="mb-6 flex flex-wrap gap-1.5">
           {counts.map((c) => (
             <Toggle key={c.id} size="sm" variant="outline" pressed={category === c.id} onPressedChange={() => setCategory(c.id)}>
@@ -437,18 +566,39 @@ export function CatalogGrid({
         </div>
       )}
       {shown.length ? (
-        <ul data-size={size} className={size === "page" ? "grid grid-cols-1 gap-x-6 gap-y-8 @[640px]:grid-cols-2 @[1080px]:grid-cols-3" : "grid grid-cols-2 gap-x-4 gap-y-6 @[640px]:grid-cols-3 @[1080px]:grid-cols-5"}>
-          {shown.map((item) => (
-            <li key={item.id} className="flex min-w-0">
-              <CatalogCard item={item} countNoun={countNoun} onSelect={onSelect} />
-            </li>
-          ))}
-        </ul>
+        sections ? (
+          <div className="flex flex-col gap-10">
+            {cats.map((c) => {
+              const list = filterCatalog(base, c);
+              if (!list.length) return null;
+              const href = sectionHref?.(c);
+              return (
+                <section key={c} aria-label={labelOf(c)} className="flex flex-col gap-3">
+                  <div className="flex items-baseline gap-2">
+                    <h2 id={c.toLowerCase().replace(/[^a-z0-9]+/g, "-")} className="scroll-mt-24 text-lg font-semibold tracking-tight">
+                      {href ? (
+                        <a href={href} className="hover:underline">
+                          {labelOf(c)}
+                        </a>
+                      ) : (
+                        labelOf(c)
+                      )}
+                    </h2>
+                    <span className="text-[13px] text-muted-foreground tabular-nums">{list.length}</span>
+                  </div>
+                  {grid(list)}
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          grid(shown)
+        )
       ) : (
         <div className="rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-6 py-12 text-center text-[14px] text-muted-foreground">{empty ?? "Nothing here yet."}</div>
       )}
       <p className="sr-only" aria-live="polite">
-        {category === "all" ? "" : `${shown.length} in ${labelOf(category)}`}
+        {status}
       </p>
     </section>
     </Live.Provider>

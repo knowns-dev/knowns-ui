@@ -13,6 +13,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { Button } from "./button";
+import { EASE, MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 
 /* ── Scoring (pure) ── */
 
@@ -113,7 +114,10 @@ export function effectiveLength(pw: string) {
       len += 1;
       continue;
     }
-    const step: number | null | "same" = chars[i] === chars[i - 1] ? "same" : stepOf(chars[i - 1], chars[i]);
+    const cur = chars[i];
+    const prev = chars[i - 1];
+    if (cur === undefined || prev === undefined) continue;
+    const step: number | null | "same" = cur === prev ? "same" : stepOf(prev, cur);
     run = step !== null && step === lastStep ? run + 1 : step !== null ? 2 : 1;
     lastStep = step;
     len += run >= 3 ? 0.25 : 1;
@@ -227,7 +231,8 @@ export function cryptoRandom(n: number) {
   const buf = new Uint32Array(1);
   for (;;) {
     globalThis.crypto.getRandomValues(buf);
-    if (buf[0] < max) return buf[0] % n;
+    const v = buf[0];
+    if (v !== undefined && v < max) return v % n;
   }
 }
 
@@ -290,8 +295,6 @@ const TONE_TEXT: Record<StrengthScore, string> = {
   4: "text-emerald-700 dark:text-emerald-300",
 };
 
-const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
-
 function prefersReducedMotion() {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -306,10 +309,9 @@ const Tick = ({ on }: { on: boolean }) => (
       viewBox="0 0 16 16"
       fill="none"
       className={cn(
-        "absolute inset-0 size-full transition-[transform,opacity] motion-reduce:transition-none",
-        on ? "scale-100 opacity-100 duration-200" : "scale-90 opacity-0 duration-150",
+        "absolute inset-0 size-full transition-[transform,opacity] ease-(--kn-ease-out) motion-reduce:transition-none",
+        on ? "scale-100 opacity-100 duration-(--kn-dur)" : "scale-90 opacity-0 duration-(--kn-dur-fast)",
       )}
-      style={{ transitionTimingFunction: "var(--kn-ease-out, cubic-bezier(.22,1,.36,1))" }}
     >
       <circle cx="8" cy="8" r="7" className="fill-emerald-500 dark:fill-emerald-400" />
       <path
@@ -320,8 +322,8 @@ const Tick = ({ on }: { on: boolean }) => (
         pathLength={1}
         strokeDasharray="1"
         className={cn(
-          "stroke-white transition-[stroke-dashoffset] motion-reduce:transition-none dark:stroke-emerald-950",
-          on ? "[stroke-dashoffset:0] delay-75 duration-200 motion-reduce:delay-0" : "[stroke-dashoffset:1] duration-100",
+          "stroke-white transition-[stroke-dashoffset] duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none dark:stroke-emerald-950",
+          on ? "[stroke-dashoffset:0] delay-75 duration-(--kn-dur) motion-reduce:delay-0" : "[stroke-dashoffset:1] duration-(--kn-dur-fast)",
         )}
       />
     </svg>
@@ -341,11 +343,10 @@ function StrengthLabel({ level, score }: { level: number; score: StrengthScore |
           <span
             key={text}
             className={cn(
-              "col-start-1 row-start-1 whitespace-nowrap transition-[opacity,transform,color] duration-[180ms] motion-reduce:transition-none",
+              "col-start-1 row-start-1 whitespace-nowrap transition-[opacity,transform,color] ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none",
               at === -1 ? "text-muted-foreground" : TONE_TEXT[(score ?? 0) as StrengthScore],
               active ? "translate-y-0 opacity-100" : at < level ? "-translate-y-1.5 opacity-0" : "translate-y-1.5 opacity-0",
             )}
-            style={{ transitionTimingFunction: EASE_OUT }}
           >
             {text}
           </span>
@@ -431,7 +432,7 @@ export function PasswordStrength({
         { opacity: 1, offset: 0.25 },
         { transform: "translateX(100%)", opacity: 0 },
       ],
-      { duration: 900, delay: 180, easing: "cubic-bezier(.22,1,.36,1)" },
+      { duration: MOTION.slow, delay: MOTION.fast, easing: EASE.out },
     );
   }, [top, shownScore, empty]);
 
@@ -509,13 +510,10 @@ export function PasswordStrength({
             <span key={i} className="relative h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
               <span
                 className={cn(
-                  "absolute inset-0 origin-left rounded-full bg-[var(--kn-pw-tone)] motion-reduce:transition-none",
+                  "absolute inset-0 origin-left rounded-full bg-[var(--kn-pw-tone)] transition-[transform,background-color] duration-(--kn-dur-slow) ease-(--kn-ease-inout) motion-reduce:transition-none",
                   i < level ? "scale-x-100" : "scale-x-0",
                 )}
                 style={{
-                  transitionProperty: "transform, background-color",
-                  transitionDuration: "220ms, 250ms",
-                  transitionTimingFunction: `${EASE_OUT}, ease-out`,
                   transitionDelay: `${segmentDelay(i, fromLevel, level)}ms, 0ms`,
                 }}
               />
@@ -534,7 +532,7 @@ export function PasswordStrength({
           {checks.map((c) => (
             <li
               key={c.id}
-              className={cn("flex items-center gap-2 text-[12.5px] transition-colors duration-200 motion-reduce:transition-none", c.met ? "text-foreground" : "text-muted-foreground")}
+              className={cn("flex items-center gap-2 text-[12.5px] transition-colors ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none", c.met ? "text-foreground" : "text-muted-foreground")}
             >
               <Tick on={c.met} />
               <span>
@@ -550,7 +548,7 @@ export function PasswordStrength({
       <p
         aria-hidden={!hint || undefined}
         className={cn(
-          "min-h-[1lh] truncate text-[12px] leading-[18px] text-muted-foreground transition-opacity duration-200 motion-reduce:transition-none",
+          "min-h-[1lh] truncate text-[12px] leading-[18px] text-muted-foreground transition-opacity ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none",
           hint ? "opacity-100" : "opacity-0",
         )}
       >
@@ -573,7 +571,7 @@ export function PasswordStrength({
           >
             {generated ? "Generate another" : "Generate strong password"}
           </Button>
-          <span className={cn("transition-opacity duration-200 motion-reduce:transition-none", canCopy ? "opacity-100" : "pointer-events-none opacity-0")} aria-hidden={!canCopy || undefined}>
+          <span className={cn("transition-opacity ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none", canCopy ? "opacity-100" : "pointer-events-none opacity-0")} aria-hidden={!canCopy || undefined}>
             <Button type="button" size="sm" variant="ghost" onClick={onCopy} tabIndex={canCopy ? undefined : -1}>
               {copied ? "Copied" : "Copy"}
             </Button>

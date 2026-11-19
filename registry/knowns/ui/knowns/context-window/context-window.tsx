@@ -3,6 +3,7 @@
 
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { SwapText, TickNumber, useChangeCount } from "@/registry/knowns/lib/knowns/motion";
 import { Button } from "../button";
 import { Tooltip } from "../tooltip";
 import { ContextCells } from "./context-cells";
@@ -71,6 +72,14 @@ const STATE_TONE: Record<ContextState, string> = {
   full: "text-red-600 dark:text-red-400",
   over: "text-red-600 dark:text-red-400",
 };
+/** Bar motion: a state flip fades its words in (120ms); the history segment shimmers while compacting, the only loop. */
+const BAR_CSS = `
+@keyframes kncw-fade { from { opacity: 0; } }
+.kncw-fade { animation: kncw-fade var(--kn-dur-fast, 120ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
+@keyframes kncw-bar-shimmer { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+[data-kncw-busy="true"] { animation: kncw-bar-shimmer 1s var(--kn-ease-inout, cubic-bezier(.65, 0, .35, 1)) infinite; }
+@media (prefers-reduced-motion: reduce) { .kncw-fade, [data-kncw-busy="true"] { animation: none !important; } }
+`;
 const HATCH = (c: string) => `repeating-linear-gradient(135deg, color-mix(in srgb, ${c} 55%, transparent) 0 3px, color-mix(in srgb, ${c} 18%, transparent) 3px 6px)`;
 
 /**
@@ -106,6 +115,7 @@ export function ContextWindow(props: ContextWindowProps) {
   const state = limit ? contextState(totals.fill, warnAt, fullAt) : "ok";
   const colors = useMemo(() => segmentColors(segments), [segments]);
   const [hot, setHot] = useState<string | null>(null);
+  const stateChanges = useChangeCount(state);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const titleId = useId();
 
@@ -125,6 +135,11 @@ export function ContextWindow(props: ContextWindowProps) {
   // The bar spans the limit; past it, it spans what's there and marks the limit.
   const span = Math.max(limit ?? 0, totals.used + totals.reserved, 1);
   const ordered = [...segments.filter((s) => !isReserve(s)), ...segments.filter(isReserve)];
+  // Each segment's span of the bar, in % of it.
+  const spans = ordered.reduce<{ s: ContextSegment; start: number; end: number }[]>((acc, s) => {
+    const start = acc.length ? acc[acc.length - 1]!.end : 0;
+    return [...acc, { s, start, end: Math.min(100, start + (segTokens(s) / span) * 100) }];
+  }, []);
   const compactButton =
     action ??
     (onCompact && (
@@ -147,9 +162,9 @@ export function ContextWindow(props: ContextWindowProps) {
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 tabular-nums">
             {limit ? (
               <>
-                <span className={cn("text-[28px] font-semibold leading-none tracking-tight", state !== "ok" && STATE_TONE[state])}>{formatPct(totals.pct)}</span>
+                <span className={cn("text-[28px] font-semibold leading-none tracking-tight", state !== "ok" && STATE_TONE[state])}><TickNumber value={totals.pct} format={formatPct} /></span>
                 <span className="text-[13.5px] text-muted-foreground">
-                  · <span className="font-medium text-foreground">{fmt(totals.used)}</span> / {fmt(limit)} tokens
+                  · <span className="font-medium text-foreground"><TickNumber value={totals.used} format={fmt} /></span> / {fmt(limit)} tokens
                 </span>
               </>
             ) : (
@@ -180,23 +195,48 @@ export function ContextWindow(props: ContextWindowProps) {
         </div>
       ) : (
       <div {...meter} aria-labelledby={titleId} className="relative">
-        <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted" onMouseLeave={() => setHot(null)}>
-          {ordered.map((s) => {
+        <style href="kncw-bar" precedence="default">
+          {BAR_CSS}
+        </style>
+        {/* Every segment is a full-width layer clipped to its span, so a new size animates the clip (the hatch of the
+            reserve is never stretched) and the bar moves together with the percentage above it. */}
+        <div
+          className="relative h-3 w-full overflow-hidden rounded-full bg-muted"
+          onMouseMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            const at = ((e.clientX - r.left) / Math.max(1, r.width)) * 100;
+            setHot(spans.find((x) => at >= x.start && at < x.end)?.s.id ?? null);
+          }}
+          onMouseLeave={() => setHot(null)}
+        >
+          {spans.map(({ s, start, end }) => {
             const c = colors.get(s.id)!;
             return (
               <div
                 key={s.id}
                 data-segment={s.id}
-                onMouseEnter={() => setHot(s.id)}
-                className="h-full transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) first:rounded-l-full motion-reduce:transition-none [&+&]:border-l [&+&]:border-card"
-                style={{
-                  width: `${(segTokens(s) / span) * 100}%`,
-                  background: isReserve(s) ? HATCH(c) : c,
-                  opacity: hot && hot !== s.id ? 0.3 : 1,
-                }}
-              />
+                data-kncw-busy={(compacting && s.kind === "history") || undefined}
+                className="absolute inset-0 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none"
+                style={{ opacity: hot && hot !== s.id ? 0.3 : 1 }}
+              >
+                <div
+                  className="absolute inset-0 transition-[clip-path] duration-(--kn-dur-slow) ease-(--kn-ease-inout) motion-reduce:transition-none"
+                  style={{ background: isReserve(s) ? HATCH(c) : c, clipPath: `inset(0 ${100 - end}% 0 ${start}%)` }}
+                />
+              </div>
             );
           })}
+          {/* A 1px seam at the start of each segment after the first: it slides with the segment and never stretches. */}
+          {spans.slice(1).map(({ s, start, end }) => (
+            <div
+              key={s.id}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 transition-transform duration-(--kn-dur-slow) ease-(--kn-ease-inout) motion-reduce:transition-none"
+              style={{ transform: `translateX(${start}%)`, opacity: end > start ? 1 : 0 }}
+            >
+              <div className="h-full w-px bg-card" />
+            </div>
+          ))}
         </div>
         {/* Thresholds (and the limit, when over it) as hairlines on the bar. */}
         {limit &&
@@ -205,18 +245,22 @@ export function ContextWindow(props: ContextWindowProps) {
             { at: fullAt, label: "full" },
             ...(span > limit ? [{ at: 1, label: "limit" }] : []),
           ].map((m) => (
+            // The span can change (a reply reserve grows past the limit): the tick slides with the same meter motion.
             <span
               key={m.label}
               aria-hidden="true"
-              className={cn("absolute -inset-y-1 w-px", m.label === "limit" ? "bg-red-500" : "bg-foreground/35")}
-              style={{ left: `${((m.at * limit) / span) * 100}%` }}
-            />
+              className="pointer-events-none absolute -inset-y-1 inset-x-0 transition-transform duration-(--kn-dur-slow) ease-(--kn-ease-inout) motion-reduce:transition-none"
+              style={{ transform: `translateX(${((m.at * limit) / span) * 100}%)` }}
+            >
+              <span className={cn("block h-full w-px", m.label === "limit" ? "bg-red-500" : "bg-foreground/35")} />
+            </span>
           ))}
       </div>
       )}
 
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[12.5px]">
-        <span className={cn("font-medium", STATE_TONE[state])} aria-live="polite">
+      {/* The row keeps its height whatever the state says (two lines when narrow), so the legend never moves. */}
+      <div data-kncw-state="" className="flex min-h-10 flex-col gap-y-0.5 text-[12.5px] @xl:min-h-5 @xl:flex-row @xl:items-baseline @xl:justify-between @xl:gap-x-3">
+        <span key={stateChanges} className={cn("font-medium", STATE_TONE[state], stateChanges > 0 && "kncw-fade")} aria-live="polite">
           {limit ? stateSentence(state, totals, fmt) : "Pass limit, or model with limits, to see how full it is"}
         </span>
         {limit && <span className="text-muted-foreground">{thresholdsText(warnAt, fullAt)}</span>}
@@ -233,15 +277,21 @@ export function ContextWindow(props: ContextWindowProps) {
             <>
               <span aria-hidden="true" className="size-2.5 flex-none rounded-[3px]" style={{ background: isReserve(s) ? HATCH(c) : c }} />
               <span className="min-w-0 flex-1 truncate">
-                {s.label}
+                <SwapText value={s.label} className="max-w-full truncate align-bottom">
+                  {s.label}
+                </SwapText>
                 {parts.length > 0 && <span className="text-muted-foreground"> · {parts.length}</span>}
               </span>
-              <span className="tabular-nums text-muted-foreground">{fmt(tokens)}</span>
-              <span className="w-9 text-right tabular-nums text-muted-foreground">{formatPct(share)}</span>
+              <span className="text-muted-foreground">
+                <TickNumber value={tokens} format={fmt} />
+              </span>
+              <span className="w-9 text-right text-muted-foreground">
+                <TickNumber value={share} format={formatPct} />
+              </span>
             </>
           );
           const rowClass = cn(
-            "flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-[12.5px] outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ring/70",
+            "flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-[12.5px] outline-none transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) focus-visible:ring-2 focus-visible:ring-ring/70",
             hot && hot !== s.id && "opacity-45",
             hot === s.id && "bg-muted/60",
           );
@@ -265,7 +315,7 @@ export function ContextWindow(props: ContextWindowProps) {
                 className={cn(rowClass, "cursor-pointer hover:bg-muted/60")}
               >
                 {row}
-                <svg aria-hidden="true" viewBox="0 0 16 16" className={cn("-mr-0.5 size-3.5 flex-none text-muted-foreground transition-transform", isOpen && "rotate-90")} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <svg aria-hidden="true" viewBox="0 0 16 16" className={cn("-mr-0.5 size-3.5 flex-none text-muted-foreground transition-transform duration-(--kn-dur) ease-(--kn-ease-out)", isOpen && "rotate-90")} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m6 4 4 4-4 4" />
                 </svg>
               </button>
@@ -321,7 +371,8 @@ function Sparkline({ history, limit, warnAt, fullAt, fmt }: { history: number[];
   const y = (v: number) => H - (v / top) * H;
   const line = history.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   const cut = drops(history);
-  const last = history[history.length - 1];
+  const at = (i: number) => history[i] ?? 0;
+  const last = at(history.length - 1);
   const [hover, setHover] = useState<number | null>(null);
   const fillId = useId();
   return (
@@ -329,14 +380,14 @@ function Sparkline({ history, limit, warnAt, fullAt, fmt }: { history: number[];
     <figure className="mt-auto flex flex-col gap-1">
       <figcaption className="flex items-baseline justify-between text-[12px] text-muted-foreground">
         <span>Per turn · {history.length} turns{cut.length ? ` · ${cut.length} ${cut.length === 1 ? "compaction" : "compactions"}` : ""}</span>
-        <span className="tabular-nums">{hover !== null ? `Turn ${hover + 1}: ${fmt(history[hover])}` : `Now ${fmt(last)}`}</span>
+        <span className="tabular-nums">{hover !== null ? `Turn ${hover + 1}: ${fmt(at(hover))}` : `Now ${fmt(last)}`}</span>
       </figcaption>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`Tokens per turn over ${history.length} turns, from ${fmt(history[0])} to ${fmt(last)}${cut.length ? `, dropping ${cut.length} ${cut.length === 1 ? "time" : "times"}` : ""}`}
-        className="h-11 w-full overflow-visible text-indigo-500"
+        aria-label={`Tokens per turn over ${history.length} turns, from ${fmt(at(0))} to ${fmt(last)}${cut.length ? `, dropping ${cut.length} ${cut.length === 1 ? "time" : "times"}` : ""}`}
+        className="h-11 w-full overflow-visible text-[color:var(--kn-accent,var(--primary))]"
         onMouseMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           setHover(Math.max(0, Math.min(history.length - 1, Math.round(((e.clientX - r.left) / r.width) * (history.length - 1)))));
@@ -356,7 +407,7 @@ function Sparkline({ history, limit, warnAt, fullAt, fmt }: { history: number[];
         <path d={`${line} L${W},${H} L0,${H} Z`} fill={`url(#${fillId})`} />
         <path d={line} fill="none" stroke="currentColor" strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
         {cut.map((i) => (
-          <line key={i} x1={x(i)} x2={x(i)} y1={y(history[i - 1])} y2={y(history[i])} className="text-emerald-600 dark:text-emerald-400" stroke="currentColor" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+          <line key={i} x1={x(i)} x2={x(i)} y1={y(at(i - 1))} y2={y(at(i))} className="text-emerald-600 dark:text-emerald-400" stroke="currentColor" strokeWidth={2} vectorEffect="non-scaling-stroke" />
         ))}
         {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={0} y2={H} className="text-foreground/30" stroke="currentColor" vectorEffect="non-scaling-stroke" />}
       </svg>
@@ -431,13 +482,13 @@ function Ring({
               strokeWidth={stroke}
               strokeDasharray={`${Math.max(0, len - 0.6)} ${C}`}
               strokeDashoffset={-offset}
-              className="transition-[stroke-dasharray,stroke-dashoffset] duration-500 motion-reduce:transition-none"
+              className="transition-[stroke-dasharray,stroke-dashoffset] duration-(--kn-dur-slow) ease-(--kn-ease-inout) motion-reduce:transition-none"
             />
           ))}
         </svg>
         {size >= 28 && (
           <span aria-hidden="true" className={cn("absolute text-[10px] font-semibold tabular-nums", state === "ok" ? "text-foreground" : STATE_TONE[state])} style={{ fontSize: Math.max(9, size * 0.3) }}>
-            {center}
+            {limit ? <TickNumber value={totals.pct} format={(p) => formatPct(p).replace("%", "")} /> : center}
           </span>
         )}
         {state !== "ok" && <span aria-hidden="true" className={cn("absolute -right-0.5 -top-0.5 size-2 rounded-full border-2 border-card", state === "warn" ? "bg-amber-500" : "bg-red-500")} />}

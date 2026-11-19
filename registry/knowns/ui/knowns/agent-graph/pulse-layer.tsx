@@ -93,7 +93,7 @@ export function PulseLayer({
     const pts = pathRef.current(p.from, p.to);
     if (!pts) return null;
     const cum = measure(pts);
-    const total = cum[cum.length - 1];
+    const total = cum[cum.length - 1] ?? 0;
     const len = Math.min(p.kind === "ok" ? 56 : 84, total * 0.6);
     const head = ease(Math.min(1, (now - p.start) / p.dur)) * (total + len);
     const hue = p.kind === "fail" ? "#ef4444" : hueRef.current(p.from, p.to);

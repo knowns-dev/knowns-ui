@@ -57,7 +57,8 @@ export interface TraceWaterfallProps {
 
 const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 /** Rows gliding to a new place, the body growing, a new row settling in. */
-const GLIDE = `duration-[380ms] ${EASE} motion-reduce:transition-none`;
+// Rows already on screen glide to their new place: slow token, in-out.
+const GLIDE = `duration-(--kn-dur-slow) ease-(--kn-ease-inout) motion-reduce:transition-none`;
 
 /* Bars, labels and ticks are placed in CSS from times (ms after `anchor`) and three variables on the root:
    --kn-v0 / --kn-vlen (the view, tweened every frame) and --kn-now (the live clock). One rAF loop writes
@@ -110,7 +111,7 @@ function Block({ label, value, tone }: { label: string; value: unknown; tone?: "
 }
 
 const Chevron = ({ open }: { open: boolean }) => (
-  <svg viewBox="0 0 16 16" aria-hidden className={cn("size-3 transition-transform duration-200 motion-reduce:transition-none", EASE, open && "rotate-90")} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 16 16" aria-hidden className={cn("size-3 transition-transform duration-(--kn-dur) motion-reduce:transition-none", EASE, open && "rotate-90")} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M6 4l4 4-4 4" />
   </svg>
 );
@@ -305,6 +306,7 @@ export function TraceWaterfall({
     // Scroll into range first (virtualised rows may not be mounted yet), then focus.
     const body = bodyRef.current;
     const top = layout.offsets[i];
+    if (top === undefined) return;
     if (body && (top < body.scrollTop || top + ROW_H > body.scrollTop + body.clientHeight)) body.scrollTop = Math.max(0, top - body.clientHeight / 3);
     requestAnimationFrame(() => rowEls.current.get(r.span.id)?.focus({ preventScroll: true }));
   };
@@ -499,7 +501,7 @@ export function TraceWaterfall({
           }}
           className={cn(
             "group flex h-8 cursor-pointer items-center outline-none",
-            enter && "transition-[opacity,translate] duration-[420ms] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:-translate-y-1.5 starting:opacity-0",
+            enter && "transition-[opacity,translate] duration-(--kn-dur-slow) ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:-translate-y-1.5 starting:opacity-0",
             "hover:bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:shadow-[inset_2px_0_0_var(--ring)]",
             isOpen && "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
             dim && "opacity-45",
@@ -549,7 +551,7 @@ export function TraceWaterfall({
                   className={cn(
                     "pointer-events-auto relative block w-full",
                     textPos === "inside" ? "h-4" : "h-3",
-                    "transition-[background-color,opacity] duration-500 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+                    "transition-[background-color,opacity] duration-(--kn-dur) ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
                     failed && "!bg-red-500/90 dark:!bg-red-400/90",
                   )}
                   style={{
@@ -591,7 +593,7 @@ export function TraceWaterfall({
                   "absolute top-1/2 -translate-y-1/2 text-[11px] whitespace-nowrap tabular-nums",
                   textPos === "after" ? "left-0 pl-1.5" : "right-full pr-1.5",
                   textPos === "inside" ? "font-medium" : failed ? "text-red-600 dark:text-red-400" : slow ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground",
-                  settle && "transition-opacity duration-500 starting:opacity-0",
+                  settle && "transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) starting:opacity-0",
                 )}
               >
                 {running ? null : durText}
@@ -632,8 +634,9 @@ export function TraceWaterfall({
     <div ref={rootRef} role="region" aria-labelledby={titleId} className={cn(SURFACE, className)} style={initialVars}>
       {/* Header */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-3.5 pb-3">
-        <div className="flex min-w-0 flex-1 items-baseline gap-2">
-          <h3 id={titleId} className="truncate text-[14px] font-semibold tracking-tight">
+        {/* Narrow: the title has the first row to itself and the controls wrap below it. Wide: it shares the row. */}
+        <div data-slot="trace-header-title" className="flex min-w-0 basis-full items-baseline gap-2 @[640px]:flex-1 @[640px]:basis-0">
+          <h3 id={titleId} title={typeof title === "string" ? title : undefined} className="min-w-0 truncate text-[14px] font-semibold tracking-tight">
             {title}
           </h3>
           <span className="text-[12px] whitespace-nowrap text-muted-foreground tabular-nums">
@@ -683,7 +686,7 @@ export function TraceWaterfall({
             const at = t + domain[0] - anchor;
             return (
               <span key={at} data-kn="at" data-kn-s={at} className="pointer-events-none absolute inset-0 overflow-visible" style={{ transform: `translateX(${X(String(at))})` }}>
-                <span className={cn("absolute top-0 left-0 flex h-full items-center transition-opacity duration-300 starting:opacity-0 motion-reduce:transition-none", x > 0.95 && "-translate-x-full")}>
+                <span className={cn("absolute top-0 left-0 flex h-full items-center transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) starting:opacity-0 motion-reduce:transition-none", x > 0.95 && "-translate-x-full")}>
                   <span className={cn("absolute top-0 h-1.5 w-px bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)]", x > 0.95 ? "right-0" : "left-0")} />
                   <span className={cn("text-[10.5px] text-muted-foreground tabular-nums", x > 0.95 ? "pr-1" : "pl-1")}>{formatOffset(t, step)}</span>
                 </span>
@@ -727,7 +730,7 @@ export function TraceWaterfall({
                 const at = t + domain[0] - anchor;
                 return (
                   <span key={at} data-kn="at" data-kn-s={at} className="absolute inset-0" style={{ transform: `translateX(${X(String(at))})` }}>
-                    <span className="absolute inset-y-0 left-0 w-px bg-[color-mix(in_srgb,var(--foreground)_4.5%,transparent)] transition-opacity duration-300 starting:opacity-0 motion-reduce:transition-none" />
+                    <span className="absolute inset-y-0 left-0 w-px bg-[color-mix(in_srgb,var(--foreground)_4.5%,transparent)] transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) starting:opacity-0 motion-reduce:transition-none" />
                   </span>
                 );
               })}

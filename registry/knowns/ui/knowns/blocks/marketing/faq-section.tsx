@@ -125,7 +125,7 @@ export function FaqSection({ items, eyebrow, title = "Frequently asked questions
                   type="button"
                   aria-pressed={cat === c}
                   onClick={() => setCat(c)}
-                  className={cn("h-8 flex-none rounded-full border px-3 text-[13px] transition-colors", cat === c ? "border-foreground bg-foreground text-background" : "bg-card text-muted-foreground hover:text-foreground", focusRing)}
+                  className={cn("h-8 flex-none rounded-full border px-3 text-[13px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out)", cat === c ? "border-foreground bg-foreground text-background" : "bg-card text-muted-foreground hover:text-foreground", focusRing)}
                 >
                   {c === "all" ? "All" : c}
                 </button>
@@ -160,7 +160,7 @@ export function FaqSection({ items, eyebrow, title = "Frequently asked questions
                     onClick={() => copyLink(id)}
                     aria-label={copied === id ? "Link copied" : `Copy link to "${it.question}"`}
                     className={cn(
-                      "absolute top-4 right-8 grid size-6 place-items-center rounded-lg text-muted-foreground opacity-0 transition-opacity ease-(--kn-ease-out) group-hover/faq:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-60",
+                      "absolute top-4 right-8 grid size-6 place-items-center rounded-lg text-muted-foreground opacity-0 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) group-hover/faq:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-60",
                       focusRing,
                     )}
                   >

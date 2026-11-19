@@ -7,6 +7,7 @@ import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/ru
 import { Button } from "../button";
 import { Spinner } from "../spinner";
 import { MotionStyle, usePlay } from "@/registry/knowns/lib/knowns/motion";
+import { EASE as KN_EASE, MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 import {
   STATUS_LABEL,
   elapsedOf,
@@ -66,8 +67,8 @@ const CSS = `
 @keyframes knpl-in { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
 @keyframes knpl-out { from { opacity: 1; transform: none } to { opacity: 0; transform: translateX(6px) } }
 `;
-const EASE = "cubic-bezier(.22,1,.36,1)";
-const LEAVE_MS = 280;
+const EASE = KN_EASE.out;
+const LEAVE_MS = MOTION.base;
 const NO_STEPS: PlanStep[] = [];
 
 const STATE_TEXT: Record<PlanState, string> = { proposed: "Proposed", running: "Running", done: "Done", failed: "Failed" };
@@ -126,7 +127,7 @@ const Chevron = ({ open }: { open: boolean }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
-    className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ease-out", open && "rotate-90")}
+    className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-(--kn-dur) ease-(--kn-ease-out)", open && "rotate-90")}
   >
     <path d="M6 4l4 4-4 4" />
   </svg>
@@ -202,7 +203,7 @@ function useFlip(container: RefObject<HTMLElement | null>, reduced: boolean) {
       next.set(id, top);
       const was = tops.current.get(id);
       if (!reduced && was !== undefined && was !== top && typeof row.animate === "function")
-        row.animate([{ transform: `translateY(${was - top}px)` }, { transform: "none" }], { duration: 320, easing: EASE });
+        row.animate([{ transform: `translateY(${was - top}px)` }, { transform: "none" }], { duration: MOTION.slow, easing: EASE });
     });
     tops.current = next;
   });
@@ -243,8 +244,8 @@ function StepRow({ row, n, now, fresh, onToggle }: { row: Row; n: number | undef
       aria-label={`${replaced ? "Replaced" : STATUS_LABEL[status]}: ${step.title}`}
       className={cn(
         "relative flex gap-3 py-1.5",
-        fresh && "motion-safe:animate-[knpl-in_300ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]",
-        row.leaving && "pointer-events-none motion-safe:animate-[knpl-out_280ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]",
+        fresh && "motion-safe:animate-[knpl-in_var(--kn-dur-slow)_var(--kn-ease-out)_both]",
+        row.leaving && "pointer-events-none motion-safe:animate-[knpl-out_var(--kn-dur)_var(--kn-ease-out)_both]",
       )}
     >
       {/* key + usePlay: the check draws once when this step turns done, never on first render or a re-render. */}

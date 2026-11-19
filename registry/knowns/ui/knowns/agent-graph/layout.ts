@@ -62,7 +62,7 @@ export type RadialState = {
  */
 export function layoutTree(tree: Tree, avail: number, fixedH: number | undefined, narrow: boolean, squeeze = true): Layout {
   const padX = narrow ? 22 : 44;
-  const LEAF = narrow ? 64 : 92;
+  const LEAF = narrow ? 72 : 92;
   const COL = narrow ? 120 : 160;
   const INDENT = narrow ? 28 : 36;
   const GAP = narrow ? 88 : 106; // tile + two-line label below + breathing room
@@ -114,7 +114,7 @@ export function layoutTree(tree: Tree, avail: number, fixedH: number | undefined
       });
     } else {
       const xs = ch.map((c) => place(c, d + 1));
-      x = (xs[0] + xs[xs.length - 1]) / 2;
+      x = ((xs[0] ?? 0) + (xs[xs.length - 1] ?? 0)) / 2;
     }
     pos.set(id, { x, y: PAD_TOP + d * ROW });
     row.set(id, d);
@@ -144,9 +144,11 @@ export function layoutTree(tree: Tree, avail: number, fixedH: number | undefined
     ids.sort((a, b) => pos.get(a)!.x - pos.get(b)!.x);
     ids.forEach((id, i) => {
       const x = pos.get(id)!.x;
-      const left = i ? x - pos.get(ids[i - 1])!.x : 2 * (x - 8);
-      const right = i < ids.length - 1 ? pos.get(ids[i + 1])!.x - x : 2 * (width - 8 - x);
-      room.set(id, Math.min(left, right) - 14);
+      const before = ids[i - 1];
+      const after = ids[i + 1];
+      const left = i && before !== undefined ? x - pos.get(before)!.x : 2 * (x - 8);
+      const right = i < ids.length - 1 && after !== undefined ? pos.get(after)!.x - x : 2 * (width - 8 - x);
+      room.set(id, Math.min(left, right) - (narrow ? 4 : 14));
     });
   }
   return { pos, room, stacked, width, height, rowGap, orient: "v" };
@@ -204,7 +206,7 @@ export function layoutFlow(
           c0 += sizes.get(c)!;
           return yy;
         });
-        y = (ys[0] + ys[ys.length - 1]) / 2;
+        y = ((ys[0] ?? 0) + (ys[ys.length - 1] ?? 0)) / 2;
       }
       pos.set(id, { x: x0 + dir * d * colGap, y });
       return y;
@@ -294,7 +296,10 @@ export function labelBox(p: Pt, tile: number, room: number, margin = 6): Box {
 export const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
 export type Seg = { a: Pt; b: Pt };
-export const segsOf = (pts: Pt[]): Seg[] => pts.slice(1).map((b, i) => ({ a: pts[i], b }));
+export const segsOf = (pts: Pt[]): Seg[] => pts.slice(1).flatMap((b, i) => {
+    const a = pts[i];
+    return a ? [{ a, b }] : [];
+  });
 
 /** Proper crossing of two axis-aligned segments (touching at ends does not count). */
 export function segmentsCross(s: Seg, t: Seg): boolean {
@@ -613,7 +618,7 @@ export function layoutCenterStable(prev: Layout | null | undefined, tree: Tree, 
         c0 += deepSize(c, plan.row, plan.node);
         return cy;
       });
-      y = (ys[0] + ys[ys.length - 1]) / 2;
+      y = ((ys[0] ?? 0) + (ys[ys.length - 1] ?? 0)) / 2;
     }
     pos.set(id, { x, y });
     room.set(id, agents.has(id) ? agentRoom : toolRoom);

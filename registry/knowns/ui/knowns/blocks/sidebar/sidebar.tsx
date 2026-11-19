@@ -183,15 +183,14 @@ function unboot(key: string) {
 
 /*
  * Motion, all CSS:
- * - the aside animates its width between 256px and the 56px rail (or 0 when off-canvas); labels fade while it does;
- * (the mobile sheet's slide is the Sheet component's.) Reduced motion: no width animation.
+ * - the aside switches width at once between 256px and the 56px rail (or 0 when off-canvas) and labels fade, so no layout is animated;
+ * (the mobile sheet's slide is the Sheet component's.) Reduced motion: no fade.
  */
 const MOTION = `
 [data-kn-sidebar-reveal]:not([data-shown]){display:none}
-[data-kn-sidebar-aside]{transition:width 220ms var(--kn-ease-out)}
-[data-kn-sidebar-fade]{transition:opacity 160ms ease-out}
+[data-kn-sidebar-fade]{transition:opacity var(--kn-dur-fast,120ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1))}
 @media (prefers-reduced-motion:reduce){
-  [data-kn-sidebar-aside]{transition:none}
+  [data-kn-sidebar-fade]{transition:none}
 }
 `;
 
@@ -419,7 +418,7 @@ export function SidebarTrigger({ className, label = "Toggle sidebar", labels, lo
           aria-expanded={s.isMobile ? s.mobileOpen : !s.collapsed}
           aria-controls={s.isMobile ? s.sheetId : undefined}
           className={cn(
-            "grid shrink-0 place-items-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-11",
+            "grid shrink-0 place-items-center outline-none transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-11",
             look === "field"
               ? "size-9 rounded-[10px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-foreground/70 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-foreground"
               : look === "float"
@@ -446,7 +445,7 @@ function Fade({ children, className }: { children: ReactNode; className?: string
 }
 
 function Count({ n }: { n: number }) {
-  return <span className="rounded-md bg-muted px-1.5 text-[10.5px] font-medium tabular-nums leading-[18px] text-muted-foreground">{n}</span>;
+  return <span className="rounded-md bg-muted px-1.5 text-[10.5px] font-medium tabular-nums leading-[18px] text-muted-foreground">{n.toLocaleString("en-US")}</span>;
 }
 
 function Chevron({ open, className }: { open: boolean; className?: string }) {
@@ -454,7 +453,7 @@ function Chevron({ open, className }: { open: boolean; className?: string }) {
     <svg
       viewBox="0 0 16 16"
       aria-hidden="true"
-      className={cn("size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200 ease-(--kn-ease-out) motion-reduce:transition-none", open && "rotate-90", className)}
+      className={cn("size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none", open && "rotate-90", className)}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.6"
@@ -494,7 +493,7 @@ export function SidebarGroup({
     <div role="group" aria-labelledby={label ? `${id}-l` : undefined} className={cn("group/grp flex flex-col gap-px", className)}>
       {label && (
         <div className="relative flex h-7 items-center gap-1 px-2">
-          <span aria-hidden="true" className="absolute inset-x-1.5 top-1/2 h-px bg-border opacity-0 transition-opacity ease-(--kn-ease-out) group-first/grp:hidden group-data-[rail]/sb:opacity-100" />
+          <span aria-hidden="true" className="absolute inset-x-1.5 top-1/2 h-px bg-border opacity-0 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) group-first/grp:hidden group-data-[rail]/sb:opacity-100" />
           {collapsible ? (
             <button
               type="button"
@@ -534,7 +533,7 @@ function Collapse({ id, open, children }: { id?: string; open: boolean; children
   return (
     <div
       id={id}
-      className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-(--kn-ease-out) motion-reduce:transition-none", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
+      className={cn("grid transition-[grid-template-rows,opacity] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
       inert={!open}
     >
       <div className="min-h-0 overflow-hidden">{children}</div>
@@ -909,9 +908,19 @@ export interface SidebarWorkspace {
   /** Logo or avatar URL. */
   src?: string;
   icon?: ReactNode;
+  /** A CSS background for a plain square avatar (a gradient or an image), used instead of initials when there is no `src` or `icon`. */
+  swatch?: string;
 }
 
-/** A workspace or team switcher: the current one, and a menu to pick another or create one. */
+/** The avatar of a workspace: its swatch when it has one, otherwise the Avatar. */
+function WorkspaceAvatar({ w, size }: { w: SidebarWorkspace; size: "xs" | "md" }) {
+  if (w.swatch && !w.src && !w.icon) {
+    return <span aria-hidden="true" className={cn("block flex-none", size === "md" ? "size-8 rounded-lg" : "size-5 rounded-md")} style={{ background: w.swatch }} />;
+  }
+  return <Avatar label={w.name} initials={workspaceInitials(w.name)} src={w.src} icon={w.icon} size={size} shape="square" decorative />;
+}
+
+/** A workspace or team switcher: the current one, and a menu to pick another or create one. `expanded` shows that list open in the flow, as a card, instead of in a popover. */
 export function SidebarSwitcher({
   workspaces,
   value,
@@ -919,6 +928,7 @@ export function SidebarSwitcher({
   onCreate,
   createLabel = "Create workspace",
   label = "Switch workspace",
+  expanded = false,
   className,
 }: {
   workspaces: SidebarWorkspace[];
@@ -927,6 +937,8 @@ export function SidebarSwitcher({
   onCreate?: () => void;
   createLabel?: string;
   label?: string;
+  /** Show the list open in the flow, as a card under the current workspace, instead of in a popover. */
+  expanded?: boolean;
   className?: string;
 }) {
   const { rail } = useContext(SurfaceCtx);
@@ -935,7 +947,7 @@ export function SidebarSwitcher({
     id: w.id,
     label: w.name,
     description: w.description,
-    icon: <Avatar label={w.name} initials={workspaceInitials(w.name)} src={w.src} icon={w.icon} size="xs" shape="square" decorative />,
+    icon: <WorkspaceAvatar w={w} size="xs" />,
     kind: "radio",
     checked: w.id === current?.id,
   }));
@@ -959,6 +971,67 @@ export function SidebarSwitcher({
       ]
     : [{ id: "ws", label: "Workspaces", items }];
   if (!current) return null;
+  const chevron = (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5 text-muted-foreground">
+      <path d="M5 6l3-3 3 3M5 10l3 3 3-3" />
+    </svg>
+  );
+  if (expanded) {
+    return (
+      <div className={cn("flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm", className)}>
+        <div className="flex h-12 items-center gap-2.5 border-b px-2.5">
+          <WorkspaceAvatar w={current} size="md" />
+          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">{current.name}</span>
+          {chevron}
+        </div>
+        <div
+          role="radiogroup"
+          aria-label={label}
+          className="flex flex-col gap-0.5 p-1.5"
+          onKeyDown={(e: ReactKeyboardEvent<HTMLDivElement>) => {
+            // Radio semantics: the arrows move to the next workspace and pick it; Home and End jump to the ends.
+            const keys = ["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft", "Home", "End"];
+            if (!keys.includes(e.key)) return;
+            const ids = workspaces.map((w) => w.id);
+            const at = ids.indexOf(current.id);
+            const to = e.key === "Home" ? 0 : e.key === "End" ? ids.length - 1 : (at + (e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1) + ids.length) % ids.length;
+            e.preventDefault();
+            const next = ids[to];
+            if (next !== undefined) onChange?.(next);
+            e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]')[to]?.focus();
+          }}
+        >
+          {workspaces.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              role="radio"
+              aria-checked={w.id === current.id}
+              tabIndex={w.id === current.id ? 0 : -1}
+              onClick={() => onChange?.(w.id)}
+              className={cn("flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50", w.id === current.id ? "bg-muted" : "hover:bg-muted/60")}
+            >
+              <WorkspaceAvatar w={w} size="md" />
+              <span className="flex min-w-0 flex-col leading-tight">
+                <span className="truncate text-[13px] font-medium text-foreground">{w.name}</span>
+                {w.description && <span className="truncate text-[11.5px] text-muted-foreground">{w.description}</span>}
+              </span>
+            </button>
+          ))}
+          {onCreate && (
+            <button type="button" onClick={onCreate} className="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50">
+              <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-lg bg-muted text-foreground">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="size-4">
+                  <path d="M8 3.5v9M3.5 8h9" />
+                </svg>
+              </span>
+              <span className="truncate text-[13px] font-medium text-foreground">{createLabel}</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
   return (
     <Menu
       aria-label={label}
@@ -971,16 +1044,12 @@ export function SidebarSwitcher({
           aria-label={rail ? `${current.name}, ${label}` : undefined}
           className={cn("flex h-11 w-full min-w-0 items-center gap-2.5 rounded-lg px-1.5 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50", className)}
         >
-          <Avatar label={current.name} initials={workspaceInitials(current.name)} src={current.src} icon={current.icon} size="md" shape="square" decorative />
+          <WorkspaceAvatar w={current} size="md" />
           <Fade className="flex flex-1 flex-col leading-tight">
             <span className="truncate text-[13px] font-semibold text-foreground">{current.name}</span>
             {current.description && <span className="truncate text-[11.5px] text-muted-foreground">{current.description}</span>}
           </Fade>
-          <Fade className="flex">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5 text-muted-foreground">
-              <path d="M5 6l3-3 3 3M5 10l3 3 3-3" />
-            </svg>
-          </Fade>
+          <Fade className="flex">{chevron}</Fade>
         </button>
       }
     />

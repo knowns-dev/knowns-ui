@@ -113,7 +113,7 @@ function List({ nodes, active, onPick, nested }: { nodes: TocNode[]; active: str
               onPick(n.id);
             }}
             className={cn(
-              "-ml-px block border-l-2 border-transparent py-1 text-[13px] leading-snug text-muted-foreground transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring",
+              "-ml-px block border-l-2 border-transparent py-1 text-[13px] leading-snug text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground focus-visible:rounded-sm focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring",
               "aria-[current=location]:border-foreground aria-[current=location]:font-medium aria-[current=location]:text-foreground",
               nested ? "pl-6" : "pl-3",
             )}
@@ -186,7 +186,7 @@ export function DocsToc({ items, title = "On this page", links, children, offset
                     href={l.href}
                     target={/^https?:/.test(l.href) ? "_blank" : undefined}
                     rel={/^https?:/.test(l.href) ? "noopener noreferrer" : undefined}
-                    className="flex items-center gap-2 py-0.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5"
+                    className="flex items-center gap-2 py-0.5 text-[13px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground focus-visible:rounded-sm focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5"
                   >
                     {l.icon}
                     {l.label}

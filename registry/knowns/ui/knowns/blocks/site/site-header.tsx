@@ -32,7 +32,7 @@ import {
   type NavMegaItem,
 } from "./site-utils";
 
-export type { NavEntry, NavLink, NavMegaGroup, NavMegaItem } from "./site-utils";
+export type { NavEntry, NavLink, NavMegaFooter, NavMegaGroup, NavMegaItem } from "./site-utils";
 
 export interface SiteHeaderProps {
   /** Before the brand, e.g. a SidebarTrigger that opens the docs navigation on small screens. */
@@ -85,7 +85,7 @@ const Chevron = ({ open }: { open?: boolean }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
-    className={cn("size-3.5 text-muted-foreground transition-transform ease-(--kn-ease-out) duration-200 motion-reduce:transition-none", open && "rotate-180")}
+    className={cn("size-3.5 text-muted-foreground transition-transform ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none", open && "rotate-180")}
   >
     <path d="M4.5 6.5 8 10l3.5-3.5" />
   </svg>
@@ -99,7 +99,7 @@ const SearchIcon = () => (
 );
 
 const iconButton = cn(
-  "grid size-8 flex-none cursor-pointer place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground pointer-coarse:size-11",
+  "grid size-8 flex-none cursor-pointer place-items-center rounded-[9px] text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground pointer-coarse:size-11",
   focusRing,
 );
 
@@ -143,7 +143,7 @@ function SearchButton({ search, wide }: { search: NonNullable<SiteHeaderProps["s
       type="button"
       onClick={search.onOpen}
       className={cn(
-        "inline-flex h-8 w-44 cursor-pointer items-center gap-2 rounded-[9px] bg-card px-2.5 text-[13px] text-muted-foreground shadow-[0_0_0_1px_var(--border)] transition-colors duration-150 hover:text-foreground",
+        "inline-flex h-8 w-44 cursor-pointer items-center gap-2 rounded-[9px] bg-card px-2.5 text-[13px] text-muted-foreground shadow-[0_0_0_1px_var(--border)] transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:text-foreground",
         focusRing,
       )}
     >
@@ -160,6 +160,17 @@ function SearchButton({ search, wide }: { search: NonNullable<SiteHeaderProps["s
 
 /* ── Panels ── */
 
+/** The count and the badge after a label. The count is muted; the badge is the accent. Both are text, so a screen reader reads "Blocks, 77, New". */
+function ItemMeta({ item, className }: { item: NavMegaItem; className?: string }) {
+  if (item.count === undefined && !item.badge) return null;
+  return (
+    <span className={cn("inline-flex flex-none items-center gap-1.5", className)}>
+      {item.count !== undefined && <span className="rounded-full bg-muted px-1.5 text-[11.5px] leading-[18px] font-medium text-muted-foreground tabular-nums">{item.count}</span>}
+      {item.badge && <span className="rounded-full bg-[color-mix(in_srgb,var(--kn-badge,var(--kn-accent,var(--primary)))_14%,transparent)] px-1.5 text-[11px] leading-[18px] font-medium text-[color-mix(in_srgb,var(--kn-badge,var(--kn-accent,var(--primary)))_85%,var(--foreground))]">{item.badge}</span>}
+    </span>
+  );
+}
+
 function MegaLink({ item, onNavigate, current, onPick }: { item: NavMegaItem; onNavigate?: SiteHeaderProps["onNavigate"]; current?: string; onPick: () => void }) {
   const here = isActiveHref(item.href, current) && item.href.replace(/\/+$/, "") === (current ?? "").replace(/[?#].*$/, "").replace(/\/+$/, "");
   return (
@@ -173,15 +184,18 @@ function MegaLink({ item, onNavigate, current, onPick }: { item: NavMegaItem; on
         onNavigate?.(item.href, e);
         onPick();
       }}
-      className={cn("group/link flex gap-3 rounded-[10px] p-2.5 transition-colors duration-150 hover:bg-muted", focusRing, here && "bg-muted/60")}
+      className={cn("group/link flex gap-3 rounded-[10px] p-2.5 transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted", focusRing, here && "bg-muted/60")}
     >
       {item.icon && (
-        <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-[8px] bg-card text-muted-foreground shadow-[0_0_0_1px_var(--border)] transition-colors group-hover/link:text-foreground [&_svg]:size-4">
+        <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-[8px] bg-card text-muted-foreground shadow-[0_0_0_1px_var(--border)] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) group-hover/link:text-foreground [&_svg]:size-4">
           {item.icon}
         </span>
       )}
-      <span className="min-w-0">
-        <span className="block text-[13.5px] font-medium text-foreground">{item.label}</span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2 text-[13.5px] font-medium text-foreground">
+          {item.label}
+          <ItemMeta item={item} />
+        </span>
         {item.description && <span className="mt-0.5 block text-[12.5px] leading-snug text-muted-foreground">{item.description}</span>}
       </span>
     </a>
@@ -259,7 +273,10 @@ export function SiteHeader({
     if (k === "next" || k === "prev") {
       e.preventDefault();
       const j = stepIndex(i, n, k === "next" ? 1 : -1);
-      if (open >= 0) setOpen(entryKind(nav[j]) === "link" ? -1 : j);
+      if (open >= 0) {
+        const target = nav[j];
+        setOpen(target && entryKind(target) === "link" ? -1 : j);
+      }
       focusTop(j);
     } else if (k === "first" || k === "last") {
       e.preventDefault();
@@ -303,7 +320,7 @@ export function SiteHeader({
 
   const topClass = (on: boolean, isActive: boolean) =>
     cn(
-      "relative inline-flex h-8 cursor-pointer items-center gap-1 rounded-[8px] px-3 text-[13.5px] whitespace-nowrap transition-colors duration-150",
+      "relative inline-flex h-8 cursor-pointer items-center gap-1 rounded-[8px] px-3 text-[13.5px] whitespace-nowrap transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast)",
       on || isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
       on && "bg-muted",
       focusRing,
@@ -313,7 +330,7 @@ export function SiteHeader({
     <span
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-x-3 rounded-full bg-foreground transition-[opacity,transform] ease-(--kn-ease-out) duration-200 motion-reduce:transition-none",
+        "pointer-events-none absolute inset-x-3 rounded-full bg-foreground transition-[opacity,transform] ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none",
         minimal ? "-bottom-[9px] h-0.5" : "-bottom-[15px] h-0.5",
         isActive ? "scale-x-100 opacity-100" : "scale-x-50 opacity-0",
       )}
@@ -346,7 +363,7 @@ export function SiteHeader({
             href={signIn.href}
             onClick={signIn.onClick}
             onNavigate={onNavigate}
-            className={cn("hidden h-8 cursor-pointer items-center rounded-[9px] px-3 text-[13.5px] text-muted-foreground transition-colors hover:text-foreground sm:inline-flex", focusRing)}
+            className={cn("hidden h-8 cursor-pointer items-center rounded-[9px] px-3 text-[13.5px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground sm:inline-flex", focusRing)}
           >
             {signIn.label ?? "Sign in"}
           </LinkOrButton>
@@ -388,7 +405,7 @@ export function SiteHeader({
       data-slot="site-header"
       data-scrolled={scrolled || undefined}
       className={cn(
-        "z-40 w-full transition-[background-color,box-shadow,backdrop-filter] duration-200 ease-out motion-reduce:transition-none",
+        "z-40 w-full transition-[background-color,box-shadow,backdrop-filter] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
         sticky && "sticky top-0",
         scrolled || !sticky || solid
           ? "bg-[color-mix(in_srgb,var(--background)_78%,transparent)] shadow-[0_1px_0_var(--border)] backdrop-blur-md backdrop-saturate-150"
@@ -459,14 +476,15 @@ export function SiteHeader({
                         if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) setOpen((o) => (o === i ? -1 : o));
                       }}
                       className={cn(
-                        "absolute top-full z-50 pt-3 transition-[opacity,translate] duration-150 ease-out motion-reduce:transition-none",
+                        "absolute top-full z-50 pt-3 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none",
                         kind === "mega" ? "left-1/2 w-[min(760px,calc(100%-2rem))] -translate-x-1/2" : "left-0 w-72",
-                        on ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0",
+                        on ? "visible opacity-100" : "invisible opacity-0",
                       )}
                     >
                       <div className="rounded-2xl border bg-popover p-2 text-popover-foreground shadow-[0_18px_48px_-16px_rgb(0_0_0/0.28)]">
                         {entry.kind === "mega" ? (
-                          <div className={cn("grid gap-2", entry.featured ? "grid-cols-[1fr_240px]" : "grid-cols-1")}>
+                          <>
+                            <div className={cn("grid gap-2", entry.featured ? "grid-cols-[1fr_240px]" : "grid-cols-1")}>
                             <div className={cn("grid gap-x-2 gap-y-3", entry.groups.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
                               {entry.groups.map((g) => (
                                 <div key={g.title}>
@@ -483,6 +501,26 @@ export function SiteHeader({
                             </div>
                             {entry.featured && <div className="min-w-0 rounded-[12px] bg-muted/50 p-1">{entry.featured}</div>}
                           </div>
+                            {entry.footer && (
+                          <div className="mt-2 flex items-center justify-between gap-3 border-t px-2.5 pt-2 pb-0.5 text-[12.5px] text-muted-foreground">
+                            <span className="min-w-0">{entry.footer.text}</span>
+                            {entry.footer.link && (
+                              <a
+                                href={entry.footer.link.href}
+                                data-panel-link=""
+                                target={entry.footer.link.external ? "_blank" : undefined}
+                                rel={entry.footer.link.external ? "noreferrer" : undefined}
+                                onClick={(e) => {
+                                  onNavigate?.(entry.footer!.link!.href, e);
+                                  setOpen(-1);
+                                }}
+                                className={cn("flex-none rounded-[6px] px-1 font-medium text-foreground underline-offset-4 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:underline", focusRing)}
+                              >
+                                {entry.footer.link.label} <span aria-hidden="true">→</span>
+                              </a>
+                            )}
+                          </div>)}
+                          </>
                         ) : (
                           <ul>
                             {entry.items.map((item) => (
@@ -525,7 +563,7 @@ export function SiteHeader({
 
 function buttonLook(variant: "primary" | "secondary") {
   return cn(
-    "inline-flex h-7 items-center rounded-[8px] px-3 text-[12.5px] font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-150 pointer-coarse:h-9",
+    "inline-flex h-7 items-center rounded-[8px] px-3 text-[12.5px] font-medium whitespace-nowrap transition-[background-color,box-shadow] ease-(--kn-ease-out) duration-(--kn-dur-fast) pointer-coarse:h-9",
     variant === "primary" ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-card text-foreground shadow-[0_0_0_1px_var(--border)] hover:bg-muted",
     focusRing,
   );
@@ -581,7 +619,7 @@ export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavig
   };
   const activeIdx = activeEntry(nav, currentHref);
   const linkClass = (on: boolean) =>
-    cn("flex min-h-11 items-center rounded-[10px] px-3 text-[15px] transition-colors hover:bg-muted", on ? "font-medium text-foreground" : "text-foreground/85", focusRing);
+    cn("flex min-h-11 items-center rounded-[10px] px-3 text-[15px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted", on ? "font-medium text-foreground" : "text-foreground/85", focusRing);
 
   return (
     <dialog
@@ -596,7 +634,7 @@ export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavig
       className={cn(
         "fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-[min(360px,100vw)] max-w-none border-l bg-background p-0 text-foreground",
         "backdrop:bg-black/40 backdrop:backdrop-blur-[2px]",
-        "transition-[translate] duration-300 ease-(--kn-ease-out) starting:open:translate-x-full motion-reduce:transition-none",
+        "transition-[translate,overlay,display] transition-discrete duration-(--kn-dur-slow) ease-(--kn-ease-out) starting:open:translate-x-full not-open:translate-x-full not-open:duration-[calc(var(--kn-dur-slow)*.67)] motion-reduce:transition-none",
       )}
     >
       <div className="flex h-full flex-col">
@@ -636,6 +674,47 @@ export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavig
                   </a>
                 );
               }
+              if (entry.kind === "mega" && entry.drawer === "flat") {
+                return (
+                  <section key={entry.label} aria-label={entry.label} className="py-1">
+                    <p className="px-3 pt-2 pb-1 text-[12px] font-medium tracking-wide text-muted-foreground uppercase">{entry.label}</p>
+                    {entry.groups.map((g) => (
+                      <div key={g.title} role="group" aria-label={g.title} className="pb-1">
+                        <p className="px-3 pt-1.5 pb-0.5 text-[12.5px] text-muted-foreground">{g.title}</p>
+                        <ul>
+                          {g.items.map((item) => {
+                            const here = item.href === currentHref;
+                            return (
+                              <li key={item.href + item.label}>
+                                <a href={item.href} aria-current={here ? "page" : undefined} onClick={pick(item.href)} className={cn("flex min-h-12 items-center gap-3 rounded-[10px] px-3 text-[15px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted", here ? "font-medium text-foreground" : "text-foreground/85", focusRing)}>
+                                  {item.icon && (
+                                    <span aria-hidden="true" className="grid size-7 flex-none place-items-center rounded-[8px] bg-card text-muted-foreground shadow-[0_0_0_1px_var(--border)] [&_svg]:size-4">
+                                      {item.icon}
+                                    </span>
+                                  )}
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate">{item.label}</span>
+                                    {item.description && <span className="block truncate text-[12.5px] leading-snug text-muted-foreground">{item.description}</span>}
+                                  </span>
+                                  <ItemMeta item={item} />
+                                </a>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                    {entry.footer?.link && (
+                      <p className="flex items-center justify-between gap-3 px-3 pt-1 text-[13px] text-muted-foreground">
+                        <span className="min-w-0">{entry.footer.text}</span>
+                        <a href={entry.footer.link.href} onClick={pick(entry.footer.link.href)} className={cn("flex min-h-9 flex-none items-center rounded-[8px] px-1 font-medium text-foreground", focusRing)}>
+                          {entry.footer.link.label} <span aria-hidden="true">&nbsp;→</span>
+                        </a>
+                      </p>
+                    )}
+                  </section>
+                );
+              }
               const items = entry.kind === "mega" ? entry.groups.flatMap((g) => g.items) : entry.items;
               return (
                 <AccordionItem key={entry.label} value={String(i)} className="border-b-0">
@@ -648,9 +727,12 @@ export function SiteDrawer({ id, open, onClose, brand, nav, currentHref, onNavig
                             href={item.href}
                             aria-current={item.href === currentHref ? "page" : undefined}
                             onClick={pick(item.href)}
-                            className={cn("flex min-h-10 flex-col justify-center rounded-[8px] px-3 py-1.5 transition-colors hover:bg-muted", focusRing)}
+                            className={cn("flex min-h-10 flex-col justify-center rounded-[8px] px-3 py-1.5 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted", focusRing)}
                           >
-                            <span className={cn(item.href === currentHref ? "font-medium text-foreground" : "text-foreground/85")}>{item.label}</span>
+                            <span className={cn("flex items-center gap-2", item.href === currentHref ? "font-medium text-foreground" : "text-foreground/85")}>
+                              {item.label}
+                              <ItemMeta item={item} />
+                            </span>
                             {item.description && <span className="text-[12.5px] leading-snug text-muted-foreground">{item.description}</span>}
                           </a>
                         </li>

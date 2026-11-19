@@ -252,7 +252,7 @@ export function ActivityFeed({
         tabIndex={on || (selected === null && key === "") ? 0 : -1}
         onClick={() => setTypes(key ? [key] : [])}
         className={cn(
-          "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[8px] px-2.5 text-[13px] font-medium transition-colors",
+          "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[8px] px-2.5 text-[13px] font-medium transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out)",
           focusRing,
           on ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         )}
@@ -316,7 +316,7 @@ export function ActivityFeed({
               type="button"
               onClick={release}
               className={cn(
-                "inline-flex h-8 items-center gap-2 rounded-full border border-border bg-card py-0 pr-3 pl-1.5 text-[13px] font-medium text-foreground shadow-md transition-transform ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transform-none",
+                "inline-flex h-8 items-center gap-2 rounded-full border border-border bg-card py-0 pr-3 pl-1.5 text-[13px] font-medium text-foreground shadow-md transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transform-none",
                 focusRing,
               )}
             >
@@ -414,7 +414,7 @@ function Event({
         </span>
       </span>
       <div className="min-w-0">
-        <p className="text-[14px] leading-5 text-muted-foreground">
+        <p className="text-[15px] leading-[22px] text-muted-foreground">
           {unread && <span className="sr-only">Unread. </span>}
           <span className="font-medium text-foreground">{it.actor.name}</span>
           {agent && <span className="sr-only"> (agent)</span>} {it.verb}
@@ -437,8 +437,8 @@ function Event({
             aria-hidden="true"
             style={sweeping ? { transitionDelay: `${sweepDelay(sweepStep, SWEEP_STEP)}ms` } : undefined}
             className={cn(
-              "size-2 shrink-0 rounded-full transition-colors duration-[180ms] ease-(--kn-ease-out) motion-reduce:transition-none",
-              unread && !sweeping ? "bg-indigo-500" : "bg-muted-foreground/25",
+              "size-2 shrink-0 rounded-full transition-colors duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
+              unread && !sweeping ? "bg-[color:var(--kn-accent,var(--primary))]" : "bg-muted-foreground/25",
             )}
           />
         )}
@@ -453,7 +453,7 @@ function Event({
         aria-expanded={open}
         aria-controls={id}
         onClick={onToggle}
-        className={cn("block w-full px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:bg-muted/40", focusRing, "focus-visible:ring-inset")}
+        className={cn("block w-full px-4 py-3 text-left transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted/40 focus-visible:bg-muted/40", focusRing, "focus-visible:ring-inset")}
       >
         {body}
       </button>

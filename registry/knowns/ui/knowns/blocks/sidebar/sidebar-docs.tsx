@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { AnimatedNumber } from "../../animated-number";
 import { Kbd } from "../../kbd";
 import { loadJSON, saveJSON } from "./sidebar-utils";
 
@@ -127,7 +128,7 @@ export function DocsMark({ page }: { page: DocsPage }) {
         </span>
       )}
       {page.pro && (
-        <svg viewBox="0 0 16 16" role="img" aria-label={page.pro === "variants" ? "Free, with Pro variants" : "Pro"} className="ml-auto size-3 shrink-0 text-violet-500">
+        <svg viewBox="0 0 16 16" role="img" aria-label={page.pro === "variants" ? "Free, with Pro variants" : "Pro"} className="ml-auto size-3 shrink-0 text-[color:var(--kn-accent,var(--primary))]">
           <path d={STAR} fill={page.pro === true ? "currentColor" : "none"} stroke="currentColor" strokeWidth={page.pro === true ? 0 : 1.3} strokeLinejoin="round" />
         </svg>
       )}
@@ -140,7 +141,7 @@ function Chevron({ open, className }: { open: boolean; className?: string }) {
     <svg
       viewBox="0 0 16 16"
       aria-hidden="true"
-      className={cn("size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none", open && "rotate-90", className)}
+      className={cn("size-3.5 shrink-0 text-muted-foreground/70 transition-transform ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none", open && "rotate-90", className)}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.6"
@@ -165,14 +166,19 @@ function SoonBadge() {
 function Count({ n }: { n: number }) {
   // A category with only upcoming pages has no count.
   if (n === 0) return null;
-  return <span className="rounded-md bg-muted px-1.5 text-[10.5px] font-medium tabular-nums leading-[18px] text-muted-foreground">{n}</span>;
+  // The digits roll when a filter changes the count; the first render and an unchanged count play nothing.
+  return (
+    <span className="inline-flex h-[18px] items-center rounded-md bg-muted px-1.5 text-[10.5px] font-medium tabular-nums text-muted-foreground">
+      <AnimatedNumber value={n} />
+    </span>
+  );
 }
 
 function Collapse({ id, open, children }: { id: string; open: boolean; children: ReactNode }) {
   return (
     <div
       id={id}
-      className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
+      className={cn("grid transition-[grid-template-rows,opacity] ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
       inert={!open}
     >
       <div className="min-h-0 overflow-hidden">{children}</div>

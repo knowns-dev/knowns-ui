@@ -46,7 +46,10 @@ export function formatDate(date: number | string | Date, locale = "en-US"): stri
 export function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "?";
-  return (parts.length === 1 ? parts[0].slice(0, 2) : parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  if (!first || !last) return "?";
+  return (parts.length === 1 ? first.slice(0, 2) : first.charAt(0) + last.charAt(0)).toUpperCase();
 }
 
 /* ── Table of contents and reading progress ── */

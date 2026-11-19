@@ -75,7 +75,7 @@ function cursorColors(actors: Actor[]): Map<string, string> {
   const root = rootAgent(actors);
   const agents = actors.filter((a) => a.type === "agent");
   const ordered = root ? [root, ...agents.filter((a) => a !== root)] : agents;
-  return new Map(ordered.map((a, i) => [a.id, AGENT_PALETTE[CURSOR_ORDER[i % CURSOR_ORDER.length]]]));
+  return new Map(ordered.map((a, i): [string, string] => [a.id, AGENT_PALETTE[CURSOR_ORDER[i % CURSOR_ORDER.length] ?? 0] ?? "currentColor"]));
 }
 
 const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
@@ -210,7 +210,12 @@ export function AgentCursors({
   useEffect(() => {
     const el = rootRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "120px" });
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e) setVisible(e.isIntersecting);
+      },
+      { rootMargin: "120px" },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -359,7 +364,9 @@ export function AgentCursors({
   useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setWide(e.contentRect.width >= 760));
+    const ro = new ResizeObserver(([e]) => {
+      if (e) setWide(e.contentRect.width >= 760);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -422,7 +429,7 @@ export function AgentCursors({
         <span
           key={`${g.s.id}-${g.state}`}
           style={{ "--kn-c": g.state === "accepted" ? t.color : "var(--muted-foreground)" } as CSSProperties}
-          className={cn("rounded-[3px] transition-[background-color] duration-[900ms] ease-out", fresh && "starting:bg-[color-mix(in_srgb,var(--kn-c)_28%,transparent)]")}
+          className={cn("rounded-[3px] transition-[background-color] duration-(--kn-dur-slow) ease-(--kn-ease-out)", fresh && "starting:bg-[color-mix(in_srgb,var(--kn-c)_28%,transparent)]")}
         >
           {g.text}
         </span>
@@ -565,7 +572,7 @@ export function AgentCursors({
     })();
     return (
       <div key={b.id} data-kn-anchor={b.id} className="relative">
-        <span aria-hidden className={cn("absolute -left-3.5 top-1 bottom-1 w-[2px] rounded-full transition-[background-color] duration-500", EASE)} style={{ background: bar }} />
+        <span aria-hidden className={cn("absolute -left-3.5 top-1 bottom-1 w-[2px] rounded-full transition-[background-color] duration-(--kn-dur)", EASE)} style={{ background: bar }} />
         {body}
         {inline.length > 0 && (
           <div className="mt-2 flex flex-col gap-2">
@@ -611,7 +618,7 @@ export function AgentCursors({
                 const t = toneOf(a.id);
                 const away = presence[a.id]?.away;
                 return (
-                  <span key={a.id} title={`${a.label}: ${status(a)}`} className={cn("relative transition-[opacity,filter] duration-300", away && "opacity-45 grayscale")}>
+                  <span key={a.id} title={`${a.label}: ${status(a)}`} className={cn("relative transition-[opacity,filter] duration-(--kn-dur) ease-(--kn-ease-out)", away && "opacity-45 grayscale")}>
                     <Avatar actor={a} t={t} size={22} ring={false} />
                     {isActive(a) && <span aria-hidden className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2 ring-card" style={{ background: t.color }} />}
                   </span>
@@ -643,8 +650,8 @@ export function AgentCursors({
                         if (el) railEls.current.set(c.id, el);
                         else railEls.current.delete(c.id);
                       }}
-                      className={cn("absolute inset-x-0 transition-[top] duration-300 starting:opacity-0", EASE)}
-                      style={{ top: railTops[c.id] ?? 0 }}
+                      className="absolute inset-x-0 top-0 transition-[transform,opacity] duration-(--kn-dur-slow) ease-(--kn-ease-inout) starting:opacity-0"
+                      style={{ transform: `translateY(${railTops[c.id] ?? 0}px)` }}
                     >
                       {commentCard(c)}
                     </div>
@@ -672,7 +679,7 @@ export function AgentCursors({
                           const id = cellId(row.id, ci);
                           const by = activeIn(id);
                           return (
-                            <td key={ci} data-kn-anchor={id} className={cn("border-b px-3 py-2.5 align-top transition-[box-shadow] duration-300", HAIRLINE, ci === 0 && "font-medium")} style={{ boxShadow: by ? `inset 0 0 0 1px ${toneOf(by).faint}` : "inset 0 0 0 1px transparent" }}>
+                            <td key={ci} data-kn-anchor={id} className={cn("border-b px-3 py-2.5 align-top transition-[box-shadow] duration-(--kn-dur) ease-(--kn-ease-out)", HAIRLINE, ci === 0 && "font-medium")} style={{ boxShadow: by ? `inset 0 0 0 1px ${toneOf(by).faint}` : "inset 0 0 0 1px transparent" }}>
                               <span data-kn-text="">{renderText(id, cell)}</span>
                             </td>
                           );
@@ -697,7 +704,7 @@ export function AgentCursors({
                       if (el) pointerEls.current.set(a.id, el);
                       else pointerEls.current.delete(a.id);
                     }}
-                    className="absolute left-0 top-0 opacity-0 transition-opacity duration-300 will-change-transform"
+                    className="absolute left-0 top-0 opacity-0 transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) will-change-transform"
                   >
                     <svg width="20" height="22" viewBox="0 0 20 22" className="-translate-x-[2px] -translate-y-[2px] drop-shadow-[0_1px_2px_rgb(0_0_0/0.2)]">
                       <path d="M2.5 2 17.5 10.4l-6.6 1.7-3.3 6.9z" fill={t.color} stroke="white" strokeWidth="1" strokeLinejoin="round" />
@@ -708,7 +715,7 @@ export function AgentCursors({
                       if (el) tagEls.current.set(a.id, el);
                       else tagEls.current.delete(a.id);
                     }}
-                    className={cn("absolute left-0 top-0 flex max-w-[190px] flex-col rounded-lg border bg-popover px-2 py-1 text-popover-foreground opacity-0 data-on-text:bg-popover/92 data-on-text:backdrop-blur-sm shadow-[0_4px_12px_-4px_rgb(0_0_0/0.18)] transition-opacity duration-300 will-change-transform", HAIRLINE)}
+                    className={cn("absolute left-0 top-0 flex max-w-[190px] flex-col rounded-lg border bg-popover px-2 py-1 text-popover-foreground opacity-0 data-on-text:bg-popover/92 data-on-text:backdrop-blur-sm shadow-[0_4px_12px_-4px_rgb(0_0_0/0.18)] transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) will-change-transform", HAIRLINE)}
                   >
                     <span className="flex items-center gap-1.5 text-[11.5px] leading-4 font-medium">
                       <span className="size-1.5 flex-none rounded-full" style={{ background: away ? "var(--muted-foreground)" : t.color }} />

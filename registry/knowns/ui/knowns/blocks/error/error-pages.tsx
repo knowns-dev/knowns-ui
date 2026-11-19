@@ -121,7 +121,7 @@ export function NotFoundPage({
                     <span className="text-[13.5px] font-medium">{l.label}</span>
                     {l.description && <span className="truncate text-[12.5px] text-muted-foreground">{l.description}</span>}
                   </span>
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" className="size-3.5 text-muted-foreground transition-transform ease-(--kn-ease-out) group-hover:translate-x-0.5 motion-reduce:transition-none">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" className="size-3.5 text-muted-foreground transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) group-hover:translate-x-0.5 motion-reduce:transition-none">
                     <path d="M6 4l4 4-4 4" />
                   </svg>
                 </a>

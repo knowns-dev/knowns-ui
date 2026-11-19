@@ -207,13 +207,13 @@ export function AiAnswer({
   let wordIndex = 0;
   const words = (s: string, keyBase: string) =>
     (s.match(/\S+\s*|\s+/g) ?? []).map((w) => (
-      <span key={`${keyBase}-${wordIndex++}`} className={animate ? "animate-[kn-word_320ms_ease-out_both]" : undefined}>
+      <span key={`${keyBase}-${wordIndex++}`} className={animate ? "animate-[kn-word_var(--kn-dur-slow)_var(--kn-ease-out)_both]" : undefined}>
         {w}
       </span>
     ));
 
   const caret = writing && status !== "thinking" && (
-    <span aria-hidden="true" className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[3px] rounded-full bg-indigo-500 motion-safe:animate-pulse" />
+    <span aria-hidden="true" className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[3px] rounded-full bg-[color:var(--kn-accent,var(--primary))] motion-safe:animate-pulse" />
   );
 
   const renderInline = (parts: Inline[], keyBase: string, last = false) => [
@@ -266,7 +266,7 @@ export function AiAnswer({
           >
             {steps.some((s) => s.state === "active") ? <Spinner className="size-3" label="" /> : <span className="size-3 text-emerald-600 dark:text-emerald-400 [&>svg]:size-full">{icon.check}</span>}
             {steps.find((s) => s.state === "active")?.label ?? steps.filter((s) => s.state === "done").map((s) => s.label).join(" · ")}
-            <span className={cn("size-3 transition-transform [&>svg]:size-full", stepsOpen && "rotate-90")}>{icon.chevron}</span>
+            <span className={cn("size-3 transition-transform duration-(--kn-dur) ease-(--kn-ease-out) [&>svg]:size-full", stepsOpen && "rotate-90")}>{icon.chevron}</span>
           </button>
           {stepsOpen && (
             <ol className="mt-1.5 ml-1.5 flex flex-col gap-1 border-l pl-3.5 text-[12.5px]">
@@ -276,7 +276,7 @@ export function AiAnswer({
                     aria-hidden="true"
                     className={cn(
                       "-ml-[19px] size-2 rounded-full ring-2 ring-card",
-                      s.state === "done" ? "bg-emerald-500" : s.state === "active" ? "bg-indigo-500 motion-safe:animate-pulse" : "bg-muted-foreground/30",
+                      s.state === "done" ? "bg-emerald-500" : s.state === "active" ? "bg-[color:var(--kn-accent,var(--primary))] motion-safe:animate-pulse" : "bg-muted-foreground/30",
                     )}
                   />
                   {s.label}
@@ -314,10 +314,10 @@ export function AiAnswer({
                 </>
               );
               const cls = cn(
-                "flex h-full flex-col rounded-xl px-3 py-2.5 text-left transition-[box-shadow,background-color] duration-150",
+                "flex h-full flex-col rounded-xl px-3 py-2.5 text-left transition-[box-shadow,background-color] ease-(--kn-ease-out) duration-(--kn-dur)",
                 "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:bg-muted/40",
-                lit && "bg-indigo-500/[0.06] shadow-[0_0_0_1.5px_rgb(99_102_241/0.55)]",
-                status === "thinking" && animate && "animate-[kn-rise_260ms_ease-out_both]",
+                lit && "bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_6%,transparent)] shadow-[0_0_0_1.5px_color-mix(in_srgb,var(--kn-accent,var(--primary))_55%,transparent)]",
+                status === "thinking" && animate && "animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both]",
                 focusRing,
               );
               return (
@@ -340,7 +340,7 @@ export function AiAnswer({
                   onClick={() => setAllSources((v) => !v)}
                   className={cn(
                     "flex h-full min-h-14 w-full flex-col items-start justify-between rounded-xl px-3 py-2.5 text-left text-[12px] text-muted-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:bg-muted/40 hover:text-foreground",
-                    hot.some((n) => n > maxPills) && !allSources && "shadow-[0_0_0_1.5px_rgb(99_102_241/0.55)]",
+                    hot.some((n) => n > maxPills) && !allSources && "shadow-[0_0_0_1.5px_color-mix(in_srgb,var(--kn-accent,var(--primary))_55%,transparent)]",
                     focusRing,
                   )}
                 >
@@ -402,7 +402,7 @@ export function AiAnswer({
 
       {/* Suggestions */}
       {finished && suggestions && suggestions.length > 0 && (
-        <div className="mt-4 animate-[kn-rise_220ms_ease-out_both]">
+        <div className="mt-4 animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both]">
           <div className="mb-1 text-[11.5px] font-medium tracking-wide text-muted-foreground uppercase">Ask next</div>
           <ul className="divide-y">
             {suggestions.map((q) => (
@@ -413,7 +413,7 @@ export function AiAnswer({
                   className={cn("group flex w-full items-center justify-between gap-3 rounded-md py-2 text-left text-[13.5px] text-foreground/90 hover:text-foreground", focusRing)}
                 >
                   {q}
-                  <span className="size-3.5 flex-none text-muted-foreground transition-transform group-hover:translate-x-0.5 [&>svg]:size-full">{icon.chevron}</span>
+                  <span className="size-3.5 flex-none text-muted-foreground transition-transform duration-(--kn-dur) ease-(--kn-ease-out) group-hover:translate-x-0.5 [&>svg]:size-full">{icon.chevron}</span>
                 </button>
               </li>
             ))}
@@ -471,7 +471,7 @@ export function AiAnswer({
       </div>
 
       {rating === "bad" && finished && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 animate-[kn-rise_180ms_ease-out_both]" role="group" aria-label="What was wrong?">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both]" role="group" aria-label="What was wrong?">
           <span className="mr-1 text-[12.5px] text-muted-foreground">{reason ? "Thanks - noted." : "What was wrong?"}</span>
           {!reason &&
             feedbackReasons.map((r) => (
@@ -537,10 +537,10 @@ function Citation({ n, source, hot, onHot, animate }: { n: number; source?: Answ
         }}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
         className={cn(
-          "inline-flex h-[18px] min-w-[18px] items-center justify-center gap-1 rounded-[5px] px-1 text-[10.5px] font-semibold tabular-nums leading-none",
-          "bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] text-muted-foreground transition-colors hover:text-foreground",
-          hot && "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
-          animate && "animate-[kn-pop_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]",
+          "inline-flex h-[19px] min-w-[19px] items-center justify-center gap-1 rounded-[5px] px-1 text-[11px] font-semibold tabular-nums leading-none",
+          "bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground",
+          hot && "bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_15%,transparent)] text-[color:var(--kn-accent,var(--primary))]",
+          animate && "animate-[kn-pop_var(--kn-dur)_var(--kn-ease-out)_both]",
           focusRing,
         )}
       >
@@ -562,7 +562,7 @@ function Citation({ n, source, hot, onHot, animate }: { n: number; source?: Answ
           style={{ left: at.x, top: at.y }}
           className={cn(
             "fixed z-[60] w-64 -translate-x-1/2 rounded-xl border bg-popover p-3 text-left text-[12.5px] leading-snug text-popover-foreground",
-            "shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] animate-[kn-rise_150ms_ease-out_both]",
+            "shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] animate-[kn-rise_var(--kn-dur-fast)_var(--kn-ease-out)_both]",
             !at.below && "-translate-y-full",
           )}
         >
@@ -573,7 +573,7 @@ function Citation({ n, source, hot, onHot, animate }: { n: number; source?: Answ
           <span className="mt-1 block font-medium">{source.title}</span>
           {source.excerpt && <span className="mt-1 block text-muted-foreground">{source.excerpt}</span>}
           {source.url && (
-            <a href={source.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[12px] font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+            <a href={source.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[12px] font-medium text-[color:var(--kn-accent,var(--primary))] hover:underline">
               Open source ↗
             </a>
           )}

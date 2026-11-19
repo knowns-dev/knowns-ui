@@ -95,7 +95,7 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
       {Array.from({ length: n }, (_, i) => {
         const b = windowBox(i, n);
         const on = i === current;
-        const lines = LINES[i % LINES.length];
+        const lines = LINES[i % LINES.length] ?? [];
         return (
           <div
             key={i}
@@ -123,7 +123,7 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
               </span>
               <span
                 className={cn(
-                  "ml-[1.5cqw] flex h-[5.2cqw] items-center rounded-t-[1.4cqw] border border-b-0 px-[2.4cqw] text-[2.6cqw] leading-none font-medium whitespace-nowrap transition-colors duration-(--kn-dur-slow)",
+                  "ml-[1.5cqw] flex h-[5.2cqw] items-center rounded-t-[1.4cqw] border border-b-0 px-[2.4cqw] text-[2.6cqw] leading-none font-medium whitespace-nowrap transition-colors ease-(--kn-ease-out) duration-(--kn-dur-slow)",
                   on ? "bg-card text-foreground" : "bg-transparent text-muted-foreground",
                 )}
                 style={on ? { boxShadow: "inset 0 0.5cqw 0 var(--kn-ill)" } : undefined}
@@ -136,7 +136,7 @@ export function TabOverload({ windows = DEFAULT, active, onActiveChange, cycle =
               {lines.map((w, j) => (
                 <span
                   key={j}
-                  className="h-[1.9cqw] rounded-full transition-colors duration-(--kn-dur-slow)"
+                  className="h-[1.9cqw] rounded-full transition-colors ease-(--kn-ease-out) duration-(--kn-dur-slow)"
                   style={{ width: `${w}%`, background: on && j === 0 ? "color-mix(in srgb, var(--kn-ill) 70%, transparent)" : "color-mix(in srgb, var(--foreground) 11%, transparent)" }}
                 />
               ))}

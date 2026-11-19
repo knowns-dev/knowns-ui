@@ -66,6 +66,34 @@
       ]
     },
     {
+      "name": "quiz-glyphs",
+      "type": "registry:lib",
+      "title": "Quiz glyphs",
+      "description": "The small one-style icons of the quiz components: check, cross, clock, plus, trash, arrows, grip, flag, download, upload, restart and spark. 16px, stroke follows currentColor.",
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "registry/knowns/lib/knowns/quiz-glyphs.tsx",
+          "type": "registry:lib",
+          "target": "lib/knowns/quiz-glyphs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "quiz",
+      "type": "registry:lib",
+      "title": "Quiz model",
+      "description": "Shared quiz types (QuizQuestion, QuizResponse) and grading: gradeQuestion with partial credit for multiple choice, scoreQuiz, and validateQuestion. Pure functions, no React.",
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "registry/knowns/lib/knowns/quiz.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/quiz.ts"
+        }
+      ]
+    },
+    {
       "name": "knowns-core",
       "type": "registry:lib",
       "title": "Knowns UI core",
@@ -134,6 +162,22 @@
             "transform": "translateX(300%)"
           }
         },
+        "@keyframes kn-sweep": {
+          "from": {
+            "transform": "translateX(-100%)"
+          },
+          "to": {
+            "transform": "translateX(250%)"
+          }
+        },
+        "@keyframes kn-sweep-rtl": {
+          "from": {
+            "transform": "translateX(100%)"
+          },
+          "to": {
+            "transform": "translateX(-250%)"
+          }
+        },
         "@keyframes kn-word": {
           "from": {
             "opacity": "0",
@@ -150,6 +194,11 @@
           "to": {
             "opacity": "0",
             "transform": "translateY(6px)"
+          }
+        },
+        "@keyframes kn-fade-in": {
+          "from": {
+            "opacity": "0.35"
           }
         },
         "@keyframes kn-fade-out": {
@@ -191,16 +240,6 @@
             "scrollbar-width": "thin",
             "scrollbar-color": "var(--kn-thumb) transparent"
           }
-        },
-        "@property --kn-fade-l": {
-          "syntax": "\"<length>\"",
-          "inherits": "false",
-          "initial-value": "0px"
-        },
-        "@property --kn-fade-r": {
-          "syntax": "\"<length>\"",
-          "inherits": "false",
-          "initial-value": "0px"
         },
         ".kn-scroll-fade-x": {
           "mask-image": "linear-gradient(to right, #000 var(--kn-fade-inset-l, 0px), transparent var(--kn-fade-inset-l, 0px), #000 calc(var(--kn-fade-inset-l, 0px) + var(--kn-fade-l)), #000 calc(100% - var(--kn-fade-r)), transparent), linear-gradient(#000, #000)",
@@ -337,6 +376,7 @@
         "https://ui.knowns.dev/r/knowns-icons.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/dialog.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/status-dot.json",
         "https://ui.knowns.dev/r/toggle-group.json"
       ],
@@ -417,6 +457,7 @@
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/knowns-icons.json",
         "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/spinner.json",
         "https://ui.knowns.dev/r/tooltip.json"
       ],
@@ -461,6 +502,7 @@
         "https://ui.knowns.dev/r/knowns-icons.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/kbd.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/popover.json"
       ],
       "files": [
@@ -545,6 +587,40 @@
       ]
     },
     {
+      "name": "animated-number",
+      "type": "registry:ui",
+      "title": "Animated number",
+      "description": "A number whose changed digits roll up or down to the new value: Intl formatting for currency, percent and decimals, tabular widths, instant with reduced motion.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/animated-number.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/animated-number.tsx"
+        }
+      ]
+    },
+    {
+      "name": "answer-pad",
+      "type": "registry:ui",
+      "title": "Answer pad",
+      "description": "The student's phone view of a live question: big tap targets for the choices, locked after one answer, with waiting, right and wrong states. The answer shows at once and is sent in the background; if sending fails it stays saved and goes again when the phone is back online.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/quiz.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/answer-pad/answer-pad.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/answer-pad/answer-pad.tsx"
+        }
+      ]
+    },
+    {
       "name": "approval-prompt",
       "type": "registry:ui",
       "title": "Approval prompt",
@@ -594,6 +670,65 @@
           "path": "registry/knowns/ui/knowns/badge.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "area-trend-card",
+      "type": "registry:block",
+      "title": "Area trend card",
+      "description": "A card for a total that is made of parts over time: a label, a headline total with a change badge, a period dropdown, a soft-gradient area chart (stacked, overlaid or 100% share) and a legend with each series' total. Pointing at a band, a line or a legend entry swaps the headline to that series' total, which rolls with the number; leaving restores the grand total.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/animated-number.json",
+        "https://ui.knowns.dev/r/chart.json",
+        "https://ui.knowns.dev/r/dropdown.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/analytics/area-trend-card.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/analytics/area-trend-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "eval-score",
+      "type": "registry:block",
+      "title": "Eval score",
+      "description": "A score card for AI evals: one 0 to 100 score made of weighted sub-scores, drawn as a half-arc (or ring) of rounded segments that fill over a faint track, a rating from your thresholds, a stepper between eval runs and a row per sub-score. Pointing at or focusing a row or a segment dims the rest.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/animated-number.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/card.json",
+        "https://ui.knowns.dev/r/chart.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/analytics/eval-score.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/analytics/eval-score.tsx"
+        }
+      ]
+    },
+    {
+      "name": "goal-rings",
+      "type": "registry:block",
+      "title": "Goal rings",
+      "description": "A compact card of progress rings with a stat for each ring: label, value, goal and percent. Pointing at or focusing a ring or its stat brings that ring forward and dims the others; a ring past its goal laps the start.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/animated-number.json",
+        "https://ui.knowns.dev/r/card.json",
+        "https://ui.knowns.dev/r/chart.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/analytics/goal-rings.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/analytics/goal-rings.tsx"
         }
       ]
     },
@@ -685,7 +820,8 @@
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/input.json",
-        "https://ui.knowns.dev/r/otp-input.json"
+        "https://ui.knowns.dev/r/otp-input.json",
+        "https://ui.knowns.dev/r/social-button.json"
       ],
       "files": [
         {
@@ -787,7 +923,7 @@
       "name": "dither-field",
       "type": "registry:block",
       "title": "Dither Field",
-      "description": "A soft light rendered as crisp ordered-dither dots: a glow that eases after the pointer, a rising horizon or flowing noise. Canvas, redrawn only while the light changes.",
+      "description": "A soft light rendered as crisp ordered-dither dots: a glow that eases after the pointer, a rising horizon or flowing noise, or any picture redrawn as colour dither cells (src). Canvas, redrawn only while the light changes.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/illustrations-core.json",
         "https://ui.knowns.dev/r/backgrounds-core.json"
@@ -841,7 +977,8 @@
       "description": "A lit floor that rises from the bottom edge: two soft gradient layers drift and breathe, and pulse(x) sends a wave across it from a ref or from other pieces (Prompt Keyboard sends one per key). CSS and the Web Animations API, no blur filter, no per-frame JavaScript.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/illustrations-core.json",
-        "https://ui.knowns.dev/r/backgrounds-core.json"
+        "https://ui.knowns.dev/r/backgrounds-core.json",
+        "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [
         {
@@ -903,6 +1040,23 @@
       ]
     },
     {
+      "name": "rain-field",
+      "type": "registry:block",
+      "title": "Rain Field",
+      "description": "Thin streaks of light falling at different speeds behind a fine dot screen, so they read as lit pixels. Canvas: the dot screen is baked once, only the lit cells are drawn each frame.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/illustrations-core.json",
+        "https://ui.knowns.dev/r/backgrounds-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/backgrounds/rain-field.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/backgrounds/rain-field.tsx"
+        }
+      ]
+    },
+    {
       "name": "signal-lines",
       "type": "registry:block",
       "title": "Signal Lines",
@@ -926,6 +1080,8 @@
       "description": "A catalogue page: category tabs with counts over a grid of thumbnail cards with New and Pro badges, plus a Sketch kit for quiet monochrome thumbnails in one visual language.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/input.json",
+        "https://ui.knowns.dev/r/segmented-control.json",
         "https://ui.knowns.dev/r/toggle-group.json"
       ],
       "files": [
@@ -1201,6 +1357,43 @@
       ]
     },
     {
+      "name": "class-core",
+      "type": "registry:ui",
+      "title": "Class core",
+      "description": "Shared pure helpers for the class blocks (class-roster, gradebook, student-progress): students, assignments and a score book, averages, typed score parsing, quiz scores from responses, topic mastery, attendance counts and a safe CSV export. No React.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/quiz.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/education/class-core.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/blocks/education/class-core.ts"
+        }
+      ]
+    },
+    {
+      "name": "class-roster",
+      "type": "registry:block",
+      "title": "Class roster",
+      "description": "The teacher's list of students: search, today's attendance as a chip that cycles Present, Late, Absent and Excused, the average so far and when each student was last active. Built on the data table, driven by props, no backend.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/class-core.json",
+        "https://ui.knowns.dev/r/data-table.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/education/class-roster.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/education/class-roster.tsx"
+        }
+      ]
+    },
+    {
       "name": "error-pages",
       "type": "registry:block",
       "title": "Error Pages",
@@ -1297,6 +1490,111 @@
           "path": "registry/knowns/ui/knowns/blocks/marketing/feature-grid.tsx",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/marketing/feature-grid.tsx"
+        }
+      ]
+    },
+    {
+      "name": "feature-trio",
+      "type": "registry:block",
+      "title": "Feature trio",
+      "description": "Three quiet feature cards, each a bold lead sentence with a muted continuation and a live product moment underneath. The first card spans both columns; they reveal once on scroll, and show whole without JavaScript or under reduced motion.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/marketing-core.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/feature-trio.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/feature-trio.tsx"
+        }
+      ]
+    },
+    {
+      "name": "footer-columns",
+      "type": "registry:block",
+      "title": "Footer columns",
+      "description": "Marketing footer with the brand and a blurb, the Newsletter block as its sign-up, two to four link columns that stay two across on a phone, text-only social links and the legal row.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/newsletter.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-columns.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-columns.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-parts.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-parts.tsx"
+        }
+      ]
+    },
+    {
+      "name": "footer-minimal",
+      "type": "registry:block",
+      "title": "Footer minimal",
+      "description": "One-line marketing footer: brand, a few links and the copyright. Wraps to a centred stack on a phone. For a landing page that ends at a call to action.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-minimal.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-minimal.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-parts.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-parts.tsx"
+        }
+      ]
+    },
+    {
+      "name": "footer-status",
+      "type": "registry:block",
+      "title": "Footer status",
+      "description": "Marketing footer with a live system status pill (a still dot, a label and a link to your status page), an optional 30-day uptime strip, link columns and the legal row. Status comes from your data; the footer never fetches.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/status-dot.json",
+        "https://ui.knowns.dev/r/uptime-bar.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-status.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-status.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-parts.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-parts.tsx"
+        }
+      ]
+    },
+    {
+      "name": "footer-wordmark",
+      "type": "registry:block",
+      "title": "Footer wordmark",
+      "description": "Marketing footer that ends in the brand word set as wide as the page and cropped at the bottom edge, fading out. A quiet row of links, text-only socials and the legal line sit above it. No JavaScript.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-wordmark.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-wordmark.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/footer-parts.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/footer-parts.tsx"
         }
       ]
     },
@@ -1673,6 +1971,7 @@
       "description": "A docs sidebar built on Sidebar: search, filter chips, sections, categories and pages with counts, New and Pro marks, upcoming pages marked Soon, remembered folds and the current page scrolled into view.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/animated-number.json",
         "https://ui.knowns.dev/r/kbd.json",
         "https://ui.knowns.dev/r/sidebar.json"
       ],
@@ -1893,6 +2192,59 @@
       ]
     },
     {
+      "name": "calendar",
+      "type": "registry:ui",
+      "title": "Calendar",
+      "description": "A month grid: single day, range or multiple days, one or two months, min/max and disabled days, controlled paging, a renderDay slot for dots and badges, full keyboard navigation. Intl only, no date library.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/calendar/calendar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/calendar/calendar.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/calendar/calendar-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/calendar/calendar-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/calendar/calendar-zone.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/calendar/calendar-zone.ts"
+        }
+      ]
+    },
+    {
+      "name": "call-overlay",
+      "type": "registry:ui",
+      "title": "Call overlay",
+      "description": "A call and recording overlay for AI voice apps, built on live-activity: connecting, live, on hold, muted, recording and ended in a collapsed pill with a timer, mute and end, opening into a card with who is speaking, hold, record and a confirmed end. A recording variant has pause, stop and discard. Controlled; bring your own timer and audio.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/live-activity.json",
+        "https://ui.knowns.dev/r/motion.json",
+        "https://ui.knowns.dev/r/status-dot.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/call-overlay/call-overlay.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/call-overlay/call-overlay.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/call-overlay/call-state.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/call-overlay/call-state.ts"
+        }
+      ]
+    },
+    {
       "name": "card",
       "type": "registry:ui",
       "title": "Card",
@@ -1909,12 +2261,35 @@
       ]
     },
     {
+      "name": "carousel",
+      "type": "registry:ui",
+      "title": "Carousel",
+      "description": "Slides in a row that snap into place: native scroll for touch and trackpad, arrow buttons, arrow keys, dots, one to four slides per view, instant with reduced motion.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/carousel/carousel.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/carousel/carousel.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/carousel/carousel-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/carousel/carousel-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "chart",
       "type": "registry:ui",
       "title": "Chart",
-      "description": "Line, bar (grouped or stacked), area and sparkline in plain SVG with no dependency: axes, grid, keyboard tooltip, legend toggles, empty state and a screen-reader data table.",
+      "description": "Line, bar (grouped or stacked), area, donut, pie, activity rings and sparkline in plain SVG with no dependency: axes, grid, keyboard tooltip, legend toggles, empty state and a screen-reader data table.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/animated-number.json",
         "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [
@@ -1932,6 +2307,11 @@
           "path": "registry/knowns/ui/knowns/chart/sparkline.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/chart/sparkline.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/chart/chart-radial.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/chart/chart-radial.tsx"
         }
       ]
     },
@@ -1943,8 +2323,10 @@
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/knowns-icons.json",
+        "https://ui.knowns.dev/r/avatar.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/tooltip.json"
       ],
       "files": [
@@ -2053,6 +2435,23 @@
       ]
     },
     {
+      "name": "context-menu",
+      "type": "registry:ui",
+      "title": "Context menu",
+      "description": "The menu under the pointer: right-click, Shift+F10 or the menu key, and a long press on touch. Built on Menu, so it has the same sections, checkable rows, submenus and typeahead.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/menu.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/context-menu/context-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/context-menu/context-menu.tsx"
+        }
+      ]
+    },
+    {
       "name": "context-window",
       "type": "registry:ui",
       "title": "Context window",
@@ -2060,6 +2459,7 @@
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/tooltip.json"
       ],
       "files": [
@@ -2104,17 +2504,37 @@
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/calendar.json",
         "https://ui.knowns.dev/r/checkbox.json",
+        "https://ui.knowns.dev/r/date-range-picker.json",
         "https://ui.knowns.dev/r/input.json",
         "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/motion.json",
+        "https://ui.knowns.dev/r/popover.json",
         "https://ui.knowns.dev/r/segmented-control.json",
-        "https://ui.knowns.dev/r/skeleton.json"
+        "https://ui.knowns.dev/r/skeleton.json",
+        "https://ui.knowns.dev/r/slider.json"
       ],
       "files": [
         {
           "path": "registry/knowns/ui/knowns/data-table/data-table.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/data-table/data-table.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/data-table/data-table-action-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/data-table/data-table-action-bar.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/data-table/data-table-filters.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/data-table/data-table-filters.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/data-table/table-filters.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/data-table/table-filters.ts"
         },
         {
           "path": "registry/knowns/ui/knowns/data-table/table-utils.ts",
@@ -2130,7 +2550,8 @@
       "description": "One date, optionally with a time: a typeable field that reads ISO, locale-ordered numbers, month names, today/tomorrow, 'next fri', 'in 3 days' and '3pm', with a live preview and a calendar popover; or a button or an inline panel. Quick picks, min/max, disabled days, Intl only.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
-        "https://ui.knowns.dev/r/date-range-picker.json",
+        "https://ui.knowns.dev/r/calendar.json",
+        "https://ui.knowns.dev/r/knowns-field.json",
         "https://ui.knowns.dev/r/popover.json"
       ],
       "files": [
@@ -2148,6 +2569,8 @@
       "description": "Range or single date in a popover: one or two month calendar, presets, keyboard grid navigation, min/max and disabled days, Field label/hint/error. Intl only, no date library.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/calendar.json",
+        "https://ui.knowns.dev/r/knowns-field.json",
         "https://ui.knowns.dev/r/popover.json"
       ],
       "files": [
@@ -2176,6 +2599,23 @@
       ]
     },
     {
+      "name": "drawer",
+      "type": "registry:ui",
+      "title": "Drawer",
+      "description": "A bottom sheet with a trigger: pull its handle down to dismiss, a fixed or full height, and the same slide as Sheet. Controlled or uncontrolled.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/sheet.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/drawer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/drawer.tsx"
+        }
+      ]
+    },
+    {
       "name": "dropdown",
       "type": "registry:ui",
       "title": "Dropdown",
@@ -2193,6 +2633,22 @@
           "path": "registry/knowns/ui/knowns/dropdown.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/dropdown.tsx"
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "type": "registry:ui",
+      "title": "Empty",
+      "description": "The state of a list with nothing in it: an icon, a title, one sentence and the next action. Dashed or plain, three sizes.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/empty.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/empty.tsx"
         }
       ]
     },
@@ -2232,6 +2688,44 @@
       ]
     },
     {
+      "name": "filter-chips",
+      "type": "registry:ui",
+      "title": "Filter Chips",
+      "description": "A standalone, fully controlled filter bar: a chip per field with a multi-select menu (search, avatars), a value summary, clear buttons and Clear all. It filters nothing itself, so the value can live in the URL or on the server.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/combobox.json",
+        "https://ui.knowns.dev/r/input.json",
+        "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/popover.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/filter-chips.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/filter-chips.tsx"
+        }
+      ]
+    },
+    {
+      "name": "floating-dock",
+      "type": "registry:ui",
+      "title": "Floating Dock",
+      "description": "A floating panel pinned to one of the four corners of the screen or of a parent, with a margin and the device safe area kept clear. It holds anything: a player, a call, a chat. The corner is a prop; dragging and snapping are in the Pro media-dock.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/floating-dock.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/floating-dock.tsx"
+        }
+      ]
+    },
+    {
       "name": "ghost-text",
       "type": "registry:ui",
       "title": "Ghost text",
@@ -2251,6 +2745,27 @@
           "path": "registry/knowns/ui/knowns/ghost-text/ghost-utils.ts",
           "type": "registry:ui",
           "target": "components/ui/knowns/ghost-text/ghost-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "heatmap",
+      "type": "registry:ui",
+      "title": "Heatmap",
+      "description": "A two-axis grid of values, such as weekday by hour or region by month, built with CSS grid and no chart library. Each cell mixes the accent into the track by its value so light and dark follow the theme, with row and column labels, a Less to More legend, one tab stop with the arrow keys to move between cells, and the focused cell announced with its row, column and value. Pointing at or focusing a cell rings it and brightens its two labels.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/heatmap/heatmap.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/heatmap/heatmap.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/heatmap/heatmap-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/heatmap/heatmap-utils.ts"
         }
       ]
     },
@@ -2453,6 +2968,29 @@
       ]
     },
     {
+      "name": "live-activity",
+      "type": "registry:ui",
+      "title": "Live activity",
+      "description": "A glanceable capsule for work that runs elsewhere: a pill with an icon or avatar, a title and one value, that opens into a card with details and actions as one size change. Comes with three basics: status with elapsed time, stage progress with a sliding marker, and a countdown with draining ticks.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json",
+        "https://ui.knowns.dev/r/status-dot.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/live-activity/live-activity.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/live-activity/live-activity.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/live-activity/activity-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/live-activity/activity-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "menu",
       "type": "registry:ui",
       "title": "Menu",
@@ -2492,6 +3030,35 @@
           "path": "registry/knowns/ui/knowns/message-actions/message-actions-utils.ts",
           "type": "registry:ui",
           "target": "components/ui/knowns/message-actions/message-actions-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "now-playing",
+      "type": "registry:ui",
+      "title": "Now playing",
+      "description": "A music player for an app that does not own the audio or does. A capsule built on Live Activity (pill that opens into a card), or a tile in three sizes (compact, medium, large) that fills its container and picks the size from its width. Headless: pass the pushed state (track, position, playing, volume) and the handlers; the time keeps running between pushes and never jumps back on a stale one. Empty and pending states, every string translatable, a read-only progress bar when there is no seek, and an optional useAudioPlayer hook.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/live-activity.json",
+        "https://ui.knowns.dev/r/slider.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/now-playing/now-playing.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/now-playing/now-playing.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/now-playing/now-playing-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/now-playing/now-playing-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/now-playing/use-audio-player.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/now-playing/use-audio-player.ts"
         }
       ]
     },
@@ -2570,7 +3137,8 @@
       "description": "Segmented strength meter with a text label, a live configurable rules checklist, a generate-and-copy strong password button and polite announcements. Exports pure scorePassword, passwordRules, checkPassword and generatePassword helpers.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
-        "https://ui.knowns.dev/r/button.json"
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [
         {
@@ -2598,6 +3166,22 @@
       ]
     },
     {
+      "name": "priority-bars",
+      "type": "registry:ui",
+      "title": "Priority bars",
+      "description": "Priority as three rising bars: low fills one, medium two, high three; urgent is an orange exclamation square and none is three faint bars. A real image role with a spoken label, or decorative beside a word.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/priority-bars.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/priority-bars.tsx"
+        }
+      ]
+    },
+    {
       "name": "progress",
       "type": "registry:ui",
       "title": "Progress",
@@ -2606,13 +3190,33 @@
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
-        "https://ui.knowns.dev/r/knowns-core.json"
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/tooltip.json"
       ],
       "files": [
         {
           "path": "registry/knowns/ui/knowns/progress.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "question-card",
+      "type": "registry:ui",
+      "title": "Question Card",
+      "description": "One quiz question to answer: single choice, multiple choice, true or false or a typed answer. Keys 1 to 9 pick a choice, Enter submits, and a verdict with the explanation opens when the answer is checked. Right and wrong are announced to screen readers.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json",
+        "https://ui.knowns.dev/r/quiz.json",
+        "https://ui.knowns.dev/r/quiz-glyphs.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/question-card/question-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/question-card/question-card.tsx"
         }
       ]
     },
@@ -2768,6 +3372,57 @@
           "path": "registry/knowns/ui/knowns/slider.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/slider.tsx"
+        }
+      ]
+    },
+    {
+      "name": "social-button",
+      "type": "registry:ui",
+      "title": "Social Button",
+      "description": "A sign-in button for 24 providers plus your own: an outline, a brand (official styles for Google, Apple and Microsoft) or an icon-only variant, in the Button sizes, with loading and a verb prop.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/social-button/social-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/social-button/social-button.tsx"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/icons/social-icons.data.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/icons/social-icons.data.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/social-button/social-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/social-button/social-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "sortable",
+      "type": "registry:ui",
+      "title": "Sortable",
+      "description": "A list you reorder by dragging or from the keyboard: whole row or a handle, screen-reader announcements for every move, a lifted look on pick-up and a 180ms settle.",
+      "dependencies": [
+        "@dnd-kit/core@^6.3.1",
+        "@dnd-kit/modifiers@^9.0.0",
+        "@dnd-kit/sortable@^10.0.0",
+        "@dnd-kit/utilities@^3.2.2"
+      ],
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/sortable/sortable.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/sortable/sortable.tsx"
         }
       ]
     },
@@ -3036,13 +3691,31 @@
       "description": "Light/dark (or light/dark/system) toggle that reveals the new theme with a View Transition: a circle from the click point (the button centre for keyboard), a wipe, or a fade. Sun-to-moon icon morph. Instant without View Transitions or under reduced motion. Controlled or uncontrolled (localStorage + .dark on html), SSR-safe, with themeScript() for no flash and transitionTheme() for menus.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
-        "https://ui.knowns.dev/r/button.json"
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [
         {
           "path": "registry/knowns/ui/knowns/theme-toggle.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/theme-toggle.tsx"
+        }
+      ]
+    },
+    {
+      "name": "thinking-indicator",
+      "type": "registry:ui",
+      "title": "Thinking indicator",
+      "description": "A one-line working indicator: a small glyph (dot grid wave, node chain pulse, filling ring or breathing bars), a shimmering status label and an optional elapsed timer.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/shimmer-text.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/thinking-state/thinking-indicator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/thinking-state/thinking-indicator.tsx"
         }
       ]
     },
@@ -3057,6 +3730,7 @@
         "https://ui.knowns.dev/r/badge.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/spinner.json",
+        "https://ui.knowns.dev/r/thinking-indicator.json",
         "https://ui.knowns.dev/r/tooltip.json"
       ],
       "files": [
@@ -3073,12 +3747,56 @@
       ]
     },
     {
+      "name": "time-slots",
+      "type": "registry:ui",
+      "title": "Time slots",
+      "description": "The times of one day to pick from, for booking: shown in a chosen time zone with its label, disabled slots, keyboard list navigation and an inline Confirm. Intl only, no date library.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/calendar.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/time-slots/time-slots.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/time-slots/time-slots.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/time-slots/slots.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/time-slots/slots.ts"
+        }
+      ]
+    },
+    {
+      "name": "timeline-scrubber",
+      "type": "registry:ui",
+      "title": "Timeline Scrubber",
+      "description": "A time axis with ticks and labels and one marker you drag or move with the keyboard, anchoring a card above it that stays inside the track. Controlled or not. A grab halo on the marker, a faint ghost where a click lands, and the card fades on a click or key move; transform and opacity only.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/timeline-scrubber/timeline-scrubber.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/timeline-scrubber/timeline-scrubber.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/timeline-scrubber/timeline-scrubber-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/timeline-scrubber/timeline-scrubber-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "toast",
       "type": "registry:ui",
       "title": "Toast",
       "description": "Notifications with ToastProvider and useToast().",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/knowns-floating.json",
         "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [

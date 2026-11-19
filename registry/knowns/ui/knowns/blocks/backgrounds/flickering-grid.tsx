@@ -95,7 +95,7 @@ export function FlickeringGrid({
       const y = Math.round(Math.floor(i / sc.cols) * sc.pitch * sc.dpr);
       const d = sizeDev();
       ctx.clearRect(x, y, d, d);
-      ctx.globalAlpha = sc.op[i];
+      ctx.globalAlpha = sc.op[i] ?? 0;
       ctx.fillRect(x, y, d, d);
     };
     sc.full = () => {
@@ -126,7 +126,7 @@ export function FlickeringGrid({
       mc.fillStyle = "#000";
       mc.fillText(text, sc.cols / 2, sc.rows / 2);
       const data = mc.getImageData(0, 0, sc.cols, sc.rows).data;
-      for (let i = 0; i < sc.inside.length; i++) sc.inside[i] = data[i * 4 + 3] > 110 ? 1 : 0;
+      for (let i = 0; i < sc.inside.length; i++) sc.inside[i] = (data[i * 4 + 3] ?? 0) > 110 ? 1 : 0;
     };
 
     const fit = () => {

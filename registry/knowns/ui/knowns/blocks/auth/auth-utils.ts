@@ -10,10 +10,8 @@ export type AuthResult =
 
 export type AuthErrorKind = "invalid" | "expired" | "locked" | "rate-limit" | "network" | "unknown";
 
-/** Built-in OAuth buttons (brand icon and name included). */
-export type SocialProvider = "github" | "google" | "microsoft" | "apple";
-
-export const PROVIDER_NAME: Record<SocialProvider, string> = { github: "GitHub", google: "Google", microsoft: "Microsoft", apple: "Apple" };
+/** Built-in OAuth providers (mark and name come with the social-button item). */
+export { PROVIDER_NAME, SOCIAL_PROVIDERS, type SocialProvider } from "../../social-button/social-utils";
 
 /** sign-in: email first. sign-up: also asks for a name (optional) and shows the terms line. */
 export type AuthMode = "sign-in" | "sign-up";

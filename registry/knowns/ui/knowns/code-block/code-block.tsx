@@ -74,7 +74,7 @@ const WrapIcon = () => (
 );
 
 const toolbar = cn(
-  "inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[8px] px-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-200",
+  "inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[8px] px-2 text-[12.5px] font-medium text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast)",
   "hover:bg-foreground/[0.06] hover:text-foreground aria-pressed:bg-foreground/[0.08] aria-pressed:text-foreground pointer-coarse:h-9 [&_svg]:size-3.5",
   focusRing,
 );
@@ -259,10 +259,10 @@ export function CodeBlock({
           aria-expanded={expanded}
           aria-controls={bodyId}
           onClick={() => setExpanded(!expanded)}
-          className={cn("flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 border-t border-border text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground", focusRing, "focus-visible:-outline-offset-2")}
+          className={cn("flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 border-t border-border text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-foreground/[0.04] hover:text-foreground", focusRing, "focus-visible:-outline-offset-2")}
         >
           {expanded ? "Show less" : `Show ${hidden} more ${hidden === 1 ? "line" : "lines"}`}
-          <svg {...svg} className={cn("size-3.5 transition-transform duration-200 motion-reduce:transition-none", expanded && "rotate-180")}>
+          <svg {...svg} className={cn("size-3.5 transition-transform ease-(--kn-ease-out) duration-(--kn-dur) motion-reduce:transition-none", expanded && "rotate-180")}>
             <path d="m4 6.25 4 4 4-4" />
           </svg>
         </button>

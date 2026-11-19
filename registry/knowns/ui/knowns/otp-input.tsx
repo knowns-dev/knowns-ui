@@ -190,7 +190,7 @@ export function OtpInput({
               SLOT[size],
               // Slots keep their height and narrow (never past their size) when the row is tight, e.g. 8 slots on a phone.
               "min-w-0 shrink bg-card text-center font-medium tabular-nums caret-transparent outline-none",
-              "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_1px_2px_rgb(0_0_0/0.04)] transition-[box-shadow] duration-200 ease-out dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]",
+              "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_1px_2px_rgb(0_0_0/0.04)] transition-[box-shadow] duration-(--kn-dur) ease-(--kn-ease-out) dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]",
               "focus:shadow-[0_0_0_1.5px_color-mix(in_srgb,var(--ring)_90%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
               bad && "shadow-[0_0_0_1px_rgb(239_68_68/0.6),0_0_0_4px_rgb(239_68_68/0.12)] focus:shadow-[0_0_0_1.5px_rgb(239_68_68/0.8),0_0_0_4px_rgb(239_68_68/0.16)]",
               "disabled:cursor-not-allowed disabled:opacity-50",

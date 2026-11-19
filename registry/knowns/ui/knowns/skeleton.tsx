@@ -22,7 +22,7 @@ const CSS = `
   background-position: 100% 0;
   animation: knsk-sweep ${SWEEP_MS}ms linear infinite;
 }
-.knsk-fade { transition: opacity 220ms ease; }
+.knsk-fade { transition: opacity var(--kn-dur,180ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)); }
 @media (prefers-reduced-motion: reduce) {
   .knsk { animation: none; background-image: none; }
   .knsk-fade { transition: none; }

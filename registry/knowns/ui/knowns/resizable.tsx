@@ -133,17 +133,19 @@ export function ResizablePanelGroup({ direction = "horizontal", children, storag
       if (target < 0) return;
       e.preventDefault();
       const other = target === i ? i + 1 : i;
-      const now = sizes[target];
+      const now = sizes[target] ?? 0;
       const next = sizes.slice();
+      const room = next[other] ?? 0;
       if (now > 0) {
         before.current[target] = now;
-        next[other] += now;
+        next[other] = room + now;
         next[target] = 0;
         commit(next);
       } else {
-        const back = Math.min(before.current[target] ?? defaults[target] ?? 25, next[other] - (limits[other]?.collapsible ? 0 : (limits[other]?.min ?? 10)));
-        next[target] = Math.max(back, 0);
-        next[other] -= next[target];
+        const back = Math.min(before.current[target] ?? defaults[target] ?? 25, room - (limits[other]?.collapsible ? 0 : (limits[other]?.min ?? 10)));
+        const opened = Math.max(back, 0);
+        next[target] = opened;
+        next[other] = room - opened;
         commit(next.map((v) => Math.round(v * 1000) / 1000));
       }
     }
@@ -185,7 +187,7 @@ export function ResizablePanelGroup({ direction = "horizontal", children, storag
                 aria-label={c.props.label}
                 data-collapsed={size === 0 || undefined}
                 style={{ flex: `${size} 1 0px`, minWidth: 0, minHeight: 0, overflow: "hidden" }}
-                className={cn("relative", !dragging && "transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none", c.props.className)}
+                className={cn("relative", !dragging && "transition-[flex-grow] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none", c.props.className)}
               >
                 {c.props.children}
               </div>
@@ -251,7 +253,7 @@ function HandleView({ withGrip, label, className, __handle: h }: ResizableHandle
       onDoubleClick={h.onReset}
       style={{ flex: "none", [horizontal ? "width" : "height"]: HANDLE_PX, touchAction: "none" }}
       className={cn(
-        "group/handle relative z-10 bg-border outline-none transition-colors duration-150",
+        "group/handle relative z-10 bg-border outline-none transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast)",
         horizontal ? "cursor-col-resize" : "cursor-row-resize",
         // A wider target than the 1px line: 12px, 20px on touch screens.
         horizontal ? "after:absolute after:inset-y-0 after:-inset-x-1.5 pointer-coarse:after:-inset-x-2.5" : "after:absolute after:inset-x-0 after:-inset-y-1.5 pointer-coarse:after:-inset-y-2.5",

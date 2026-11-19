@@ -72,8 +72,6 @@ export interface CommandMenuProps {
   className?: string;
 }
 
-const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
-
 /*
  * Motion, all CSS so a closed menu costs nothing. A command menu is opened constantly, so it barely moves:
  * - the panel fades in and fades out (a real exit: the native dialog stays painted through `overlay` /
@@ -370,7 +368,7 @@ export function CommandMenu({
       onClick={(e) => e.target === e.currentTarget && setOpen(false)}
       className={cn(
         "m-auto mt-[12vh] w-[calc(100%-2rem)] max-w-[600px] overflow-hidden rounded-2xl border bg-popover p-0 text-[13.5px] text-popover-foreground",
-        "[border-color:color-mix(in_srgb,var(--foreground)_10%,transparent)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_6%,transparent),0_24px_64px_-16px_rgb(0_0_0/0.4)]",
+        "shadow-[0_24px_64px_-16px_rgb(0_0_0/0.35)]",
         "dark:[background:color-mix(in_srgb,var(--popover)_80%,#000)]",
         className,
       )}
@@ -416,18 +414,18 @@ export function CommandMenu({
         role="listbox"
         aria-label={page ? page.title : "Commands"}
         data-kn-cmd-list=""
-        className="kn-scroll relative max-h-[min(380px,55vh)] overflow-y-auto overscroll-contain p-1.5 [scrollbar-width:thin]"
+        className="kn-scroll relative max-h-[min(380px,55vh)] overflow-y-auto overscroll-contain p-1 [scrollbar-width:thin]"
       >
-        <div ref={pillRef} aria-hidden data-kn-cmd-pill="" className="pointer-events-none absolute inset-x-1.5 top-0 rounded-[9px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] opacity-0" />
+        <div ref={pillRef} aria-hidden data-kn-cmd-pill="" className="pointer-events-none absolute inset-x-1 top-0 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] opacity-0" />
         {rows.length === 0 && !loading && (
           <div role="presentation" data-kn-cmd-empty="" className="px-3 py-10 text-center text-[13px] text-muted-foreground">
             {query ? (empty ? empty(query) : <>No results for “{query}”</>) : "Nothing here yet."}
           </div>
         )}
         {rows.length === 0 && loading && (
-          <div role="presentation" className="flex flex-col gap-1.5 p-1.5">
+          <div role="presentation" className="flex flex-col gap-1 p-1.5">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-9 rounded-[9px] bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] motion-safe:animate-pulse" style={{ opacity: 1 - i * 0.25 }} />
+              <div key={i} className="h-8 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] motion-safe:animate-pulse" style={{ opacity: 1 - i * 0.25 }} />
             ))}
           </div>
         )}
@@ -467,8 +465,7 @@ export function CommandMenu({
                 onClick={() => choose(r)}
                 className={cn(
                   // Relative so the row paints above the gliding highlight. forced-colors has no highlight paint, so outline there.
-                  "relative flex min-h-9 cursor-pointer items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 select-none",
-                  `transition-colors duration-100 ${EASE}`,
+                  "relative flex min-h-8 cursor-pointer items-center gap-2.5 rounded-[8px] px-2.5 py-1.5 select-none",
                   on && "forced-colors:outline forced-colors:outline-1",
                   it.disabled && "cursor-not-allowed opacity-45",
                 )}
@@ -533,7 +530,7 @@ export function CommandMenuTrigger({ onClick, label = "Search…", hotkey = "mod
       onClick={onClick}
       aria-keyshortcuts={hotkey.replace("mod", mac ? "Meta" : "Control")}
       className={cn(
-        "inline-flex h-8 w-56 items-center gap-2 rounded-[9px] bg-card px-2.5 text-[13px] text-muted-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.04)] transition-colors hover:text-foreground",
+        "inline-flex h-8 w-56 items-center gap-2 rounded-[9px] bg-card px-2.5 text-[13px] text-muted-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.04)] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground",
         "outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         className,
       )}

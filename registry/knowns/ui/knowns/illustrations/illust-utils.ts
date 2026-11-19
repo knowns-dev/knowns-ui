@@ -1,5 +1,6 @@
 /** @registry name="illustrations-core" type="ui" title="Illustrations core" description="Shared helpers for illustrations: pause offscreen, in hidden tabs and under reduced motion." deps="knowns-core" */
 /** Small geometry and text helpers shared by the illustrations. */
+import { AGENT_PALETTE } from "@/registry/knowns/lib/knowns/status";
 
 export type Pt = { x: number; y: number };
 
@@ -22,4 +23,16 @@ export function cubicPath(p0: Pt, p1: Pt, p2: Pt, p3: Pt): string {
 export function typedPrefix(text: string, at: number, msPerChar = 34): string {
   if (at <= 0) return "";
   return text.slice(0, Math.min(text.length, Math.floor(at / msPerChar)));
+}
+
+/** The agent palette colour for slot `i`, wrapping around. The palette is never empty, so the fallback only types it. */
+export function hueAt(i: number): string {
+  return AGENT_PALETTE[i % AGENT_PALETTE.length] ?? "#0ea5e9"; // never reached (the index wraps); sky, not the brand colour
+}
+
+/** `arr[i]` for an index the caller knows is in range. Fails loudly instead of returning undefined, like a bad index always did. */
+export function nth<T>(arr: ArrayLike<T>, i: number): T {
+  const v = arr[i];
+  if (v === undefined) throw new RangeError(`index ${i} is out of range`);
+  return v;
 }

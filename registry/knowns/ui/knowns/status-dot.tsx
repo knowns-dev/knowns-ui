@@ -27,8 +27,8 @@ export const statusDotVariants = cva("", { variants: { state: COLOR, tone: TONE_
 const LABEL: Record<StatusDotState, string> = { idle: "Idle", busy: "Working", blocked: "Needs you", failed: "Failed", finished: "Done" };
 
 /** Small coloured dot for a state; busy and blocked pulse. Pass `label` to announce it. */
-export function StatusDot({ state = "idle", tone, label, className }: { state?: StatusDotState; /** A colour role in place of the state's colour; the pulse still follows `state`. */ tone?: StatusDotTone; label?: string | false; className?: string }) {
-  const live = state === "busy" || state === "blocked";
+export function StatusDot({ state = "idle", tone, label, className, pulse = true }: { state?: StatusDotState; /** Busy and blocked ping. Pass false to keep the colour and drop the ping, e.g. when several dots share a screen. */ pulse?: boolean; /** A colour role in place of the state's colour; the pulse still follows `state`. */ tone?: StatusDotTone; label?: string | false; className?: string }) {
+  const live = (state === "busy" || state === "blocked") && pulse;
   return (
     <span
       role={label === false ? undefined : "img"}

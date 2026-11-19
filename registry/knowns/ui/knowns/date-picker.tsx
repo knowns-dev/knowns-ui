@@ -12,8 +12,10 @@
  */
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { SURFACE } from "./field-class";
 import { Popover } from "./popover";
-import { Calendar, addDays, addMonths, clampDay, outOfBounds, sameDay, startOfDay } from "./date-range-picker";
+import { Calendar } from "./calendar/calendar";
+import { addDays, addMonths, clampDay, outOfBounds, sameDay, startOfDay } from "./calendar/calendar-utils";
 
 /* ── Pure helpers (exported for tests) ── */
 
@@ -96,8 +98,8 @@ export function parseDateInput(text: string, o: { today?: Date; locale?: string 
 
   // "fri" / "this fri": the coming Friday, today included. "next fri": the first Friday after today.
   m = s.match(/^(this |next )?([a-z]+)$/);
-  if (m && m[2].length >= 3 && weekdayIndex(m[2]) >= 0) {
-    const diff = (weekdayIndex(m[2]) - today.getDay() + 7) % 7;
+  if (m && (m[2] ?? "").length >= 3 && weekdayIndex(m[2] ?? "") >= 0) {
+    const diff = (weekdayIndex(m[2] ?? "") - today.getDay() + 7) % 7;
     return day(addDays(today, m[1] === "next " && diff === 0 ? 7 : diff));
   }
 
@@ -123,10 +125,10 @@ export function parseDateInput(text: string, o: { today?: Date; locale?: string 
   let mi = -1;
   let d = 0;
   let y: number | null = null;
-  if (m && monthIndex(m[1]) >= 0) [mi, d, y] = [monthIndex(m[1]), Number(m[2]), m[3] ? fullYear(Number(m[3])) : null];
+  if (m && monthIndex(m[1] ?? "") >= 0) [mi, d, y] = [monthIndex(m[1] ?? ""), Number(m[2]), m[3] ? fullYear(Number(m[3])) : null];
   else {
     m = s.match(/^(\d{1,2}) ([a-z]{3,})(?: (\d{2,4}))?$/);
-    if (m && monthIndex(m[2]) >= 0) [mi, d, y] = [monthIndex(m[2]), Number(m[1]), m[3] ? fullYear(Number(m[3])) : null];
+    if (m && monthIndex(m[2] ?? "") >= 0) [mi, d, y] = [monthIndex(m[2] ?? ""), Number(m[1]), m[3] ? fullYear(Number(m[3])) : null];
   }
   if (mi >= 0) {
     if (y !== null) return day(makeDay(y, mi, d));
@@ -186,14 +188,14 @@ const CalIcon = () => (
 );
 
 const FIELD_SIZE = {
-  sm: "h-7 gap-2 rounded-lg pl-3 pr-1 text-[13px] pointer-coarse:h-9",
-  md: "h-8 gap-2 rounded-lg pl-3 pr-1 text-[14px] pointer-coarse:h-10",
-  lg: "h-9 gap-2 rounded-xl pl-4 pr-1 text-[15px] pointer-coarse:h-11",
+  sm: "h-7 gap-2 rounded-[8px] pl-3 pr-1 text-[12.5px] pointer-coarse:h-9",
+  md: "h-8 gap-2 rounded-[9px] pl-3 pr-1 text-[13.5px] pointer-coarse:h-10",
+  lg: "h-9 gap-2 rounded-[10px] pl-3.5 pr-1 text-sm pointer-coarse:h-11",
 };
 
 const frame = cn(
-  "flex w-full min-w-0 items-center bg-card text-foreground",
-  "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)] transition-[box-shadow] duration-200 ease-out dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]",
+  "flex w-full min-w-0 items-center",
+  SURFACE,
   "focus-within:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_80%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
   "has-[[aria-invalid=true]]:shadow-[0_0_0_1px_rgb(239_68_68/0.6),0_0_0_4px_rgb(239_68_68/0.12)]",
   "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50",
@@ -236,7 +238,7 @@ function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDa
                   aria-pressed={on}
                   onClick={() => onPick(keepTime(p.date))}
                   className={cn(
-                    "w-full cursor-pointer whitespace-nowrap rounded-lg px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40",
+                    "w-full cursor-pointer whitespace-nowrap rounded-lg px-3 py-2 text-left text-[13px] text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40",
                     on && "bg-muted font-medium text-foreground",
                     focusRing,
                   )}
@@ -272,7 +274,7 @@ function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDa
               step={minuteStep * 60}
               value={timeValue(value) || "09:00"}
               onChange={(e) => {
-                const [h, m] = e.target.value.split(":").map(Number);
+                const [h = Number.NaN, m = Number.NaN] = e.target.value.split(":").map(Number);
                 if (Number.isFinite(h) && Number.isFinite(m)) onTime({ h, m });
               }}
               className={cn("h-8 rounded-lg bg-card px-2 text-[13px] tabular-nums shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)] outline-none", focusRing)}
@@ -284,7 +286,7 @@ function Panel({ value, onPick, onClear, picks, time, minuteStep, min, max, isDa
             {value ? formatDate(value, { locale, time }) : "No date selected"}
           </p>
           {onClear && value && (
-            <button type="button" onClick={onClear} className={cn("flex-none cursor-pointer rounded-lg px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground", focusRing)}>
+            <button type="button" onClick={onClear} className={cn("flex-none cursor-pointer rounded-lg px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground", focusRing)}>
               Clear
             </button>
           )}
@@ -460,7 +462,7 @@ export function DatePicker({
       type="button"
       disabled={disabled}
       aria-label={popoverLabel}
-      className={cn("grid size-7 flex-none cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground", focusRing)}
+      className={cn("grid size-7 flex-none cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground", focusRing)}
     >
       <CalIcon />
     </button>

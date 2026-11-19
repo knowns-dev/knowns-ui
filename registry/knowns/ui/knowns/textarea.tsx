@@ -131,7 +131,7 @@ export function Textarea({
   return (
     <span className="flex w-full flex-col gap-1">
       {field}
-      <span id={counterId} className={cn("self-end text-[11.5px] tabular-nums transition-colors duration-200 ease-out", state === "at" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+      <span id={counterId} className={cn("self-end text-[11.5px] tabular-nums transition-colors duration-(--kn-dur) ease-(--kn-ease-out)", state === "at" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
         <span aria-hidden="true">{counterText(n, cap, remaining, unit)}</span>
         <span className="sr-only" role="status">
           {cap !== undefined ? SPOKEN[state](cap, unit) : ""}

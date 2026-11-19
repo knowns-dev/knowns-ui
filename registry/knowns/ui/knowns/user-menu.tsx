@@ -18,7 +18,7 @@ import { Avatar } from "./avatar";
 import { Badge } from "./badge";
 import { Spinner } from "./spinner";
 import { GlideHighlight, matchIndex, useGlide } from "./menu";
-import { FLOAT_FADE, portalHostFor, useExit, useFloating } from "./use-floating";
+import { FLOAT_FADE, FLOAT_SURFACE, portalHostFor, useExit, useFloating } from "./use-floating";
 
 /* ── Types ── */
 
@@ -120,7 +120,8 @@ export function stepEntry(entries: Entry[], from: number, dir: 1 | -1): number {
   const n = entries.length;
   for (let k = 1; k <= n; k++) {
     const i = (((from + dir * k) % n) + n) % n;
-    if (enabled(entries[i])) return i;
+    const en = entries[i];
+    if (en && enabled(en)) return i;
   }
   return -1;
 }
@@ -128,7 +129,7 @@ export function stepEntry(entries: Entry[], from: number, dir: 1 | -1): number {
 /** The option `dir` steps from `current` inside a switch, looping. */
 export function stepOption<T extends string>(options: { value: T }[], current: T, dir: 1 | -1): T {
   const i = Math.max(0, options.findIndex((o) => o.value === current));
-  return options[(i + dir + options.length) % options.length].value;
+  return options[(i + dir + options.length) % options.length]?.value ?? current;
 }
 
 export type UserMenuKey = "next" | "prev" | "first" | "last" | "left" | "right" | "activate" | "close" | "tab" | "type" | null;
@@ -556,7 +557,7 @@ export function UserMenu({
         <span className={cn("relative grid grid-cols-3 rounded-lg p-0.5", "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]", isActive && "ring-1 ring-ring/50")}>
           <span
             aria-hidden
-            className="absolute inset-y-0.5 left-0.5 rounded-md bg-background shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[translate] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none dark:bg-[color-mix(in_srgb,var(--foreground)_22%,var(--background))] dark:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
+            className="absolute inset-y-0.5 left-0.5 rounded-md bg-background shadow-[0_1px_2px_rgb(0_0_0/0.12)] transition-[translate] duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none dark:bg-[color-mix(in_srgb,var(--foreground)_22%,var(--background))] dark:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
             style={{ width: `calc((100% - 4px) / 3)`, translate: `${at * 100}% 0` }}
           />
           {options.map((o) => (
@@ -567,7 +568,10 @@ export function UserMenu({
               aria-checked={o.value === value}
               aria-label={o.label}
               title={o.label}
-              onClick={() => !busy && pick(entries[i], o.value)}
+              onClick={() => {
+                const entry = entries[i];
+                if (!busy && entry) pick(entry, o.value);
+              }}
               className={cn(
                 "relative z-10 grid h-6 min-w-9 cursor-default place-items-center rounded-md px-2 text-[12px]",
                 o.value === value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
@@ -701,7 +705,8 @@ export function UserMenu({
             data-state={fl.closing ? "closed" : "open"}
             style={fl.style}
             className={cn(
-              "z-50 w-[272px] overflow-auto rounded-xl border bg-popover p-1 text-popover-foreground shadow-[0_12px_32px_-8px_rgb(0_0_0/0.25),0_2px_6px_-2px_rgb(0_0_0/0.12)]",
+              "z-50 w-[272px] overflow-auto p-1",
+              FLOAT_SURFACE,
               FLOAT_FADE,
             )}
           >
@@ -718,7 +723,7 @@ export function UserMenu({
             <div
               aria-hidden
               onClick={() => !busy && close(true)}
-              className={cn("absolute inset-0 bg-black/40 transition-opacity duration-[var(--kn-dur,180ms)]", shown ? "opacity-100" : "opacity-0")}
+              className={cn("absolute inset-0 bg-black/40 transition-opacity ease-(--kn-ease-out)", shown ? "opacity-100 duration-(--kn-dur-slow)" : "opacity-0 duration-[calc(var(--kn-dur-slow)*.67)]")}
             />
             <div
               ref={panel}
@@ -726,8 +731,8 @@ export function UserMenu({
               style={{ translate: shown ? `0 ${dragY}px` : reduced ? "0 0" : "0 100%" }}
               className={cn(
                 "absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl border-t bg-popover px-2 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] text-popover-foreground",
-                !drag.current && "transition-[translate,opacity] duration-[var(--kn-dur,180ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
-                shown ? "opacity-100" : "opacity-0",
+                !drag.current && "transition-[translate,opacity] ease-(--kn-ease-out)",
+                shown ? "opacity-100 duration-(--kn-dur-slow)" : "opacity-0 duration-[calc(var(--kn-dur-slow)*.67)]",
               )}
             >
               <div onPointerDown={onDragStart} onPointerMove={onDragMove} onPointerUp={onDragEnd} onPointerCancel={onDragEnd} className={cn("flex justify-center py-2", !reduced && "cursor-grab touch-none")}>

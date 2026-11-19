@@ -25,7 +25,7 @@ const BOX: Record<CheckboxSize, { box: string; input: string; glyph: string; tex
 /** The input as a cva map. Checked and indeterminate take their colour from `--kn-accent` (default `--primary`). */
 export const checkboxVariants = cva(
   [
-    "peer cursor-pointer appearance-none bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_24%,transparent),0_1px_1px_rgb(0_0_0/0.05)] transition-[background-color,box-shadow] duration-150 ease-out",
+    "peer cursor-pointer appearance-none bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_24%,transparent),0_1px_1px_rgb(0_0_0/0.05)] transition-[background-color,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
     "checked:bg-[color:var(--kn-accent,var(--primary))] checked:shadow-[0_0_0_1px_var(--kn-accent,var(--primary))] indeterminate:bg-[color:var(--kn-accent,var(--primary))] indeterminate:shadow-[0_0_0_1px_var(--kn-accent,var(--primary))]",
     "disabled:cursor-not-allowed disabled:opacity-50",
   ],
@@ -61,7 +61,7 @@ export function Checkbox({ label, description, indeterminate = false, size = "md
         viewBox="0 0 16 16"
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute scale-90 text-[color:var(--kn-accent-foreground,var(--primary-foreground))] opacity-0 transition-[opacity,scale] duration-150 ease-out peer-[:checked:not(:indeterminate)]:scale-100 peer-[:checked:not(:indeterminate)]:opacity-100",
+          "pointer-events-none absolute scale-90 text-[color:var(--kn-accent-foreground,var(--primary-foreground))] opacity-0 transition-[opacity,scale] duration-(--kn-dur-fast) ease-(--kn-ease-out) peer-[:checked:not(:indeterminate)]:scale-100 peer-[:checked:not(:indeterminate)]:opacity-100",
           s.glyph,
         )}
       >
@@ -70,7 +70,7 @@ export function Checkbox({ label, description, indeterminate = false, size = "md
       <svg
         viewBox="0 0 16 16"
         aria-hidden="true"
-        className={cn("pointer-events-none absolute scale-x-90 text-[color:var(--kn-accent-foreground,var(--primary-foreground))] opacity-0 transition-[opacity,scale] duration-150 ease-out peer-indeterminate:scale-x-100 peer-indeterminate:opacity-100", s.glyph)}
+        className={cn("pointer-events-none absolute scale-x-90 text-[color:var(--kn-accent-foreground,var(--primary-foreground))] opacity-0 transition-[opacity,scale] duration-(--kn-dur-fast) ease-(--kn-ease-out) peer-indeterminate:scale-x-100 peer-indeterminate:opacity-100", s.glyph)}
       >
         <path d="M4 8h8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
       </svg>

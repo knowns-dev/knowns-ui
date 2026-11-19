@@ -29,7 +29,7 @@ export function buildRows(spans: Span[], now = Date.now()): WaterfallRow[] {
     let parent: Span | undefined;
     for (let i = candidates.length - 1; i >= 0; i--) {
       const c = candidates[i];
-      if (c.startedAt <= s.startedAt && endOf(c, now) >= s.startedAt) {
+      if (c && c.startedAt <= s.startedAt && endOf(c, now) >= s.startedAt) {
         parent = c;
         break;
       }
@@ -77,7 +77,9 @@ export function percentile(values: number[], p: number): number {
   const s = [...values].sort((a, b) => a - b);
   const pos = (s.length - 1) * Math.min(1, Math.max(0, p / 100));
   const lo = Math.floor(pos);
-  return s[lo] + (s[Math.min(s.length - 1, lo + 1)] - s[lo]) * (pos - lo);
+  const a = s[lo] ?? 0;
+  const b = s[Math.min(s.length - 1, lo + 1)] ?? a;
+  return a + (b - a) * (pos - lo);
 }
 
 export type WaterfallFilter = "all" | "errors" | "slow";
@@ -218,7 +220,7 @@ export function barGeometry(span: Span, view: [number, number], now: number) {
 export function windowRange(heights: number[], top: number, height: number, overscan = 6) {
   const offsets = new Array<number>(heights.length + 1);
   offsets[0] = 0;
-  for (let i = 0; i < heights.length; i++) offsets[i + 1] = offsets[i] + heights[i];
+  for (let i = 0; i < heights.length; i++) offsets[i + 1] = (offsets[i] ?? 0) + (heights[i] ?? 0);
   let lo = 0;
   let hi = heights.length;
   // First row whose bottom is below top.
@@ -226,14 +228,14 @@ export function windowRange(heights: number[], top: number, height: number, over
   let b = heights.length;
   while (a < b) {
     const m = (a + b) >> 1;
-    if (offsets[m + 1] <= top) a = m + 1;
+    if ((offsets[m + 1] ?? Infinity) <= top) a = m + 1;
     else b = m;
   }
   lo = Math.max(0, a - overscan);
   a = lo;
-  while (a < heights.length && offsets[a] < top + height) a++;
+  while (a < heights.length && (offsets[a] ?? Infinity) < top + height) a++;
   hi = Math.min(heights.length, a + overscan);
-  return { offsets, start: lo, end: hi, total: offsets[heights.length] };
+  return { offsets, start: lo, end: hi, total: offsets[heights.length] ?? 0 };
 }
 
 /** Next row index for a key, or null when the key is not a move. */

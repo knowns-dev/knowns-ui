@@ -1,6 +1,8 @@
 /** @registry part-of="chart" */
 /** Pure helpers for Chart and Sparkline: scales, ticks, paths, stacking. No React, safe on the server. */
 
+import type { ReactNode } from "react";
+
 export type ChartValue = number | null | undefined;
 export type ChartDatum = Record<string, string | number | null | undefined>;
 
@@ -11,6 +13,24 @@ export interface ChartSeries {
   label: string;
   /** Any CSS colour. Defaults to the restrained palette. */
   color?: string;
+  /** Lines only: read this series against the right-hand axis instead of the left (it gets its own scale). Default "left". */
+  axis?: "left" | "right";
+  /** Lines only: draw this series dashed (a threshold, a target, a second kind of measure). */
+  dashed?: boolean;
+  /** Shown before the value in the chart's end labels. */
+  icon?: ReactNode;
+}
+
+/** A marker on the x axis: a dashed vertical line with a small button that opens a tooltip (a deploy, an incident, a release). */
+export interface ChartAnnotation {
+  /** The category it sits on: the value of the chart's x field, as a string. Unknown values are skipped. */
+  x: string;
+  /** Short name, read by screen readers and shown in bold in the tooltip. */
+  label: string;
+  /** More detail under the label in the tooltip. */
+  tooltip?: ReactNode;
+  /** Write `label` in small mono type beside the button, always visible, instead of only in the hover tooltip. It sits on the side with more room. */
+  showLabel?: boolean;
 }
 
 /** Colour for series `i`: one accent first, then quiet neutrals and two meaning colours. Override with `--chart-1..5`. */
@@ -22,7 +42,10 @@ export const SERIES_COLORS = [
   "var(--chart-5, oklch(0.62 0.19 20))",
 ];
 
-export const seriesColor = (s: ChartSeries, i: number) => s.color ?? SERIES_COLORS[i % SERIES_COLORS.length];
+/** A vivid set for rings and other bold marks: pink-red, lime-green, cyan. Pass it as `barColors`. The defaults stay on SERIES_COLORS. */
+export const VIVID_COLORS = ["oklch(0.66 0.25 10)", "oklch(0.8 0.21 130)", "oklch(0.78 0.14 215)"];
+
+export const seriesColor = (s: ChartSeries, i: number): string => s.color ?? SERIES_COLORS[i % SERIES_COLORS.length] ?? "currentColor";
 
 export const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
@@ -79,7 +102,8 @@ export function linePath(points: Point[], smooth = false): string {
   let d = "";
   let run: { x: number; y: number }[] = [];
   const flush = () => {
-    if (run.length === 1) d += `M${f(run[0].x)},${f(run[0].y)}h0`;
+    const only = run[0];
+    if (run.length === 1 && only) d += `M${f(only.x)},${f(only.y)}h0`;
     else if (run.length > 1) d += smooth ? monotone(run) : `M${run.map((p) => `${f(p.x)},${f(p.y)}`).join("L")}`;
     run = [];
   };
@@ -103,9 +127,39 @@ export function areaPath(points: Point[], base: number, smooth = false): string 
   }
   if (cur.length) runs.push(cur);
   return runs
-    .filter((r) => r.length > 1)
-    .map((r) => `${smooth ? monotone(r) : `M${r.map((p) => `${f(p.x)},${f(p.y)}`).join("L")}`}L${f(r[r.length - 1].x)},${f(base)}L${f(r[0].x)},${f(base)}Z`)
+    .flatMap((r) => {
+      const first = r[0];
+      const last = r[r.length - 1];
+      if (!first || !last || r.length < 2) return [];
+      return [`${smooth ? monotone(r) : `M${r.map((p) => `${f(p.x)},${f(p.y)}`).join("L")}`}L${f(last.x)},${f(base)}L${f(first.x)},${f(base)}Z`];
+    })
     .join("");
+}
+
+/** A stacked band: the top edge left to right, then the lower edge back, both on the same curve so bands meet without a gap. */
+export function bandPath(top: { x: number; y: number }[], base: { x: number; y: number }[], smooth = false): string {
+  if (top.length < 2 || base.length !== top.length) return "";
+  const back = [...base].reverse();
+  const edge = (r: { x: number; y: number }[]) => (smooth ? monotone(r) : `M${r.map((p) => `${f(p.x)},${f(p.y)}`).join("L")}`);
+  // The lower edge continues the path: its own "M" becomes an "L" to its first point.
+  return `${edge(top)}L${edge(back).slice(1)}Z`;
+}
+
+/** Each row's values as a share of the row total, in percent (0 to 100), over `keys`. Negative values count as 0; a missing value stays missing. */
+export function toShares(data: ChartDatum[], keys: string[]): ChartDatum[] {
+  return data.map((d) => {
+    let sum = 0;
+    for (const k of keys) {
+      const v = valueAt(d, k);
+      if (v !== null && v > 0) sum += v;
+    }
+    const row: ChartDatum = { ...d };
+    for (const k of keys) {
+      const v = valueAt(d, k);
+      row[k] = v === null ? null : v > 0 && sum > 0 ? (v / sum) * 100 : 0;
+    }
+    return row;
+  });
 }
 
 const f = (n: number) => Number(n.toFixed(2));
@@ -113,32 +167,39 @@ const f = (n: number) => Number(n.toFixed(2));
 /** Monotone cubic through the points: smooth, and never overshoots a peak. */
 function monotone(p: { x: number; y: number }[]): string {
   const n = p.length;
+  // Every index below is inside 0..n-1; the defaults only keep the types honest.
+  const px = (i: number) => p[i]?.x ?? 0;
+  const py = (i: number) => p[i]?.y ?? 0;
   const dx: number[] = [];
   const m: number[] = [];
   for (let i = 0; i < n - 1; i++) {
-    dx.push(p[i + 1].x - p[i].x);
-    m.push((p[i + 1].y - p[i].y) / (dx[i] || 1));
+    const w = px(i + 1) - px(i);
+    dx.push(w);
+    m.push((py(i + 1) - py(i)) / (w || 1));
   }
-  const t = [m[0]];
-  for (let i = 1; i < n - 1; i++) t.push(m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2);
-  t.push(m[n - 2]);
+  const slope = (i: number) => m[i] ?? 0;
+  const t = [slope(0)];
+  for (let i = 1; i < n - 1; i++) t.push(slope(i - 1) * slope(i) <= 0 ? 0 : (slope(i - 1) + slope(i)) / 2);
+  t.push(slope(n - 2));
+  const tan = (i: number) => t[i] ?? 0;
   for (let i = 0; i < n - 1; i++) {
-    if (m[i] === 0) t[i] = t[i + 1] = 0;
+    const mi = slope(i);
+    if (mi === 0) t[i] = t[i + 1] = 0;
     else {
-      const a = t[i] / m[i];
-      const b = t[i + 1] / m[i];
+      const a = tan(i) / mi;
+      const b = tan(i + 1) / mi;
       const s = a * a + b * b;
       if (s > 9) {
         const k = 3 / Math.sqrt(s);
-        t[i] = k * a * m[i];
-        t[i + 1] = k * b * m[i];
+        t[i] = k * a * mi;
+        t[i + 1] = k * b * mi;
       }
     }
   }
-  let d = `M${f(p[0].x)},${f(p[0].y)}`;
+  let d = `M${f(px(0))},${f(py(0))}`;
   for (let i = 0; i < n - 1; i++) {
-    const h = dx[i] / 3;
-    d += `C${f(p[i].x + h)},${f(p[i].y + t[i] * h)},${f(p[i + 1].x - h)},${f(p[i + 1].y - t[i + 1] * h)},${f(p[i + 1].x)},${f(p[i + 1].y)}`;
+    const h = (dx[i] ?? 0) / 3;
+    d += `C${f(px(i) + h)},${f(py(i) + tan(i) * h)},${f(px(i + 1) - h)},${f(py(i + 1) - tan(i + 1) * h)},${f(px(i + 1))},${f(py(i + 1))}`;
   }
   return d;
 }
@@ -220,27 +281,35 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t:
 
 /** The numbers of a "cubic-bezier(a, b, c, d)" string (as in EASE). */
 export const bezierOf = (css: string) => {
-  const [a, b, c, d] = (css.match(/-?[\d.]+/g) ?? []).map(Number);
+  // A string that is not four numbers falls back to linear.
+  const [a = 0, b = 0, c = 1, d = 1] = (css.match(/-?[\d.]+/g) ?? []).map(Number);
   return cubicBezier(a, b, c, d);
 };
 
 /** `points` resampled to `n` points along their order, so a line of 5 points can morph into one of 6. */
 export function resample(points: { x: number; y: number }[], n: number): { x: number; y: number }[] {
-  if (!points.length || n <= 0) return [];
-  if (points.length === 1 || n === 1) return Array.from({ length: n }, () => ({ ...points[0] }));
+  const first = points[0];
+  if (!first || n <= 0) return [];
+  if (points.length === 1 || n === 1) return Array.from({ length: n }, () => ({ ...first }));
   return Array.from({ length: n }, (_, i) => {
     const f = (i * (points.length - 1)) / (n - 1);
     const lo = Math.floor(f);
     const hi = Math.min(points.length - 1, lo + 1);
     const t = f - lo;
-    return { x: points[lo].x + (points[hi].x - points[lo].x) * t, y: points[lo].y + (points[hi].y - points[lo].y) * t };
+    const a = points[lo];
+    const b = points[hi];
+    if (!a || !b) return { ...first };
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
   });
 }
 
 /** Point lists `t` of the way from `from` (resampled to the length of `to`) to `to`. */
 export function lerpPoints(from: { x: number; y: number }[], to: { x: number; y: number }[], t: number): { x: number; y: number }[] {
   const a = resample(from, to.length);
-  return to.map((p, i) => ({ x: a[i].x + (p.x - a[i].x) * t, y: a[i].y + (p.y - a[i].y) * t }));
+  return to.map((p, i) => {
+    const q = a[i] ?? p;
+    return { x: q.x + (p.x - q.x) * t, y: q.y + (p.y - q.y) * t };
+  });
 }
 
 /** Where a bar sits: its box and which end is its base (the axis, or the stack join below it). */

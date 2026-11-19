@@ -36,12 +36,15 @@ export function route(a: Pt, b: Pt, cross: boolean, dip: number, orient: "v" | "
 
 /** SVG path through orthogonal points, corners rounded with radius r. */
 export function roundedPath(pts: Pt[], r: number) {
-  if (pts.length < 2) return "";
-  let d = `M${pts[0].x},${pts[0].y}`;
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  if (pts.length < 2 || !first || !last) return "";
+  let d = `M${first.x},${first.y}`;
   for (let i = 1; i < pts.length - 1; i++) {
     const p = pts[i - 1];
     const c = pts[i];
     const n = pts[i + 1];
+    if (!p || !c || !n) continue;
     const d1 = Math.hypot(c.x - p.x, c.y - p.y);
     const d2 = Math.hypot(n.x - c.x, n.y - c.y);
     const rr = Math.min(r, d1 / 2, d2 / 2);
@@ -49,36 +52,42 @@ export function roundedPath(pts: Pt[], r: number) {
     const b = { x: c.x + ((n.x - c.x) / (d2 || 1)) * rr, y: c.y + ((n.y - c.y) / (d2 || 1)) * rr };
     d += ` L${a.x},${a.y} Q${c.x},${c.y} ${b.x},${b.y}`;
   }
-  const last = pts[pts.length - 1];
   return `${d} L${last.x},${last.y}`;
 }
+
+const ORIGIN: Pt = { x: 0, y: 0 };
+/** A point by index; the origin when the index is out of range (never, for a route that has points). */
+const ptAt = (pts: Pt[], i: number): Pt => pts[i] ?? ORIGIN;
+const cumAt = (cum: number[], i: number): number => cum[i] ?? 0;
 
 /** Cumulative length at each point. */
 export function measure(pts: Pt[]) {
   const cum = [0];
-  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  for (let i = 1; i < pts.length; i++) cum.push(cumAt(cum, i - 1) + Math.hypot(ptAt(pts, i).x - ptAt(pts, i - 1).x, ptAt(pts, i).y - ptAt(pts, i - 1).y));
   return cum;
 }
 
 export function pointAt(pts: Pt[], cum: number[], d: number): Pt {
   for (let i = 1; i < pts.length; i++) {
-    if (d <= cum[i] || i === pts.length - 1) {
-      const seg = cum[i] - cum[i - 1];
-      const k = seg ? Math.max(0, Math.min(1, (d - cum[i - 1]) / seg)) : 0;
-      return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k };
+    if (d <= cumAt(cum, i) || i === pts.length - 1) {
+      const seg = cumAt(cum, i) - cumAt(cum, i - 1);
+      const k = seg ? Math.max(0, Math.min(1, (d - cumAt(cum, i - 1)) / seg)) : 0;
+      const p0 = ptAt(pts, i - 1);
+      const p1 = ptAt(pts, i);
+      return { x: p0.x + (p1.x - p0.x) * k, y: p0.y + (p1.y - p0.y) * k };
     }
   }
-  return pts[pts.length - 1];
+  return ptAt(pts, pts.length - 1);
 }
 
 /** Piece of the route between distances d0 and d1, keeping any corners in between. */
 export function slice(pts: Pt[], cum: number[], d0: number, d1: number): Pt[] {
-  const total = cum[cum.length - 1];
+  const total = cumAt(cum, cum.length - 1);
   const a = Math.max(0, d0);
   const b = Math.min(total, d1);
   if (b - a < 0.5) return [];
   const out = [pointAt(pts, cum, a)];
-  for (let i = 1; i < pts.length - 1; i++) if (cum[i] > a && cum[i] < b) out.push(pts[i]);
+  for (let i = 1; i < pts.length - 1; i++) if (cumAt(cum, i) > a && cumAt(cum, i) < b) out.push(ptAt(pts, i));
   out.push(pointAt(pts, cum, b));
   return out;
 }

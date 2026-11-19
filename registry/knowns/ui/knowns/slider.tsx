@@ -39,14 +39,15 @@ export function valueAt(fraction: number, min: number, max: number, step: number
 export function closestThumb(values: number[], v: number) {
   if (values.length < 2) return 0;
   const [a, b] = values;
+  if (a === undefined || b === undefined) return 0;
   if (a === b) return v < a ? 0 : 1;
   return Math.abs(v - a) <= Math.abs(v - b) ? 0 : 1;
 }
 
 /** Puts `next` at `index`, held between its neighbours so thumbs never cross. */
 export function setThumb(values: number[], index: number, next: number) {
-  const lo = index > 0 ? values[index - 1] : -Infinity;
-  const hi = index < values.length - 1 ? values[index + 1] : Infinity;
+  const lo = index > 0 ? (values[index - 1] ?? -Infinity) : -Infinity;
+  const hi = index < values.length - 1 ? (values[index + 1] ?? Infinity) : Infinity;
   const out = values.slice();
   out[index] = clamp(next, lo, hi);
   return out;
@@ -124,7 +125,7 @@ const SIZE = {
   md: { track: "h-1.5", thumb: "size-4.5", pad: "px-[9px]", height: "h-5", tick: "size-1" },
 };
 
-const EASE = "duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none";
+const EASE = "duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none";
 
 /**
  * Pick a number, or a range, by dragging, clicking the track or using the keyboard:
@@ -218,7 +219,7 @@ export function Slider<T extends SliderValue = number>({
 
   const onKeyDown = (e: KeyboardEvent<HTMLSpanElement>, i: number) => {
     if (disabled) return;
-    const next = keyValue(e.key, latest.current[i], { min, max, step, largeStep: big });
+    const next = keyValue(e.key, latest.current[i] ?? min, { min, max, step, largeStep: big });
     if (next === null) return;
     e.preventDefault();
     setKeyFocus(i);
@@ -229,8 +230,8 @@ export function Slider<T extends SliderValue = number>({
 
   const ticks = (marks ?? []).map((m) => (typeof m === "number" ? { value: m } : m)).filter((m) => m.value >= min && m.value <= max);
   const labelled = ticks.some((m) => m.label !== undefined);
-  const lo = isRange ? values[0] : min;
-  const hi = isRange ? values[1] : values[0];
+  const lo = isRange ? (values[0] ?? min) : min;
+  const hi = isRange ? (values[1] ?? max) : (values[0] ?? min);
   const readout = values.map(formatValue).join(" – ");
 
   return (
@@ -256,7 +257,7 @@ export function Slider<T extends SliderValue = number>({
         onPointerUp={end}
         onPointerCancel={end}
         className={cn(
-          "relative flex touch-none items-center select-none",
+          "relative flex touch-none items-center select-none [-webkit-touch-callout:none]",
           s.height,
           s.pad,
           // Room for the value bubble, so it never covers the label row.
@@ -277,7 +278,7 @@ export function Slider<T extends SliderValue = number>({
                 key={m.value}
                 aria-hidden="true"
                 className={cn(
-                  "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background-color]",
+                  "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background-color] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                   EASE,
                   s.tick,
                   inside ? "bg-primary-foreground/70" : "bg-[color-mix(in_srgb,var(--foreground)_32%,transparent)]",
@@ -308,9 +309,10 @@ export function Slider<T extends SliderValue = number>({
                 onKeyDown={(e) => onKeyDown(e, i)}
                 onBlur={() => setKeyFocus((k) => (k === i ? -1 : k))}
                 className={cn(
-                  "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-card outline-none",
+                  // touch-none on the thumb too: Safari on iOS decides a gesture from the element the finger lands on, so the thumb must not rely on its parent's touch-action.
+                  "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 touch-none rounded-full bg-card outline-none",
                   "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_18%,transparent),0_1px_3px_rgb(0_0_0/0.18)]",
-                  "transition-[scale]",
+                  "transition-[scale] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                   EASE,
                   // A wider invisible hit area for fingers.
                   "before:absolute before:-inset-2 before:rounded-full pointer-coarse:before:-inset-3.5",
@@ -330,7 +332,7 @@ export function Slider<T extends SliderValue = number>({
                   aria-hidden="true"
                   className={cn(
                     "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-[7px] bg-foreground px-1.5 py-0.5 text-[11.5px] font-medium tabular-nums text-background shadow-[0_2px_8px_rgb(0_0_0/0.18)]",
-                    "transition-[opacity,translate]",
+                    "transition-[opacity,translate] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                     EASE,
                     showTip ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
                   )}

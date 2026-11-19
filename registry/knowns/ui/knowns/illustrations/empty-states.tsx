@@ -3,7 +3,7 @@
 
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { AGENT_PALETTE } from "@/registry/knowns/lib/knowns/status";
+import { hueAt } from "./illust-utils";
 import { MOTION_GATE, useLive } from "./use-in-view";
 
 export interface EmptyStateProps {
@@ -21,7 +21,7 @@ export interface EmptyStateProps {
  * A 160 x 100 drawing in the text colour at a few fixed opacities, 1.25px solid hairlines, 4-6px radii,
  * soft neutral fills, exactly one accent detail and one quiet loop per scene. The same language as the
  * catalog thumbnails, so the site reads as one family. Reduced motion (and offscreen) shows the still frame. */
-const ACCENT = AGENT_PALETTE[0];
+const ACCENT = hueAt(0);
 const INK = { fill: 0.06, fillStrong: 0.1, line: 0.32, faint: 0.18, text: 0.22, strong: 0.62 } as const;
 
 const CSS = `
@@ -120,7 +120,7 @@ export function EmptyInbox({ title = "You're all caught up", description = "No a
               <Text x={58} y={y} w={y === 56 ? 40 : 52} />
             </g>
           ))}
-          <g style={{ ...center, animation: "knes-breathe 3.6s ease-in-out infinite" }}>
+          <g style={{ ...center, animation: "knes-breathe 3.6s var(--kn-ease-inout, cubic-bezier(.65,0,.35,1)) infinite" }}>
             <circle cx={118} cy={80} r={11} fill="var(--card, #fff)" stroke={ACCENT} strokeWidth={1.5} />
             <path d="M113.5 80.2l3 3 6-6.4" fill="none" stroke={ACCENT} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
           </g>
@@ -141,7 +141,7 @@ export function NoTools({ title = "No tools connected", description = "Connect a
       {...rest}
       art={
         <>
-          <g style={{ animation: "knes-ease 2.8s cubic-bezier(.22,1,.36,1) infinite" }}>
+          <g style={{ animation: "knes-ease 2.8s var(--kn-ease-out, cubic-bezier(.22,1,.36,1)) infinite" }}>
             <Line d="M10 62H34Q42 62 42 54V50" />
             <Box x={34} y={36} w={26} h={20} r={5} strong />
             <Line d="M60 42H68M60 50H68" />
@@ -170,11 +170,13 @@ export function NoAgents({ title = "No agents yet", description = "Add an agent 
       art={
         <>
           <path d={orbit} fill="none" stroke="currentColor" strokeOpacity={INK.line} strokeWidth={1.25} />
-          {[
-            [30, 50],
-            [130, 50],
-            [80, 76],
-          ].map(([x, y]) => (
+          {(
+            [
+              [30, 50],
+              [130, 50],
+              [80, 76],
+            ] as const
+          ).map(([x, y]) => (
             <Ring key={`${x}${y}`} x={x} y={y} r={7} />
           ))}
           <Box x={68} y={40} w={24} h={20} r={6} strong />
@@ -199,7 +201,7 @@ export function NoResults({ title = "No results", description = "Try fewer words
         <>
           <Box x={26} y={12} w={108} h={22} r={6} strong />
           <Text x={48} y={23} w={40} strong />
-          <g style={{ animation: "knes-scan 3.2s cubic-bezier(.22,1,.36,1) infinite" }}>
+          <g style={{ animation: "knes-scan 3.2s var(--kn-ease-out, cubic-bezier(.22,1,.36,1)) infinite" }}>
             <circle cx={36} cy={23} r={4.5} fill="none" stroke={ACCENT} strokeWidth={1.5} />
             <path d="M39.4 26.4l3 3" stroke={ACCENT} strokeWidth={1.5} strokeLinecap="round" />
           </g>

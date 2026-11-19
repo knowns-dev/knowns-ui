@@ -102,7 +102,9 @@ export function AgentLanes({
   useLayoutEffect(() => {
     const el = axisRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setTrackW(Math.max(0, e.contentRect.width - END_PAD)));
+    const ro = new ResizeObserver(([e]) => {
+      if (e) setTrackW(Math.max(0, e.contentRect.width - END_PAD));
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -288,7 +290,7 @@ export function AgentLanes({
           <div aria-live="polite" className="flex items-center gap-3 text-xs text-muted-foreground">
             {running > 0 && (
               <span className="inline-flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-indigo-500" />
+                <span className="size-1.5 rounded-full bg-[color:var(--kn-accent,var(--primary))]" />
                 {running} running
               </span>
             )}
@@ -320,7 +322,7 @@ export function AgentLanes({
             })}
             <span
               style={{ left: trackW }}
-              className="absolute top-1.5 -translate-x-1/2 rounded bg-indigo-500/12 px-1.5 py-px text-[10.5px] font-medium text-indigo-600 dark:text-indigo-300"
+              className="absolute top-1.5 -translate-x-1/2 rounded bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_12%,transparent)] px-1.5 py-px text-[10.5px] font-medium text-[color:var(--kn-accent,var(--primary))]"
             >
               now
             </span>
@@ -373,7 +375,7 @@ export function AgentLanes({
                 className="absolute inset-y-0 w-px bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
               />
             ))}
-            <span style={{ left: trackW }} className="absolute inset-y-0 w-px bg-indigo-500/35" />
+            <span style={{ left: trackW }} className="absolute inset-y-0 w-px bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_35%,transparent)]" />
           </div>
 
           {/* Moving: blocks and hand-offs, clipped at "now" */}
@@ -435,7 +437,7 @@ export function AgentLanes({
                       onClick={(e) => (open?.id === t.id ? close() : openTask(t, e.currentTarget))}
                       style={{ left, width, top: where.get(t.id)!.y, height: BLOCK_H, ["--hue" as string]: colors.get(actor.id) ?? "var(--kn-accent, #6366f1)" }}
                       className={cn(
-                        "absolute flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-[9px] border px-2 text-left text-[12.5px] font-medium whitespace-nowrap transition-[filter,box-shadow] hover:brightness-[1.04] dark:hover:brightness-125",
+                        "absolute flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-[9px] border px-2 text-left text-[12.5px] font-medium whitespace-nowrap transition-[filter,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:brightness-[1.04] dark:hover:brightness-125",
                         "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--hue)]",
                         st === "done" && "border-transparent bg-[color-mix(in_srgb,var(--foreground)_6%,var(--card))] text-muted-foreground",
                         st === "running" && "[border-color:color-mix(in_srgb,var(--hue)_40%,transparent)] bg-[color-mix(in_srgb,var(--hue)_13%,var(--card))] text-foreground",
@@ -536,7 +538,7 @@ export function AgentLanes({
                       {actor?.label} ·{" "}
                       <span
                         className={cn(
-                          st === "running" && "text-indigo-600 dark:text-indigo-400",
+                          st === "running" && "text-[color:var(--kn-accent,var(--primary))]",
                           st === "waiting" && "text-amber-700 dark:text-amber-400",
                           st === "failed" && "text-red-600 dark:text-red-400",
                           st === "done" && "text-emerald-700 dark:text-emerald-400",

@@ -111,7 +111,7 @@ export function PostCard({ post, onSelect, size = "md", locale }: { post: BlogPo
   }
   const body = (
     <>
-      <Cover src={post.cover?.src} alt={post.cover?.alt ?? ""} hue={post.cover?.hue} ratio={lg ? 16 / 8 : 16 / 10} className={cn("transition-transform duration-300 ease-out group-hover:scale-[1.015]", lg && "@[720px]:aspect-auto @[720px]:h-full")} />
+      <Cover src={post.cover?.src} alt={post.cover?.alt ?? ""} hue={post.cover?.hue} ratio={lg ? 16 / 8 : 16 / 10} className={cn("transition-transform duration-(--kn-dur-slow) ease-(--kn-ease-out) group-hover:scale-[1.015]", lg && "@[720px]:aspect-auto @[720px]:h-full")} />
       <span className={cn("flex min-w-0 flex-col gap-2.5", lg ? "@[720px]:justify-center @[720px]:py-2" : "")}>
         <Tags tags={post.tags} />
         <span className={cn("font-semibold text-foreground", lg ? "text-[24px] leading-tight" : "text-[16px] leading-snug")}>{post.title}</span>

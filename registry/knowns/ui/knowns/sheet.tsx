@@ -24,9 +24,9 @@ export function shouldDismiss(distance: number, height: number, velocity: number
  * the transition is off so the panel follows the pointer. Reduced motion: opacity only.
  */
 const MOTION = `
-[data-kn-sheet]{translate:0 var(--kn-sheet-drag,0px);transition:translate 260ms var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay 260ms allow-discrete,display 260ms allow-discrete}
+[data-kn-sheet]{translate:0 var(--kn-sheet-drag,0px);transition:translate var(--kn-dur-slow,280ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay var(--kn-dur-slow,280ms) allow-discrete,display var(--kn-dur-slow,280ms) allow-discrete}
 [data-kn-sheet][data-dragging]{transition:none}
-[data-kn-sheet]:not([open]){transition-duration:200ms;transition-timing-function:cubic-bezier(.4,0,1,1)}
+[data-kn-sheet]:not([open]){transition-duration:calc(var(--kn-dur-slow,280ms)*.67)}
 [data-kn-sheet][data-side=left]:not([open]){translate:-100% 0}
 [data-kn-sheet][data-side=right]:not([open]){translate:100% 0}
 [data-kn-sheet][data-side=top]:not([open]){translate:0 -100%}
@@ -37,8 +37,8 @@ const MOTION = `
   [data-kn-sheet][data-side=top][open]{translate:0 -100%}
   [data-kn-sheet][data-side=bottom][open]{translate:0 100%}
 }
-[data-kn-sheet]::backdrop{background:rgb(0 0 0/.4);opacity:1;transition:opacity 220ms ease-out,overlay 220ms allow-discrete,display 220ms allow-discrete}
-[data-kn-sheet]:not([open])::backdrop{opacity:0;transition-duration:180ms}
+[data-kn-sheet]::backdrop{background:rgb(0 0 0/.4);opacity:1;transition:opacity var(--kn-dur-slow,280ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),overlay var(--kn-dur-slow,280ms) allow-discrete,display var(--kn-dur-slow,280ms) allow-discrete}
+[data-kn-sheet]:not([open])::backdrop{opacity:0;transition-duration:calc(var(--kn-dur-slow,280ms)*.67)}
 @starting-style{[data-kn-sheet][open]::backdrop{opacity:0}}
 @media (prefers-reduced-motion:reduce){
   [data-kn-sheet],[data-kn-sheet]:not([open]){translate:0 0!important;transition-property:opacity,overlay,display}

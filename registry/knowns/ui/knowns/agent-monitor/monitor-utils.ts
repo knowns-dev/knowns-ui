@@ -114,7 +114,7 @@ export function stripBars(
   const room = Math.max(0, 1 - gap * (raw.length - 1));
   let left = 0;
   return raw.map((b, i) => {
-    const width = (shares[i] / sum) * room;
+    const width = ((shares[i] ?? 0) / sum) * room;
     const bar = { ...b, left, width };
     left += width + gap;
     return bar;

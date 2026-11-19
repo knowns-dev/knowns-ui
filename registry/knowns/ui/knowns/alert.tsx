@@ -129,7 +129,7 @@ export function Alert({ tone = "info", title, children, action, onDismiss, icon,
             setHidden(true);
             onDismiss();
           }}
-          className={cn("-m-1.5 -mr-1.5 flex size-8 flex-none cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-11", focusRing)}
+          className={cn("-m-1.5 -mr-1.5 flex size-8 flex-none cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground pointer-coarse:size-11", focusRing)}
         >
           <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4">
             <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />

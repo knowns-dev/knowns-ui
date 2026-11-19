@@ -3,6 +3,7 @@
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
+import { FLOAT_SURFACE } from "./use-floating";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 export type ToastTone = "neutral" | "success" | "warning" | "danger";
@@ -66,7 +67,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             data-state={t.closing ? "closed" : "open"}
             onPointerEnter={() => clearTimeout(timers.current.get(t.id))}
             onPointerLeave={() => arm(t.id, 2000)}
-            className="pointer-events-auto flex items-start gap-3 rounded-xl border bg-popover px-3.5 py-3 text-[13px] text-popover-foreground shadow-[0_12px_32px_-12px_rgb(0_0_0/0.3)] transition-[opacity,translate] duration-[var(--kn-dur,180ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:translate-y-1 starting:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:translate-y-1 data-[state=closed]:opacity-0 data-[state=closed]:duration-[var(--kn-dur-fast,120ms)] motion-reduce:transition-none"
+            className={cn("pointer-events-auto flex items-start gap-3 px-3 py-3 transition-[opacity,translate] duration-(--kn-dur) ease-(--kn-ease-out) starting:translate-y-1 starting:opacity-0 data-[state=closed]:pointer-events-none data-[state=closed]:translate-y-1 data-[state=closed]:opacity-0 data-[state=closed]:duration-(--kn-dur-fast) motion-reduce:transition-none", FLOAT_SURFACE)}
           >
             <span aria-hidden="true" className={cn("mt-1.5 size-1.5 flex-none rounded-full", DOT[t.tone ?? "neutral"])} />
             <div className="min-w-0 flex-1">

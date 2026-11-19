@@ -188,7 +188,7 @@ export function SearchResults({
                       onQueryChange(s);
                       input.current?.focus();
                     }}
-                    className={cn("rounded-full bg-card px-3 py-1 text-[13px] text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)] transition-colors hover:bg-muted", focusRing)}
+                    className={cn("rounded-full bg-card px-3 py-1 text-[13px] text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted", focusRing)}
                   >
                     {s}
                   </button>
@@ -228,7 +228,7 @@ export function SearchResults({
                 )}
               </>
             );
-            const cls = cn("flex w-full flex-col rounded-[12px] px-3 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]", focusRing);
+            const cls = cn("flex w-full flex-col rounded-[12px] px-3 py-3 text-left transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]", focusRing);
             const common = { ref: (el: HTMLElement | null) => void (links.current[i] = el), onKeyDown: (e: KeyboardEvent) => onListKey(e, i), className: cls };
             return (
               <li key={r.id}>

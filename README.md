@@ -102,4 +102,6 @@ MIT for the code. See [LICENSE](LICENSE).
 
 ## Trademarks
 
-The model and tool logos in `registry/knowns/lib/knowns/icons` are trademarks of their owners. They are not covered by the MIT license, are here only to identify those products, and may not be used commercially or to suggest endorsement. Sources and terms: [LICENSES.md](registry/knowns/lib/knowns/icons/LICENSES.md).
+The model and tool logos in `registry/knowns/lib/knowns/icons` are trademarks of their owners. They are not covered by the MIT license, are here only to identify those products, and may not be used commercially or to suggest endorsement.
+
+The sign-in provider marks (the `social-button` item, `social-icons.data.ts`) are also trademarks of their owners. They may be used, in commercial apps too, only to identify the provider, for example on a sign-in button, and only by following that provider's brand guidelines. They do not suggest endorsement. Sources and terms for all of them: [LICENSES.md](registry/knowns/lib/knowns/icons/LICENSES.md).

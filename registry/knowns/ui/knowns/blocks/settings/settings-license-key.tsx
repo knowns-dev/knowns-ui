@@ -75,7 +75,8 @@ export function LicenseKeySettings({ keys, title = "License key", description, o
   useEffect(() => setUsedNow(usage?.used ?? 0), [usage?.used]);
 
   const get = async (k: LicenseKey): Promise<string | null> => {
-    if (full[k.id]) return full[k.id];
+    const shown = full[k.id];
+    if (shown) return shown;
     if (!onReveal) return null;
     setBusy(`r:${k.id}`);
     const r = await settleResult(onReveal(k.id));

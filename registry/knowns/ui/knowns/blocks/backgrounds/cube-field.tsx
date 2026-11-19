@@ -141,8 +141,8 @@ export function CubeField({
           const side = base + lift;
           const poly = (pts: number[], fill: string) => {
             a.beginPath();
-            a.moveTo(pts[0], pts[1]);
-            for (let i = 2; i < pts.length; i += 2) a.lineTo(pts[i], pts[i + 1]);
+            a.moveTo(pts[0] ?? 0, pts[1] ?? 0);
+            for (let i = 2; i < pts.length; i += 2) a.lineTo(pts[i] ?? 0, pts[i + 1] ?? 0);
             a.closePath();
             a.fillStyle = fill;
             a.fill();
@@ -194,11 +194,13 @@ export function CubeField({
       let maxW = 1;
       let maxH = 1;
       for (let i = 0; i < n; i++) {
-        const m = iso ? 1 : sc.sc[i];
-        const x0 = Math.floor(x[i] - ax * m) - 1;
-        const y0 = Math.floor(y[i] - (ay + lift) * m) - 1;
-        const x1 = Math.ceil(x[i] - ax * m + sw * m) + 1;
-        const y1 = Math.ceil(y[i] - ay * m + bodyH * m) + 1;
+        const m = iso ? 1 : (sc.sc[i] ?? 1);
+        const xi = x[i] ?? 0;
+        const yi = y[i] ?? 0;
+        const x0 = Math.floor(xi - ax * m) - 1;
+        const y0 = Math.floor(yi - (ay + lift) * m) - 1;
+        const x1 = Math.ceil(xi - ax * m + sw * m) + 1;
+        const y1 = Math.ceil(yi - ay * m + bodyH * m) + 1;
         ext.set([x0, y0, x1, y1], i * 4);
         maxW = Math.max(maxW, x1 - x0);
         maxH = Math.max(maxH, y1 - y0);
@@ -206,29 +208,29 @@ export function CubeField({
       const gw = Math.ceil(sc.W / maxW) + 3;
       const gh = Math.ceil(sc.H / maxH) + 3;
       const buckets: number[][] = Array.from({ length: gw * gh }, () => []);
-      const cellOf = (i: number) => {
-        const bx = Math.max(0, Math.min(gw - 1, Math.floor(ext[i * 4] / maxW) + 1));
-        const by = Math.max(0, Math.min(gh - 1, Math.floor(ext[i * 4 + 1] / maxH) + 1));
+      const cellOf = (i: number): [number, number] => {
+        const bx = Math.max(0, Math.min(gw - 1, Math.floor((ext[i * 4] ?? 0) / maxW) + 1));
+        const by = Math.max(0, Math.min(gh - 1, Math.floor((ext[i * 4 + 1] ?? 0) / maxH) + 1));
         return [bx, by];
       };
       for (let i = 0; i < n; i++) {
         const [bx, by] = cellOf(i);
-        buckets[by * gw + bx].push(i);
+        buckets[by * gw + bx]?.push(i);
       }
       const start = new Int32Array(n + 1);
       const list: number[] = [];
       for (let i = 0; i < n; i++) {
         start[i] = list.length;
         const [bx, by] = cellOf(i);
-        const a0 = ext[i * 4];
-        const b0 = ext[i * 4 + 1];
-        const a1 = ext[i * 4 + 2];
-        const b1 = ext[i * 4 + 3];
+        const a0 = ext[i * 4] ?? 0;
+        const b0 = ext[i * 4 + 1] ?? 0;
+        const a1 = ext[i * 4 + 2] ?? 0;
+        const b1 = ext[i * 4 + 3] ?? 0;
         for (let yy = Math.max(0, by - 1); yy <= Math.min(gh - 1, by + 1); yy++)
           for (let xx = Math.max(0, bx - 1); xx <= Math.min(gw - 1, bx + 1); xx++)
-            for (const j of buckets[yy * gw + xx]) {
+            for (const j of buckets[yy * gw + xx] ?? []) {
               if (j === i) continue;
-              if (ext[j * 4] < a1 && ext[j * 4 + 2] > a0 && ext[j * 4 + 1] < b1 && ext[j * 4 + 3] > b0) list.push(j);
+              if ((ext[j * 4] ?? 0) < a1 && (ext[j * 4 + 2] ?? 0) > a0 && (ext[j * 4 + 1] ?? 0) < b1 && (ext[j * 4 + 3] ?? 0) > b0) list.push(j);
             }
       }
       start[n] = list.length;
@@ -261,7 +263,7 @@ export function CubeField({
       if (rects.length)
         for (let i = 0; i < L.n; i++) {
           let h = 1;
-          for (const r of rects) h = Math.min(h, holeAt(L.x[i], L.y[i], r, 30 * (iso0 ? 1 : L.scale[i])));
+          for (const r of rects) h = Math.min(h, holeAt(L.x[i] ?? 0, L.y[i] ?? 0, r, 30 * (iso0 ? 1 : (L.scale[i] ?? 1))));
           sc.hole[i] = h;
         }
       const keep = sc.lift.length === L.n;
@@ -269,7 +271,7 @@ export function CubeField({
         sc.lift = new Float32Array(L.n);
         sc.vel = new Float32Array(L.n);
         // Start on the wave, not flat, so the first frame does not spring up.
-        if (wave) for (let i = 0; i < L.n; i++) sc.lift[i] = waveLift(sc.gx[i], sc.gy[i], sc.t, height) * sc.hole[i];
+        if (wave) for (let i = 0; i < L.n; i++) sc.lift[i] = waveLift(sc.gx[i] ?? 0, sc.gy[i] ?? 0, sc.t, height) * (sc.hole[i] ?? 1);
       }
       buildAtlas();
       buildOverlaps();
@@ -279,13 +281,15 @@ export function CubeField({
 
     // One cube: its sprite at its level, then the tint on a raised top.
     const drawCube = (i: number, lv: number, iso: boolean) => {
-      const a = sc.alpha[i] * sc.hole[i];
+      const a = (sc.alpha[i] ?? 0) * (sc.hole[i] ?? 1);
       if (a < 0.02) return;
       const { atlas, sw, sh, ax, ay } = sc;
       const off = (lv / (LEVELS - 1)) * height * sc.dpr;
-      const m = iso ? 1 : sc.sc[i];
-      const dx = iso ? Math.round(sc.x[i] - ax) : sc.x[i] - ax * m;
-      const dy = iso ? Math.round(sc.y[i] - ay - off) : sc.y[i] - (ay + off) * m;
+      const m = iso ? 1 : (sc.sc[i] ?? 1);
+      const xi = sc.x[i] ?? 0;
+      const yi = sc.y[i] ?? 0;
+      const dx = iso ? Math.round(xi - ax) : xi - ax * m;
+      const dy = iso ? Math.round(yi - ay - off) : yi - (ay + off) * m;
       if (ctx.globalAlpha !== a) ctx.globalAlpha = a;
       ctx.drawImage(atlas!, lv * sw, 0, sw, sh, dx, dy, sw * m, sh * m);
     };
@@ -302,10 +306,10 @@ export function CubeField({
       let changed = 0;
       let full = false;
       for (let i = 0; i < n; i++) {
-        const l = Math.max(0, Math.min(LEVELS - 1, Math.round(lift[i] * top)));
+        const l = Math.max(0, Math.min(LEVELS - 1, Math.round((lift[i] ?? 0) * top)));
         lv[i] = l;
         if (drawn[i] !== l) {
-          if (drawn[i] < 0) full = true;
+          if ((drawn[i] ?? -1) < 0) full = true;
           changed++;
         }
       }
@@ -314,7 +318,7 @@ export function CubeField({
       if (full || changed > n * 0.35) {
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, sc.W, sc.H);
-        for (let i = 0; i < n; i++) drawCube(i, lv[i], iso);
+        for (let i = 0; i < n; i++) drawCube(i, lv[i] ?? 0, iso);
         drawn.set(lv);
       } else {
         mark.fill(0);
@@ -322,30 +326,30 @@ export function CubeField({
         ctx.beginPath();
         // The top edge of a cube's sprite at a level: everything else in its extent is fixed.
         const lift = (height * sc.dpr) / (LEVELS - 1);
-        const topAt = (i: number, l: number) => Math.floor(sc.y[i] - (sc.ay + l * lift) * (iso ? 1 : sc.sc[i])) - 1;
+        const topAt = (i: number, l: number) => Math.floor((sc.y[i] ?? 0) - (sc.ay + l * lift) * (iso ? 1 : (sc.sc[i] ?? 1))) - 1;
         for (let i = 0; i < n; i++) {
           if (drawn[i] === lv[i]) continue;
           mark[i] = 1;
           const o = i * 4;
           // Dirty: the old and the new sprite of this cube.
-          const x0 = ext[o];
-          const x1 = ext[o + 2];
-          const y0 = topAt(i, Math.max(drawn[i], lv[i]));
-          const y1 = ext[o + 3];
+          const x0 = ext[o] ?? 0;
+          const x1 = ext[o + 2] ?? 0;
+          const y0 = topAt(i, Math.max(drawn[i] ?? -1, lv[i] ?? 0));
+          const y1 = ext[o + 3] ?? 0;
           ctx.rect(x0, y0, x1 - x0, y1 - y0);
           // Redraw only the neighbours whose current sprite reaches into it.
-          for (let k = nbStart[i]; k < nbStart[i + 1]; k++) {
-            const j = nbList[k];
+          for (let k = nbStart[i] ?? 0; k < (nbStart[i + 1] ?? 0); k++) {
+            const j = nbList[k] ?? 0;
             if (mark[j]) continue;
             const p = j * 4;
-            if (ext[p] < x1 && ext[p + 2] > x0 && topAt(j, lv[j]) < y1 && ext[p + 3] > y0) mark[j] = 1;
+            if ((ext[p] ?? 0) < x1 && (ext[p + 2] ?? 0) > x0 && topAt(j, lv[j] ?? 0) < y1 && (ext[p + 3] ?? 0) > y0) mark[j] = 1;
           }
         }
         ctx.clip();
         ctx.clearRect(0, 0, sc.W, sc.H);
-        for (let i = 0; i < n; i++) if (mark[i]) drawCube(i, lv[i], iso);
+        for (let i = 0; i < n; i++) if (mark[i]) drawCube(i, lv[i] ?? 0, iso);
         ctx.restore();
-        for (let i = 0; i < n; i++) if (mark[i]) drawn[i] = lv[i];
+        for (let i = 0; i < n; i++) if (mark[i]) drawn[i] = lv[i] ?? -1;
       }
       ctx.globalAlpha = 1;
       const prof = (globalThis as { __knBgProfile?: Profile }).__knBgProfile;
@@ -401,18 +405,18 @@ export function CubeField({
       const p = sc.pointer;
       let busy = false;
       for (let i = 0; i < n; i++) {
-        let target = wave ? waveLift(gx[i], gy[i], sc.t, height) : 0;
+        let target = wave ? waveLift(gx[i] ?? 0, gy[i] ?? 0, sc.t, height) : 0;
         if (p) {
-          const dx = gx[i] - p[0];
-          const dy = gy[i] - p[1];
+          const dx = (gx[i] ?? 0) - p[0];
+          const dy = (gy[i] ?? 0) - p[1];
           const dd = dx * dx + dy * dy;
           if (dd < r2) {
             const f = 1 - Math.sqrt(dd) / radius;
             target = Math.max(target, f * f * (3 - 2 * f) * height);
           }
         }
-        target *= hole[i];
-        const [l, v] = springStep(lift[i], vel[i], target, dt);
+        target *= hole[i] ?? 1;
+        const [l, v] = springStep(lift[i] ?? 0, vel[i] ?? 0, target, dt);
         lift[i] = l;
         vel[i] = v;
         if (!busy && (Math.abs(v) > 0.4 || Math.abs(target - l) > 0.25)) busy = true;
@@ -444,7 +448,7 @@ export function CubeField({
       // Still: settle every cube on its target and draw once.
       sc.pointer = null;
       for (let i = 0; i < sc.n; i++) {
-        sc.lift[i] = (wave ? waveLift(sc.gx[i], sc.gy[i], sc.t, height) : 0) * sc.hole[i];
+        sc.lift[i] = (wave ? waveLift(sc.gx[i] ?? 0, sc.gy[i] ?? 0, sc.t, height) : 0) * (sc.hole[i] ?? 1);
         sc.vel[i] = 0;
       }
       sc.draw();

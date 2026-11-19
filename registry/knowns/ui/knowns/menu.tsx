@@ -19,7 +19,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { FLOAT_FADE, setRefs, useExit, useFloating } from "./use-floating";
+import { FLOAT_FADE, FLOAT_SURFACE, setRefs, useExit, useFloating } from "./use-floating";
 
 export interface MenuItem {
   id: string;
@@ -105,7 +105,8 @@ export function nextIndex(items: Navigable[], from: number, dir: 1 | -1): number
   let i = from < 0 ? (dir === 1 ? -1 : n) : from;
   for (let step = 0; step < n; step++) {
     i = (((i + dir) % n) + n) % n;
-    if (!items[i].disabled) return i;
+    const it = items[i];
+    if (it && !it.disabled) return i;
   }
   return -1;
 }
@@ -123,13 +124,14 @@ export function matchIndex(items: Pick<MenuItem, "label" | "textValue" | "disabl
   const q = query.toLowerCase();
   if (!q) return -1;
   const same = q.length > 1 && [...q].every((c) => c === q[0]);
-  const needle = same ? q[0] : q;
+  const needle = same ? (q[0] ?? q) : q;
   const n = items.length;
   // A longer query keeps the current item if it still matches; a single letter moves on.
   const start = needle.length > 1 ? Math.max(from, 0) : from + 1;
   for (let k = 0; k < n; k++) {
     const i = (((start + k) % n) + n) % n;
-    if (!items[i].disabled && itemText(items[i]).trim().toLowerCase().startsWith(needle)) return i;
+    const it = items[i];
+    if (it && !it.disabled && itemText(it).trim().toLowerCase().startsWith(needle)) return i;
   }
   return -1;
 }
@@ -213,6 +215,7 @@ export function pointInPolygon({ x, y }: Point, poly: Point[]): boolean {
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const a = poly[i];
     const b = poly[j];
+    if (!a || !b) continue;
     if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
   }
   return inside;
@@ -255,7 +258,7 @@ export function MenuSwitch({ on, className }: { on: boolean; className?: string 
       aria-hidden
       className={cn(
         "relative inline-flex h-4 w-7 flex-none items-center rounded-full p-0.5",
-        "transition-colors duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+        "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none",
         on ? "bg-primary" : "bg-[color-mix(in_srgb,var(--foreground)_16%,transparent)]",
         className,
       )}
@@ -263,7 +266,7 @@ export function MenuSwitch({ on, className }: { on: boolean; className?: string 
       <span
         className={cn(
           "size-3 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)]",
-          "transition-[translate] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+          "transition-[translate] duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none",
           on && "translate-x-3 dark:bg-[var(--primary-foreground)]",
         )}
       />
@@ -509,6 +512,7 @@ function MenuPanel(p: PanelProps) {
     if (focused !== list.current && focused?.closest(`[data-kn-menu="${tree.id}"]`) && !subPanel()?.contains(focused)) list.current?.focus({ preventScroll: true });
 
     const item = flat[i];
+    if (!item) return;
     if (item.disabled) {
       if (sub) closeSub();
       return;
@@ -552,8 +556,8 @@ function MenuPanel(p: PanelProps) {
               marginTop: depth > 0 ? -5 : undefined,
             }}
             className={cn(
-              "z-[60] flex flex-col overflow-hidden rounded-xl bg-popover text-[13px] text-popover-foreground",
-              "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_12px_32px_-12px_rgb(0_0_0/0.3),0_2px_6px_rgb(0_0_0/0.06)]",
+              "z-[60] flex flex-col overflow-hidden",
+              FLOAT_SURFACE,
               p.width === undefined && "w-max max-w-[min(320px,calc(100vw-16px))] min-w-[200px]",
               depth > 0 && "min-w-[180px]",
               FLOAT_FADE,
@@ -692,7 +696,7 @@ function MenuPanel(p: PanelProps) {
         <MenuPanel
           key={sub.index}
           tree={tree}
-          items={flat[sub.index].items!}
+          items={flat[sub.index]?.items ?? []}
           depth={depth + 1}
           anchor={() => document.getElementById(rowId(sub.index))}
           side="right"

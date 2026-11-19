@@ -137,7 +137,7 @@ export function arcAngles(e: number) {
     len += Math.hypot(p.x - prev.x, p.y - prev.y);
     prev = p;
     let a = Math.atan2(p.y, p.x) + unwrap;
-    if (a < th[i - 1] - 1e-9) {
+    if (a < (th[i - 1] ?? 0) - 1e-9) {
       unwrap += TAU;
       a += TAU;
     }
@@ -145,19 +145,21 @@ export function arcAngles(e: number) {
     s.push(len);
   }
   const k = TAU / len;
-  for (let i = 0; i <= N; i++) s[i] *= k;
+  for (let i = 0; i <= N; i++) s[i] = (s[i] ?? 0) * k;
   const lookup = (xs: number[], ys: number[], v: number) => {
+    const X = (j: number) => xs[j] ?? 0;
+    const Y = (j: number) => ys[j] ?? 0;
     let x = v % TAU;
     if (x < 0) x += TAU;
     let lo = 0;
     let hi = N;
     while (hi - lo > 1) {
       const mid = (lo + hi) >> 1;
-      if (xs[mid] <= x) lo = mid;
+      if (X(mid) <= x) lo = mid;
       else hi = mid;
     }
-    const f = xs[hi] === xs[lo] ? 0 : (x - xs[lo]) / (xs[hi] - xs[lo]);
-    return wrapAngle(ys[lo] + f * (ys[hi] - ys[lo]));
+    const f = X(hi) === X(lo) ? 0 : (x - X(lo)) / (X(hi) - X(lo));
+    return wrapAngle(Y(lo) + f * (Y(hi) - Y(lo)));
   };
   return {
     /** Screen angle → arc angle. */
@@ -238,7 +240,7 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
   const rel = (st: RadialState, id: string): Pt => {
     if (id === leadId || !st.angle.has(id)) return { x: 0, y: 0 };
     const a = st.angle.get(id)!;
-    const r = st.ring.get(id) === 0 ? st.radii[0] : st.rad.get(id)!;
+    const r = st.ring.get(id) === 0 ? (st.radii[0] ?? RING0) : st.rad.get(id)!;
     return at(a, rhoAt(a, r, st.aspect));
   };
   const has = (st: RadialState, id: string) => id === leadId || st.angle.has(id);
@@ -247,7 +249,14 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
   const anyOverlap = (st: RadialState) => {
     const ids = placed(st);
     const bs = ids.map((id) => boxAt(id, rel(st, id)));
-    for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) if (overlaps(bs[i], bs[j])) return true;
+    for (let i = 0; i < bs.length; i++) {
+      const bi = bs[i];
+      if (!bi) continue;
+      for (let j = i + 1; j < bs.length; j++) {
+        const bj = bs[j];
+        if (bj && overlaps(bi, bj)) return true;
+      }
+    }
     return false;
   };
   const linkOf = (shape: Shape, p: Pt, c: Pt) => segsOf(shapedRoute(shape, p, c));
@@ -321,7 +330,7 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
 
   /** Grow the agent ring by d; everyone outside it drifts out by the same amount (same angle). */
   const growRing = (st: RadialState, d: number) => {
-    const r0 = st.radii[0];
+    const r0 = st.radii[0] ?? RING0;
     for (const [id, r] of st.rad) if (r > r0) st.rad.set(id, r + d);
     st.radii[0] = r0 + d;
   };
@@ -334,7 +343,7 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
       const next = ringFor(count, userOnTop);
       const cur = ringSlots(st.slots, userOnTop);
       const bigger = ringSlots(next, userOnTop);
-      if (!cur.every((a, i) => Math.abs(a - bigger[i]) < 1e-9)) return false;
+      if (!cur.every((a, i) => Math.abs(a - (bigger[i] ?? Number.NaN)) < 1e-9)) return false;
       st.slots = next;
     }
     const arc = arcOf(st);
@@ -412,7 +421,7 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
     const arc = arcOf(st);
     const onRing = anchors.filter((k) => st.ring.get(k) === 0).map((k) => arc.toArc(st.angle.get(k)!));
     // Preferred direction: the user straight up; a tool along its callers' mean ray (the lead's own: down).
-    const phiArc = isUser ? -Math.PI / 2 : (meanAngle(onRing) ?? (onRing.length ? onRing[0] : Math.PI / 2));
+    const phiArc = isUser ? -Math.PI / 2 : (meanAngle(onRing) ?? onRing[0] ?? Math.PI / 2);
     const phi = arc.fromArc(phiArc);
     // A tool stays on its caller's side: closer (along the ring) to its caller's ray than to any other agent's.
     const own = new Set([parent, ...callers]);
@@ -420,7 +429,7 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
     const sectored = !isUser && parent !== leadId && onRing.length > 0;
     const inSector = (aa: number) => !sectored || rivals.every((r) => angleDist(aa, phiArc) <= angleDist(aa, r) + 1e-6);
 
-    const r0 = st.radii[0];
+    const r0 = st.radii[0] ?? RING0;
     const others = placed(st).map((k) => ({ k, box: boxAt(k, rel(st, k)) }));
     // How much a spot would make the graph scale down in the target box (wider than tall by 1 / aspect):
     // the extent that sets the scale, in px of width. Growing the short way is what shrinks the graph.
@@ -480,7 +489,7 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
     };
     spots.slice(0, SHORTLIST).forEach(consider);
     // The closest spots all put a link through a tile (or sit on one): look at every free spot.
-    if (best!.score - spots[0].base >= COST.hit) spots.slice(SHORTLIST).forEach(consider);
+    if (best!.score - (spots[0]?.base ?? 0) >= COST.hit) spots.slice(SHORTLIST).forEach(consider);
     st.angle.set(id, best!.a);
     st.ring.set(id, 1);
     st.rad.set(id, best!.rho / rhoAt(best!.a, 1, st.aspect));
@@ -543,10 +552,14 @@ export function layoutRadial(prev: Layout | null | undefined, tree: Tree, opts: 
     const boxes = thinBoxes(st);
     let n = 0;
     for (const l of all) n += hitsOthers(l.segs, [l.p, l.c], boxes, l.bb);
-    for (let i = 0; i < all.length; i++)
-      for (let j = i + 1; j < all.length; j++)
-        if (all[i].p !== all[j].p && near(all[i].bb, all[j].bb))
-          for (const a of all[i].segs) for (const b of all[j].segs) if (segmentsMerge(a, b)) n++;
+    for (let i = 0; i < all.length; i++) {
+      const li = all[i];
+      if (!li) continue;
+      for (let j = i + 1; j < all.length; j++) {
+        const lj = all[j];
+        if (lj && li.p !== lj.p && near(li.bb, lj.bb)) for (const a of li.segs) for (const b of lj.segs) if (segmentsMerge(a, b)) n++;
+      }
+    }
     return n;
   };
   const layAll = (e: number) => {

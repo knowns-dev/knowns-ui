@@ -187,7 +187,7 @@ export function ApiKeysSettings({
       ) : shown.length === 0 ? (
         <p className="rounded-lg border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">No {filter === "all" ? "" : `${ENV_LABEL[filter].toLowerCase()} `}keys.</p>
       ) : (
-        <ul className="-my-2 divide-y" aria-label="API keys">
+        <ul className="@container -my-2 divide-y" aria-label="API keys">
           {shown.map((k) => {
             const state = keyState(k, now);
             const env = keyEnv(k);
@@ -208,6 +208,8 @@ export function ApiKeysSettings({
                     onClick={() => setOpen(isOpen ? null : k.id)}
                   />
                   <div className="min-w-0 flex-1">
+                    <div className="grid gap-y-1.5 @2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_9rem] @2xl:items-center @2xl:gap-x-5">
+                    <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="truncate text-[13.5px] font-medium">{k.name}</span>
                       {env && (
@@ -227,16 +229,18 @@ export function ApiKeysSettings({
                       )}
                     </div>
                     <code className="mt-0.5 block truncate font-mono text-[12px] text-muted-foreground">{maskKey({ prefix: k.prefix, last4: k.last4, env: k.env })}</code>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
+                    </div>
+                    <div className="flex flex-wrap gap-1">
                       {k.scopes.map((s) => (
                         <Badge key={s} size="sm" variant="outline">
                           {scopeLabel(s)}
                         </Badge>
                       ))}
                     </div>
-                    <p className="mt-1.5 text-[12px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {`Created ${shortDate(k.createdAt, locale)} · Last used ${lastUsedInline(k.lastUsedAt, now, locale)}${state === "active" && k.expiresAt ? ` · Expires ${shortDate(k.expiresAt, locale)}` : state === "active" ? " · Never expires" : ""}`}
                     </p>
+                    </div>
                     {idle !== null && (
                       <p className="mt-1 text-[12px] text-amber-800 dark:text-amber-300">
                         {idleLabel(idle)}. Revoke it if nothing uses it anymore.{" "}
@@ -315,7 +319,7 @@ function KeyDetails({ k, now, locale, usageLabel }: { k: ApiKey; now: number; lo
       </dl>
       {usage.length > 1 && (
         <figure className="grid gap-1">
-          <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={`${usageLabel}, last ${usage.length} days, ${total.toLocaleString(locale)} in total`} className="max-w-full text-sky-700 dark:text-sky-300">
+          <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={`${usageLabel}, last ${usage.length} days, ${total.toLocaleString(locale)} in total`} className="max-w-full text-[color:var(--kn-accent,var(--primary))]">
             <polyline points={sparkPoints(usage, W, H)} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <figcaption className="text-[12px] text-muted-foreground">

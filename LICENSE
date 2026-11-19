@@ -25,9 +25,11 @@ SOFTWARE.
 Trademarks and third-party logos
 
 Third-party names and logos in registry/knowns/lib/knowns/icons are trademarks
-of their owners. They are not licensed under MIT, are included only to identify
-those products, and may not be used for commercial purposes or to suggest
-endorsement.
+of their owners. They are not licensed under MIT and are included only to
+identify those products. The model and tool logos may not be used for commercial
+purposes or to suggest endorsement. The sign-in provider marks may be used, in
+commercial apps too, only to identify the provider (for example on a sign-in
+button) and only by following that provider's brand guidelines.
 
 Each logo's source and terms are listed in
 registry/knowns/lib/knowns/icons/LICENSES.md.

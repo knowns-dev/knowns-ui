@@ -134,7 +134,7 @@ export function Input({ size = "md", icon, prefix, suffix, shortcut, trailing, i
           disabled={rest.disabled}
           onClick={() => setShown(!shown)}
           className={cn(
-            "-mr-1.5 grid size-6 flex-none cursor-pointer place-items-center rounded-[6px] text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground disabled:pointer-events-none",
+            "-mr-1.5 grid size-6 flex-none cursor-pointer place-items-center rounded-[6px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground disabled:pointer-events-none",
             focusRing,
           )}
         >
@@ -250,7 +250,7 @@ export function Field({ label, hint, error, id, required, optional, tooltip, chi
             <button
               type="button"
               aria-label="More information"
-              className={cn("grid size-4 cursor-help place-items-center rounded-full text-muted-foreground transition-colors duration-150 hover:text-foreground", focusRing)}
+              className={cn("grid size-4 cursor-help place-items-center rounded-full text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:text-foreground", focusRing)}
             >
               <Info />
             </button>

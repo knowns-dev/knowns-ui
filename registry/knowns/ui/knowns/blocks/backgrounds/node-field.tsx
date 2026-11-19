@@ -67,8 +67,10 @@ export function NodeField({ density, speed, color, mask = "radial", focus, inten
       const pts = pointer && interactive ? [...nodes, { ...pointer, vx: 0, vy: 0 }] : nodes;
       for (let i = 0; i < pts.length; i++) {
         const a = pts[i];
+        if (!a) continue;
         for (let j = i + 1; j < pts.length; j++) {
           const b = pts[j];
+          if (!b) continue;
           const dx = a.x - b.x;
           if (dx > max || dx < -max) continue;
           const dy = a.y - b.y;

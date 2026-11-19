@@ -11,6 +11,7 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
@@ -29,6 +30,8 @@ type Ctx = {
   orientation: TabsOrientation;
   activationMode: TabsActivation;
   fullWidth: boolean;
+  /** Link mode: the triggers are links, the list is a nav landmark. */
+  links: boolean;
   /** Tab that takes Tab-key focus when no tab is selected (first enabled one). */
   fallback: string | null;
   setFallback: (v: string | null) => void;
@@ -53,8 +56,8 @@ export function nextTabIndex(disabled: boolean[], current: number, key: string, 
   const n = disabled.length;
   const enabled = disabled.map((d, i) => (d ? -1 : i)).filter((i) => i >= 0);
   if (!enabled.length) return null;
-  if (key === "Home") return enabled[0];
-  if (key === "End") return enabled[enabled.length - 1];
+  if (key === "Home") return enabled[0] ?? null;
+  if (key === "End") return enabled[enabled.length - 1] ?? null;
   const fwd = orientation === "vertical" ? "ArrowDown" : rtl ? "ArrowLeft" : "ArrowRight";
   const back = orientation === "vertical" ? "ArrowUp" : rtl ? "ArrowRight" : "ArrowLeft";
   const step = key === fwd ? 1 : key === back ? -1 : 0;
@@ -74,14 +77,17 @@ export interface Box {
 }
 
 /** Where the moving indicator sits for a selected tab box (offsets inside the list). */
-export function indicatorRect(variant: TabsVariant, orientation: TabsOrientation, tab: Box): Box {
+export function indicatorRect(variant: TabsVariant, orientation: TabsOrientation, tab: Box, flush?: "start" | "end"): Box {
   if (variant !== "underline") return tab;
   if (orientation === "vertical") {
     const inset = Math.min(6, tab.h / 4);
     return { x: 0, y: tab.y + inset, w: 2, h: tab.h - 2 * inset };
   }
   const inset = Math.min(8, tab.w / 4);
-  return { x: tab.x + inset, y: tab.y + tab.h - 2, w: tab.w - 2 * inset, h: 2 };
+  // A flush tab has no padding on one side, so its line runs to that edge: the line and the label start together.
+  const left = flush === "start" ? 0 : inset;
+  const right = flush === "end" ? 0 : inset;
+  return { x: tab.x + left, y: tab.y + tab.h - 2, w: tab.w - left - right, h: 2 };
 }
 
 /** Which ends of a horizontally scrolling list have hidden tabs (1px tolerance for subpixel widths). */
@@ -110,6 +116,12 @@ export interface TabsProps {
   activationMode?: TabsActivation;
   /** Horizontal only: tabs share the full width equally. */
   fullWidth?: boolean;
+  /**
+   * Link mode, for tabs that are routes: give each TabsTrigger an `href` and it renders as a link, so Ctrl or Cmd click opens a
+   * new tab. The list becomes a nav landmark (name it with aria-label on TabsList) and the selected link gets aria-current="page";
+   * there is no tablist, no tab role and no arrow-key roving, so the links keep their own semantics. `value` is the current route.
+   */
+  links?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -124,6 +136,7 @@ export function Tabs({
   orientation = "horizontal",
   activationMode = "automatic",
   fullWidth = false,
+  links = false,
   children,
   className,
 }: TabsProps) {
@@ -146,7 +159,7 @@ export function Tabs({
     if (v !== current) onValueChange?.(v);
   };
   return (
-    <TabsCtx.Provider value={{ value: current, set, id, variant, size, orientation, activationMode, fullWidth, fallback, setFallback, panels, registerPanel }}>
+    <TabsCtx.Provider value={{ value: current, set, id, variant, size, orientation, activationMode, fullWidth, links, fallback, setFallback, panels, registerPanel }}>
       <div
         data-orientation={orientation}
         className={cn(orientation === "vertical" ? "flex flex-row items-start gap-6" : "flex flex-col gap-3", className)}
@@ -159,7 +172,7 @@ export function Tabs({
 
 /* ── List ── */
 
-const EASE = "ease-[cubic-bezier(.22,1,.36,1)]";
+const EASE = "ease-(--kn-ease-out)";
 
 const WRAP: Record<TabsVariant, Record<TabsOrientation, string>> = {
   underline: { horizontal: "w-full", vertical: "" },
@@ -176,8 +189,8 @@ const TRACK: Record<TabsVariant, Record<TabsOrientation, string>> = {
   pill: { horizontal: "gap-0.5", vertical: "gap-0.5" },
   // Hairline dividers between joined segments.
   button: {
-    horizontal: "rounded-[9px] [&>[role=tab]+[role=tab]]:shadow-[inset_1px_0_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]",
-    vertical: "overflow-hidden rounded-[10px] [&>[role=tab]+[role=tab]]:shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]",
+    horizontal: "rounded-[9px] [&>[data-value]+[data-value]]:shadow-[inset_1px_0_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]",
+    vertical: "overflow-hidden rounded-[10px] [&>[data-value]+[data-value]]:shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]",
   },
 };
 
@@ -196,6 +209,8 @@ export interface TabsListProps {
   variant?: TabsVariant;
   size?: TabsSize;
   fullWidth?: boolean;
+  /** Underline, horizontal: the first label sits on the list's start edge, with no leading padding, so it lines up with a title above. The line under it starts there too. */
+  flush?: boolean;
 }
 
 export function TabsList({ children, className, "aria-label": label, "aria-labelledby": labelledBy, ...over }: TabsListProps) {
@@ -207,26 +222,30 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
   const [ind, setInd] = useState<(Box & { instant: boolean }) | null>(null);
   const [edges, setEdges] = useState({ start: false, end: false });
 
-  const tabs = () => [...(list.current?.querySelectorAll<HTMLButtonElement>(':scope > [role="tab"]') ?? [])];
+  const tabs = () => [...(list.current?.querySelectorAll<HTMLElement>(":scope > [data-value]") ?? [])];
+  const isOff = (b: HTMLElement) => (b as HTMLButtonElement).disabled || b.getAttribute("aria-disabled") === "true";
+  const isSel = (b: HTMLElement) => b.getAttribute("aria-selected") === "true" || b.getAttribute("aria-current") === "page";
 
   /** Measure the selected tab, the overflow edges, and the tab that takes focus when none is selected. */
   const measure = useCallback(() => {
     const l = list.current;
     if (!l) return;
     const all = tabs();
-    const sel = all.find((b) => b.getAttribute("aria-selected") === "true");
+    const sel = all.find(isSel);
     if (sel) {
-      const r = indicatorRect(variant, t.orientation, { x: sel.offsetLeft, y: sel.offsetTop, w: sel.offsetWidth, h: sel.offsetHeight });
+      const rtl = getComputedStyle(l).direction === "rtl";
+      const first = over.flush && !vertical && variant === "underline" && sel === all[0];
+      const r = indicatorRect(variant, t.orientation, { x: sel.offsetLeft, y: sel.offsetTop, w: sel.offsetWidth, h: sel.offsetHeight }, first ? (rtl ? "end" : "start") : undefined);
       setInd((p) => (p && p.x === r.x && p.y === r.y && p.w === r.w && p.h === r.h ? p : { ...r, instant: !p }));
     } else setInd(null);
     if (!vertical) {
       const e = fadeEdges(l.scrollLeft, l.clientWidth, l.scrollWidth);
       setEdges((p) => (p.start === e.start && p.end === e.end ? p : e));
     }
-    const fb = sel ? null : (all.find((b) => !b.disabled)?.dataset.value ?? null);
+    const fb = sel ? null : (all.find((b) => !isOff(b))?.dataset.value ?? null);
     if (fb !== t.fallback) t.setFallback(fb);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [variant, t.orientation, vertical, t.fallback]);
+  }, [variant, t.orientation, vertical, t.fallback, over.flush]);
 
   useLayoutEffect(() => {
     measure();
@@ -245,7 +264,7 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
   /* Keep the selected tab in view when it changes (scroll the list only, never the page). */
   useLayoutEffect(() => {
     const l = list.current;
-    const sel = tabs().find((b) => b.getAttribute("aria-selected") === "true");
+    const sel = tabs().find(isSel);
     if (!l || !sel || vertical) return;
     const pad = 24;
     if (sel.offsetLeft - pad < l.scrollLeft) l.scrollLeft = Math.max(0, sel.offsetLeft - pad);
@@ -255,11 +274,11 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const all = tabs();
-    const i = all.indexOf(document.activeElement as HTMLButtonElement);
+    const i = all.indexOf(document.activeElement as HTMLElement);
     if (i === -1) return;
     const rtl = !vertical && getComputedStyle(e.currentTarget).direction === "rtl";
     const next = nextTabIndex(
-      all.map((b) => b.disabled),
+      all.map(isOff),
       i,
       e.key,
       t.orientation,
@@ -268,6 +287,7 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
     if (next === null) return;
     e.preventDefault();
     const tab = all[next];
+    if (!tab) return;
     tab.focus();
     if (t.activationMode === "automatic") t.set(tab.dataset.value!);
   };
@@ -275,8 +295,11 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
   const mask = vertical ? undefined : fadeMask(edges);
   const indStyle: CSSProperties | undefined = ind ? { transform: `translate(${ind.x}px, ${ind.y}px)`, width: ind.w, height: ind.h } : undefined;
 
+  const Outer = t.links ? "nav" : "div";
   return (
-    <div
+    <Outer
+      aria-label={t.links ? label : undefined}
+      aria-labelledby={t.links ? labelledBy : undefined}
       className={cn(
         "relative min-w-0",
         vertical ? "flex w-48 flex-none flex-col" : fullWidth ? "flex w-full" : "inline-flex",
@@ -288,17 +311,18 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
     >
       <div
         ref={list}
-        role="tablist"
-        aria-label={label}
-        aria-labelledby={labelledBy}
-        aria-orientation={t.orientation}
-        onKeyDown={onKeyDown}
+        role={t.links ? undefined : "tablist"}
+        aria-label={t.links ? undefined : label}
+        aria-labelledby={t.links ? undefined : labelledBy}
+        aria-orientation={t.links ? undefined : t.orientation}
+        onKeyDown={t.links ? undefined : onKeyDown}
         onScroll={vertical ? undefined : measure}
         style={mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined}
         className={cn(
           "relative flex min-w-0",
           vertical ? "flex-col" : "flex-1 items-center overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           TRACK[variant][t.orientation],
+          over.flush && !vertical && variant === "underline" && "[&>[data-value]:nth-child(2)]:ps-0",
         )}
       >
         <span
@@ -313,7 +337,7 @@ export function TabsList({ children, className, "aria-label": label, "aria-label
         />
         {children}
       </div>
-    </div>
+    </Outer>
   );
 }
 
@@ -342,35 +366,45 @@ export interface TabsTriggerProps {
   icon?: ReactNode;
   /** Count or short text after the label, e.g. 12 → "Runs 12". Read as part of the tab name. */
   badge?: ReactNode;
+  /** Link mode (inside `<Tabs links>`): the destination. The trigger renders as a link, so Ctrl or Cmd click opens a new tab. */
+  href?: string;
+  /** Link mode: called on click before the value is set. Call preventDefault to route yourself (a client router) instead of letting the browser navigate. */
+  onClick?: (e: MouseEvent<HTMLElement>) => void;
   className?: string;
 }
 
-export function TabsTrigger({ value, children, disabled, icon, badge, className }: TabsTriggerProps) {
+export function TabsTrigger({ value, children, disabled, icon, badge, href, onClick, className }: TabsTriggerProps) {
   const t = useTabs();
   const selected = t.value === value;
   const vertical = t.orientation === "vertical";
   const focusable = selected || t.fallback === value;
+  const link = href !== undefined;
+  const onPress = (e: MouseEvent<HTMLElement>) => {
+    if (disabled) return void e.preventDefault();
+    onClick?.(e);
+    // A plain click selects the tab. Ctrl, Cmd, Shift, Alt or a middle click on a link is the browser's (a new tab or window).
+    if (link && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)) return;
+    t.set(value);
+  };
+  const Tag = link ? "a" : "button";
+  const tagProps = link
+    ? { href: disabled ? undefined : href, "aria-current": selected ? ("page" as const) : undefined, "aria-disabled": disabled || undefined, tabIndex: disabled ? -1 : undefined }
+    : { type: "button" as const, role: "tab", id: `${t.id}-tab-${value}`, "aria-selected": selected, "aria-controls": t.panels.has(value) ? `${t.id}-panel-${value}` : undefined, tabIndex: focusable ? 0 : -1, disabled };
   return (
-    <button
-      type="button"
-      role="tab"
-      id={`${t.id}-tab-${value}`}
+    <Tag
+      {...tagProps}
       data-value={value}
-      aria-selected={selected}
-      aria-controls={t.panels.has(value) ? `${t.id}-panel-${value}` : undefined}
-      tabIndex={focusable ? 0 : -1}
-      disabled={disabled}
-      onClick={() => t.set(value)}
+      onClick={onPress}
       className={cn(
         "relative z-10 inline-flex cursor-pointer items-center font-medium whitespace-nowrap select-none",
-        `transition-colors duration-150 ${EASE}`,
+        `transition-colors duration-(--kn-dur-fast) ${EASE}`,
         vertical ? cn("w-full justify-start text-left", VERTICAL_SIZE[t.size], t.variant === "button" ? "" : "rounded-[8px]") : cn(TRIGGER_SIZE[t.variant][t.size], TRIGGER_SHAPE[t.variant], "justify-center"),
         t.fullWidth && !vertical ? "min-w-0 flex-1" : "flex-none",
         selected ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         // Unselected rows get a faint hover wash (the indicator marks the selected one).
         !selected && t.variant !== "underline" && "hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
         !selected && t.variant === "underline" && vertical && "hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
-        "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-muted-foreground",
+        "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent disabled:hover:text-muted-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-45",
         // Inset ring: the list may scroll, which would clip an outside outline.
         "outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         className,
@@ -386,14 +420,14 @@ export function TabsTrigger({ value, children, disabled, icon, badge, className 
       {badge !== undefined && badge !== null && badge !== false && (
         <span
           className={cn(
-            "flex-none rounded-full px-1.5 text-[11px] leading-[18px] font-medium tabular-nums transition-colors duration-150",
+            "flex-none rounded-full px-1.5 text-[11px] leading-[18px] font-medium tabular-nums transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast)",
             selected ? "bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] text-foreground" : "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-muted-foreground",
           )}
         >
           {badge}
         </span>
       )}
-    </button>
+    </Tag>
   );
 }
 
@@ -424,7 +458,7 @@ export function TabsContent({
       aria-labelledby={`${t.id}-tab-${value}`}
       hidden={!selected}
       tabIndex={0}
-      className={cn("min-w-0 rounded-md outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring", t.orientation === "vertical" && "flex-1", className)}
+      className={cn("min-w-0 rounded-md outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring", t.orientation === "vertical" && "flex-1", className)}
     >
       {children}
     </div>

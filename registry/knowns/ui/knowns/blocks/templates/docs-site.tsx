@@ -127,7 +127,7 @@ export function DocsSiteTemplate({ scrollRoot, defaultView = "home", className }
           <ul className="mt-14 grid gap-4 sm:grid-cols-3">
             {CATEGORIES.map((c) => (
               <li key={c.id}>
-                <a href={`#/${c.id}`} className="flex h-full flex-col gap-2 rounded-2xl border bg-card p-5 transition-colors hover:bg-muted/40 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring">
+                <a href={`#/${c.id}`} className="flex h-full flex-col gap-2 rounded-2xl border bg-card p-5 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted/40 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring">
                   <span className="text-[16px] font-semibold">{c.title}</span>
                   <span className="text-[14px] leading-6 text-muted-foreground">{c.text}</span>
                 </a>

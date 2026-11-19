@@ -68,7 +68,7 @@ const ICON: Record<BadgeSize, string> = { sm: "size-3", md: "size-3.5", lg: "siz
 const DOT_SIZE: Record<BadgeSize, string> = { sm: "size-1.25", md: "size-1.5", lg: "size-1.75" };
 const REMOVE: Record<BadgeSize, string> = { sm: "size-4 [&_svg]:size-2.5", md: "size-4.5 [&_svg]:size-3", lg: "size-5 [&_svg]:size-3" };
 
-const ease = "transition-[background-color,border-color,color,box-shadow,opacity] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none";
+const ease = "transition-[background-color,border-color,color,box-shadow,opacity] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none";
 /* Interactive badges: a quiet lift of the fill, using the badge's own text colour so every tone works. */
 const PRESSABLE = "cursor-pointer hover:shadow-[inset_0_0_0_999px_color-mix(in_srgb,currentColor_9%,transparent)] active:shadow-[inset_0_0_0_999px_color-mix(in_srgb,currentColor_15%,transparent)]";
 
@@ -182,7 +182,7 @@ export function Badge({
       className={cn(
         "-my-1 grid flex-none cursor-pointer place-items-center opacity-70",
         pill ? "rounded-full" : "rounded-[4px]",
-        "transition-[background-color,opacity] duration-150 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] hover:bg-[color-mix(in_srgb,currentColor_14%,transparent)] hover:opacity-100",
+        "transition-[background-color,opacity] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,currentColor_14%,transparent)] hover:opacity-100",
         "disabled:pointer-events-none pointer-coarse:size-6",
         REMOVE[size],
         focusRing,

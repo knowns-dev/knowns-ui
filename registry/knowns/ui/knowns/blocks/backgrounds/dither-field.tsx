@@ -1,11 +1,11 @@
 "use client";
-/** @registry name="dither-field" type="block" title="Dither Field" description="A soft light rendered as crisp ordered-dither dots: a glow that eases after the pointer, a rising horizon or flowing noise. Canvas, redrawn only while the light changes." */
+/** @registry name="dither-field" type="block" title="Dither Field" description="A soft light rendered as crisp ordered-dither dots: a glow that eases after the pointer, a rising horizon or flowing noise, or any picture redrawn as colour dither cells (src). Canvas, redrawn only while the light changes." */
 
 import { useEffect, useRef } from "react";
 import { useLive } from "@/registry/knowns/ui/knowns/illustrations/use-in-view";
 import { BackgroundFrame } from "./background-frame";
 import { contentRects, fitCanvas, resolveRgba, watchContent, watchTheme, type BgClear } from "./bg-canvas";
-import { bayerMatrix, densityScale, glowFalloff, holeFieldRects, intensityScale, mulberry32, speedScale, tokenColor, type BackgroundProps } from "./bg-utils";
+import { bayerMatrix, densityScale, ditherImage, glowFalloff, type DitherTone, holeFieldRects, imageRect, workingSize, intensityScale, mulberry32, speedScale, tokenColor, type BackgroundProps } from "./bg-utils";
 
 export type DitherShape = "glow" | "horizon" | "noise";
 
@@ -29,6 +29,25 @@ export interface DitherFieldProps extends BackgroundProps {
    * fixed hole, or false for none.
    */
   clear?: BgClear;
+  /**
+   * Image mode: dither this picture instead of drawing a light. The image is drawn small (one pixel per
+   * cell), thresholded per RGB channel against the Bayer matrix so its colour is kept, and scaled back up
+   * with smoothing off. Same-origin or CORS-enabled. shape, center, follow, drift and clear are ignored;
+   * the mask defaults to "none". Redrawn only on resize or when the source changes.
+   */
+  src?: string;
+  /** Image mode: "cover" fills the field and crops, "contain" fits inside it. Default "cover". */
+  fit?: "cover" | "contain";
+  /** Image mode: focal point as fractions [x, y] of the free space. Default [0.5, 0.5]. */
+  position?: [number, number];
+  /** Image mode: cell size in CSS px, 2 to 12 (density nudges it). Default 3. */
+  cell?: number;
+  /** Image mode: colour levels per channel, 2 to 8. Fewer is chunkier and more graphic; 4 or less shows hue speckle on photos. Default 6. */
+  levels?: number;
+  /** Image mode: blur in CSS px applied before thresholding, to calm busy photos. Default 0. */
+  blur?: number;
+  /** Image mode: "luma" patterns only the lightness and keeps each cell's hue, so no colour speckle; "channel" quantises R, G and B on their own, a palette look. Default "luma". */
+  tone?: DitherTone;
 }
 
 /**
@@ -47,7 +66,114 @@ type Profile = Record<string, number[]> | undefined;
  * shimmers. It only redraws while the light changes (drift, or easing toward the pointer), only on screen;
  * reduced motion draws one still frame.
  */
-export function DitherField({
+export function DitherField(props: DitherFieldProps) {
+  return props.src ? <DitherImage {...props} src={props.src} /> : <DitherShapes {...props} />;
+}
+
+/** Image mode: one dithered picture, redrawn on resize and source change only. */
+/** Longest side of the working copy of a picture. */
+const MAX_SOURCE = 2560;
+
+function DitherImage({ density, mask = "none", focus, paused, src, fit = "cover", position = [0.5, 0.5], cell = 3, levels = 6, blur = 0, tone = "luma", matrix = 8, className, style, children }: DitherFieldProps & { src: string }) {
+  const root = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const { live } = useLive(root, paused);
+  const pitch = Math.min(12, Math.max(2, cell / Math.sqrt(densityScale(density))));
+  const [px, py] = position;
+
+  // The picture is fetched and decoded once per `src`, so dragging cell size, levels or blur only redraws.
+  const source = useRef<{ img: CanvasImageSource; w: number; h: number } | null>(null);
+  const redraw = useRef<() => void>(() => {});
+  const frame = useRef(0);
+  const smallRef = useRef<HTMLCanvasElement | null>(null);
+
+  redraw.current = () => {
+    const el = root.current;
+    const cv = canvas.current;
+    const ctx = cv?.getContext("2d");
+    const img = source.current;
+    if (!el || !cv || !ctx || !img) return;
+    const thr = bayerMatrix(matrix);
+    const small = (smallRef.current ??= document.createElement("canvas"));
+    const { dpr, W, H } = fitCanvas(cv, el);
+    // A whole number of device pixels per cell keeps the grid aligned.
+    const cs = Math.max(2, Math.round(pitch * dpr));
+    const cols = Math.ceil(W / cs);
+    const rows = Math.ceil(H / cs);
+    small.width = cols;
+    small.height = rows;
+    const sctx = small.getContext("2d", { willReadFrequently: true });
+    if (!sctx) return;
+    const [x, y, w, h] = imageRect(img.w, img.h, cols, rows, fit, [px, py]);
+    sctx.clearRect(0, 0, cols, rows);
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = "high";
+    // The blur is in CSS px; the small canvas has one pixel per cell.
+    sctx.filter = blur > 0 ? `blur(${(blur * dpr) / cs}px)` : "none";
+    sctx.drawImage(img.img, x, y, w, h);
+    sctx.filter = "none";
+    const data = sctx.getImageData(0, 0, cols, rows);
+    ditherImage(data.data, cols, rows, thr, matrix, levels, tone);
+    sctx.putImageData(data, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small, 0, 0, cols * cs, rows * cs);
+  };
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    let img: HTMLImageElement | null = new Image();
+    source.current = null;
+    const run = () => redraw.current();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (!img?.naturalWidth) return;
+      // A phone photo is 12 MP and more than the canvas ever needs: keep a copy no larger than 2560 px, so each redraw is cheap.
+      const ws = workingSize(img.naturalWidth, img.naturalHeight, MAX_SOURCE);
+      if (ws.scaled) {
+        const c = document.createElement("canvas");
+        c.width = ws.w;
+        c.height = ws.h;
+        const cx = c.getContext("2d");
+        if (cx) {
+          cx.imageSmoothingQuality = "high";
+          cx.drawImage(img, 0, 0, c.width, c.height);
+          source.current = { img: c, w: c.width, h: c.height };
+        }
+      }
+      source.current ??= { img, w: img.naturalWidth, h: img.naturalHeight };
+      run();
+    };
+    img.src = src;
+    const ro = new ResizeObserver(run);
+    ro.observe(el);
+    window.addEventListener("resize", run);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", run);
+      if (img) img.onload = null;
+      img = null;
+      source.current = null;
+    };
+  }, [src]);
+
+  // Drags change these many times a second: draw at most once per frame.
+  useEffect(() => {
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => redraw.current());
+    return () => cancelAnimationFrame(frame.current);
+  }, [fit, px, py, pitch, levels, blur, tone, matrix]);
+
+  return (
+    <BackgroundFrame ref={root} name="dither-field" live={live} mask={mask} focus={focus} className={className} style={style} layer={<canvas ref={canvas} className="absolute inset-0" />}>
+      {children}
+    </BackgroundFrame>
+  );
+}
+
+function DitherShapes({
   density,
   speed,
   color,
@@ -194,13 +320,16 @@ export function DitherField({
           const fy = ny - fl;
           const sy = fy * fy * (3 - 2 * fy);
           const gain = (1 - Math.abs(y / rows - 0.5) * 0.9) * 0.72 * a;
-          for (let i = 0; i < nW; i++) rowV[i] = (n[iy0 + i] + (n[iy1 + i] - n[iy0 + i]) * sy) * gain;
+          for (let i = 0; i < nW; i++) {
+            const n0 = n[iy0 + i] ?? 0;
+            rowV[i] = (n0 + ((n[iy1 + i] ?? 0) - n0) * sy) * gain;
+          }
           const row = (y & mask) << shift;
           const base = y * cols;
           for (let x = 0; x < cols; x++) {
-            const va = rowV[colA[x]];
-            const v = va + (rowV[colB[x]] - va) * colS[x];
-            px[base + x] = (hole ? Math.min(v, HOLE_CAP) * hole[base + x] : v) > thr[row + (x & mask)] ? ink : 0;
+            const va = rowV[colA[x] ?? 0] ?? 0;
+            const v = va + ((rowV[colB[x] ?? 0] ?? 0) - va) * (colS[x] ?? 0);
+            px[base + x] = (hole ? Math.min(v, HOLE_CAP) * (hole[base + x] ?? 0) : v) > (thr[row + (x & mask)] ?? 0) ? ink : 0;
           }
         }
       } else {
@@ -221,7 +350,7 @@ export function DitherField({
             // Peaks stay below full; the content hole keeps dots off the copy itself.
             const v = (horizon ? Math.max(hv2, g * 0.7) : g * 0.82) * a;
             const i = y * cols + x;
-            px[i] = (hole ? Math.min(v, HOLE_CAP) * hole[i] : v) > thr[row + (x & mask)] ? ink : 0;
+            px[i] = (hole ? Math.min(v, HOLE_CAP) * (hole[i] ?? 0) : v) > (thr[row + (x & mask)] ?? 0) ? ink : 0;
           }
         }
       }

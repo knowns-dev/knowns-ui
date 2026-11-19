@@ -3,11 +3,12 @@
 
 import { useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { AGENT_PALETTE, initials, rootAgent } from "@/registry/knowns/lib/knowns/status";
+import { initials, rootAgent } from "@/registry/knowns/lib/knowns/status";
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
 import { modelIcon } from "@/registry/knowns/lib/knowns/icons/model-icons";
 import { toolIcon } from "@/registry/knowns/lib/knowns/icons/tool-icons";
 import { MOTION_GATE, useLive } from "./use-in-view";
+import { hueAt } from "./illust-utils";
 
 export interface PulseAgent {
   name: string;
@@ -100,8 +101,9 @@ export function pulseLayout(agentCount: number, toolsPerAgent: number[]): PulseL
     return Array.from({ length: k }, (_, j) => onEllipse(angle(i) + (j - (k - 1) / 2) * fan, 202, 128));
   });
   let fewest = 0;
-  tools.forEach((t, i) => t.length < tools[fewest].length && (fewest = i));
-  const k = tools[fewest].length;
+  const countAt = (i: number) => tools[i]?.length ?? 0;
+  tools.forEach((t, i) => t.length < countAt(fewest) && (fewest = i));
+  const k = countAt(fewest);
   return { agents, tools, grow: { agent: fewest, at: onEllipse(angle(fewest) + ((k + 1) / 2) * fan * (k ? 1 : 0), 202, 128) } };
 }
 
@@ -123,10 +125,11 @@ export function assignTools(tools: PulseTool[], agents: PulseAgent[]): PulseTool
     let i = typeof t.agent === "number" ? t.agent : typeof t.agent === "string" ? agents.findIndex((a) => a.name === t.agent) : -1;
     if (i < 0 || i >= n) {
       // Round-robin over agents that still have room.
-      for (let k = 0; k < n && groups[rr % n].length >= 3; k++) rr++;
+      for (let k = 0; k < n && (groups[rr % n]?.length ?? 0) >= 3; k++) rr++;
       i = rr++ % n;
     }
-    if (groups[i].length < 3) groups[i].push(t);
+    const group = groups[i];
+    if (group && group.length < 3) group.push(t);
   }
   return groups;
 }
@@ -225,9 +228,11 @@ export function RunPulse({
     const toolIds: string[][] = others.map(() => []);
     for (const t of toolActors) {
       const i = caller(t.id);
-      if (i >= 0 && groups[i].length < 3) {
-        groups[i].push({ name: t.label, icon: t.icon });
-        toolIds[i].push(t.id);
+      const group = groups[i];
+      const ids = toolIds[i];
+      if (i >= 0 && group && ids && group.length < 3) {
+        group.push({ name: t.label, icon: t.icon });
+        ids.push(t.id);
       }
     }
     return {
@@ -245,18 +250,20 @@ export function RunPulse({
   const nodes: Node[] = [];
   const links: Link[] = [];
   const idOf = (kind: "lead" | "agent" | "tool", i = 0, j = 0) =>
-    scene.ids ? (kind === "lead" ? scene.ids.lead : kind === "agent" ? scene.ids.agents[i] : scene.ids.tools[i][j]) : kind === "lead" ? "lead" : kind === "agent" ? `a${i}` : `t${i}.${j}`;
-  nodes.push({ id: idOf("lead"), kind: "lead", at: C, hue: AGENT_PALETTE[0], agent: scene.lead });
+    scene.ids ? (kind === "lead" ? scene.ids.lead : kind === "agent" ? (scene.ids.agents[i] ?? "") : (scene.ids.tools[i]?.[j] ?? "")) : kind === "lead" ? "lead" : kind === "agent" ? `a${i}` : `t${i}.${j}`;
+  nodes.push({ id: idOf("lead"), kind: "lead", at: C, hue: hueAt(0), agent: scene.lead });
   scene.agents.forEach((a, i) => {
-    const hue = AGENT_PALETTE[(i + 1) % AGENT_PALETTE.length];
+    const hue = hueAt(i + 1);
     const id = idOf("agent", i);
-    nodes.push({ id, kind: "agent", at: layout.agents[i], hue, agent: a });
+    const seat = layout.agents[i] ?? C;
+    nodes.push({ id, kind: "agent", at: seat, hue, agent: a });
     const start = i / Math.max(1, n);
-    links.push({ id: `${idOf("lead")}>${id}`, from: idOf("lead"), to: id, d: bend(C, layout.agents[i]), hue, delay: start });
-    scene.groups[i].forEach((t, j) => {
+    links.push({ id: `${idOf("lead")}>${id}`, from: idOf("lead"), to: id, d: bend(C, seat), hue, delay: start });
+    scene.groups[i]?.forEach((t, j) => {
       const tid = idOf("tool", i, j);
-      nodes.push({ id: tid, kind: "tool", at: layout.tools[i][j], hue, tool: t });
-      links.push({ id: `${id}>${tid}`, from: id, to: tid, d: bend(layout.agents[i], layout.tools[i][j], 0.08), hue, delay: start + 0.4 + j * 0.07 });
+      const toolAt = layout.tools[i]?.[j] ?? seat;
+      nodes.push({ id: tid, kind: "tool", at: toolAt, hue, tool: t });
+      links.push({ id: `${id}>${tid}`, from: id, to: tid, d: bend(seat, toolAt, 0.08), hue, delay: start + 0.4 + j * 0.07 });
     });
   });
   const byId = new Map(nodes.map((x) => [x.id, x]));
@@ -271,7 +278,7 @@ export function RunPulse({
   const lastArrival = new Map<string, string>();
   for (const s of shots) lastArrival.set(s.to.id, s.id);
 
-  const growing = !snap && grow ? { tool: grow, at: layout.grow.at, from: layout.agents[layout.grow.agent], hue: AGENT_PALETTE[(layout.grow.agent + 1) % AGENT_PALETTE.length] } : null;
+  const growing = !snap && grow ? { tool: grow, at: layout.grow.at, from: layout.agents[layout.grow.agent] ?? C, hue: hueAt(layout.grow.agent + 1) } : null;
   const toolCount = scene.groups.reduce((a, g) => a + g.length, 0);
   const width = typeof size === "number" ? size : WIDTH[size];
 
@@ -292,7 +299,7 @@ export function RunPulse({
         {/* Soft hue glow behind the lead. */}
         <div
           className="absolute size-[34cqw] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-70 [animation:knrp-breathe_calc(var(--period)*1.5)_ease-in-out_infinite] dark:opacity-60"
-          style={{ ...pct(C), background: `radial-gradient(closest-side, color-mix(in srgb, ${AGENT_PALETTE[0]} 26%, transparent), transparent)` }}
+          style={{ ...pct(C), background: `radial-gradient(closest-side, color-mix(in srgb, ${hueAt(0)} 26%, transparent), transparent)` }}
         />
 
         <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 size-full overflow-visible" fill="none">
@@ -308,7 +315,7 @@ export function RunPulse({
               strokeWidth={1.2}
               strokeDasharray="100 100"
               strokeLinecap="round"
-              style={{ animation: `knrp-grow-line calc(var(--period) * 4) ease-out infinite` }}
+              style={{ animation: `knrp-grow-line calc(var(--period) * 4) var(--kn-ease-out) infinite` }}
             />
           )}
           {/* Looping streaks: a short dash running the path, with a wider faint copy as its glow. */}
@@ -365,8 +372,8 @@ export function RunPulse({
                     className="pointer-events-none absolute -inset-[0.6cqw] rounded-[inherit] opacity-0 [border:1.5px_solid_var(--hue)] [box-shadow:0_0_14px_color-mix(in_srgb,var(--hue)_45%,transparent)]"
                     style={{
                       animation: shot
-                        ? `knrp-arrive-once calc(var(--period) * .5) ease-out calc(var(--period) * .3) both`
-                        : `knrp-arrive var(--period) ease-out calc(var(--period) * ${inbound!.delay.toFixed(3)}) infinite`,
+                        ? `knrp-arrive-once calc(var(--period) * .5) var(--kn-ease-out) calc(var(--period) * .3) both`
+                        : `knrp-arrive var(--period) var(--kn-ease-out) calc(var(--period) * ${inbound!.delay.toFixed(3)}) infinite`,
                     }}
                   />
                 ) : null}

@@ -63,7 +63,7 @@ export const isFrameProps = (m: unknown): m is MediaFrameProps =>
 export function Eyebrow({ eyebrow }: { eyebrow: NonNullable<HeroCopy["eyebrow"]> }) {
   const inner = (
     <>
-      {eyebrow.badge && <span className="text-indigo-600 dark:text-indigo-400">{eyebrow.badge}</span>}
+      {eyebrow.badge && <span className="text-[color:var(--kn-accent,var(--primary))]">{eyebrow.badge}</span>}
       {eyebrow.badge && (
         <span aria-hidden="true" className="text-border">
           |
@@ -195,7 +195,7 @@ export function CommandChip({ command, cycle, onCopy, className }: { command: st
         type="button"
         onClick={copy}
         aria-label={copied ? "Copied" : "Copy command"}
-        className={cn("grid size-8 flex-none cursor-pointer place-items-center rounded-lg text-muted-foreground transition-[color,background-color,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground active:scale-[0.97]", focusRing)}
+        className={cn("grid size-8 flex-none cursor-pointer place-items-center rounded-lg text-muted-foreground transition-[color,background-color,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground", focusRing)}
       >
         {copied ? (
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-4 animate-[kn-pop_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none">

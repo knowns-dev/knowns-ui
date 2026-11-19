@@ -51,7 +51,7 @@ const Arrow = ({ dir }: { dir: "left" | "right" }) => (
 );
 
 const seg =
-  "inline-flex h-8 items-center gap-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-muted focus-visible:relative focus-visible:z-10 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring";
+  "inline-flex h-8 items-center gap-1.5 text-[13px] font-medium text-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted focus-visible:relative focus-visible:z-10 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring";
 
 /** Split button: copy the page, or open more actions. */
 export function CopyPageButton({ getText, label = "Copy page", copiedLabel = "Copied", items, onSelect, onCopied, className }: CopyPageButtonProps) {
@@ -111,7 +111,7 @@ export interface DocsPageHeaderProps {
 }
 
 function PagerArrow({ link, dir, linkAs: L = "a" }: { link?: DocsPageLink | null; dir: "left" | "right"; linkAs?: ElementType }) {
-  const cls = "grid size-8 place-items-center rounded-lg border bg-card text-muted-foreground transition-colors focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring";
+  const cls = "grid size-8 place-items-center rounded-lg border bg-card text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring";
   const what = dir === "left" ? "Previous" : "Next";
   if (!link)
     return (

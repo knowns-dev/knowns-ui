@@ -162,7 +162,7 @@ export function BlogPost({
         aria-valuenow={Math.round(progress * 100)}
         className="sticky top-0 z-20 h-[2px] w-full bg-transparent"
       >
-        <div className="h-full w-full origin-left bg-foreground/70 transition-transform duration-150 ease-out motion-reduce:transition-none" style={{ transform: `scaleX(${progress})` }} />
+        <div className="h-full w-full origin-left bg-foreground/70 transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none" style={{ transform: `scaleX(${progress})` }} />
       </div>
 
       <header className="mx-auto max-w-3xl pt-6 pb-8">
@@ -215,7 +215,7 @@ export function BlogPost({
                       href={`#${t.id}`}
                       aria-current={active === t.id ? "location" : undefined}
                       className={cn(
-                        "-ml-px block border-l py-1 transition-colors duration-150",
+                        "-ml-px block border-l py-1 transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast)",
                         t.level === 3 ? "pl-6" : "pl-3",
                         active === t.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
                         focusRing,
@@ -234,7 +234,7 @@ export function BlogPost({
       {(prev || next) && (
         <nav aria-label="More posts" className="mx-auto mt-14 grid max-w-3xl gap-3 border-t border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] pt-8 @[560px]:grid-cols-2">
           {prev ? (
-            <LinkOrButton link={prev} className="flex flex-col gap-1 rounded-[12px] p-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
+            <LinkOrButton link={prev} className="flex flex-col gap-1 rounded-[12px] p-3 text-left transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
               <span className="text-[13px] text-muted-foreground">← Previous</span>
               <span className="text-[14px] font-semibold text-foreground">{prev.title}</span>
             </LinkOrButton>
@@ -242,7 +242,7 @@ export function BlogPost({
             <span />
           )}
           {next && (
-            <LinkOrButton link={next} className="flex flex-col gap-1 rounded-[12px] p-3 text-right transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
+            <LinkOrButton link={next} className="flex flex-col gap-1 rounded-[12px] p-3 text-right transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
               <span className="text-[13px] text-muted-foreground">Next →</span>
               <span className="text-[14px] font-semibold text-foreground">{next.title}</span>
             </LinkOrButton>

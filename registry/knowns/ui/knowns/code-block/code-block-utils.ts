@@ -157,7 +157,8 @@ function toLines(tokens: CodeToken[]): CodeLines {
     const parts = t.text.split("\n");
     parts.forEach((part, i) => {
       if (i > 0) lines.push([]);
-      if (part) lines[lines.length - 1].push({ kind: t.kind, text: part });
+      const lastLine = lines[lines.length - 1];
+      if (part && lastLine) lastLine.push({ kind: t.kind, text: part });
     });
   }
   return lines;
@@ -209,7 +210,7 @@ export function tokenize(code: string, language?: string): CodeLines {
       break;
     }
     if (matched) continue;
-    const ch = text[i++];
+    const ch = text[i++] ?? "";
     push("plain", ch);
     if (ch === "\n") {
       if (lang === "bash") ctx.atCommand = ctx.prev !== "\\";

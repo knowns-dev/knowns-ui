@@ -1,14 +1,17 @@
 "use client";
 /** @registry name="chat-composer" type="ui" title="Chat composer" description="Agent input: autosizing text, attachments, model and permission-mode menus, connected apps, working folder, dictation, send and stop." */
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { EASE, MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
+import { useMotionList } from "@/registry/knowns/lib/knowns/motion";
 import { modelIcon } from "@/registry/knowns/lib/knowns/icons/model-icons";
 import { toolIcon } from "@/registry/knowns/lib/knowns/icons/tool-icons";
+import { Avatar } from "../avatar";
 import { Button, type ButtonProps } from "../button";
 import { Tooltip } from "../tooltip";
 import { Menu, type MenuItem } from "../menu";
-import { canSend, formatBytes, isSubmitKey, toggleId, useControllable, waveHeights } from "./composer-utils";
+import { balancedWidth, canSend, formatBytes, insertSkill, isSubmitKey, toggleId, useControllable, waveHeights } from "./composer-utils";
 import { useAutosize } from "./use-autosize";
 
 /* ── Types ── */
@@ -25,6 +28,28 @@ export interface ComposerModel {
   icon?: ReactNode;
 }
 
+export interface ComposerAgent {
+  id: string;
+  name: string;
+  /** Shown after the name in the header: "Name: role". */
+  role?: string;
+  /** Picture for the avatar. Falls back to `icon`, then initials. */
+  avatar?: string;
+  icon?: ReactNode;
+  /** One short line under the name in the picker. */
+  detail?: string;
+}
+
+/** The identity row above the text. `avatarNode` replaces the avatar with your own mark. */
+export type ComposerHeader = Pick<ComposerAgent, "name" | "role" | "avatar" | "icon"> & { avatarNode?: ReactNode };
+
+export interface ComposerSkill {
+  /** The command without the slash: "investigate" inserts "/investigate ". */
+  id: string;
+  /** Hover hint. */
+  description?: string;
+}
+
 export interface ComposerApp {
   id: string;
   name: string;
@@ -38,6 +63,8 @@ export interface ComposerAttachment {
   kind?: AttachKind;
   /** Bytes. */
   size?: number;
+  /** Upload progress, 0 to 1. A thin bar fills along the bottom of the tile until it reaches 1; leave it out for a file that is already there. */
+  progress?: number;
 }
 
 export interface ComposerMessage {
@@ -59,7 +86,22 @@ export interface ChatComposerProps {
   onSubmit: (message: ComposerMessage) => void;
   /** While busy the send button becomes Stop. */
   busy?: boolean;
+  /** Shows the send button pressed (0.97), for a scripted demo that sends for the visitor. The real press already scales. */
+  sendPressed?: boolean;
   onStop?: () => void;
+  /** Agents to pick from. Adds an "Agent: Name" menu to the toolbar and, with `header`, the identity row on top. */
+  agents?: ComposerAgent[];
+  agent?: string;
+  defaultAgent?: string;
+  onAgentChange?: (id: string) => void;
+  /** Avatar and "Name: role" above the text. true shows the current agent from `agents`; an object shows its own identity, e.g. the product's agent while `agents` are profiles. Default false. */
+  header?: boolean | ComposerHeader;
+  /** Muted after the model name, e.g. "High" shows "(High)". */
+  effort?: string;
+  /** Slash commands as chips under the toolbar. A click puts the command in the text. Use ComposerSkills to place the row yourself. */
+  skills?: ComposerSkill[];
+  /** Line above the chips. Default "Run a skill or ask anything". */
+  skillsLabel?: ReactNode;
   models?: ComposerModel[];
   model?: string;
   defaultModel?: string;
@@ -84,6 +126,12 @@ export interface ChatComposerProps {
   dictation?: { listening: boolean; transcript?: string; onToggle: () => void };
   /** Replaces the bottom row (folder + apps); false removes it. */
   footer?: ReactNode | false;
+  /** The + menu in the toolbar. false hides it, for a layout that places its own. Default true. */
+  attachMenu?: boolean;
+  /** The permission-mode menu in the toolbar. Default true. */
+  modeMenu?: boolean;
+  /** "lg" sets the text large, for a launcher where the box is the page's hero. Default "md". */
+  size?: "md" | "lg";
   /** Lines before the text scrolls. Default 8. */
   maxRows?: number;
   disabled?: boolean;
@@ -205,6 +253,125 @@ function Waveform({ className }: { className?: string }) {
   );
 }
 
+/* ── Working glow ── */
+
+/**
+ * While the agent runs, one light band travels around the border (a rotating conic gradient from --kn-accent, clipped to
+ * a ring) with a soft bloom just inside it. It fades in and out with `busy`, so the card lights up instead of swapping.
+ * Only transform and opacity move. Reduced motion shows a still accent ring.
+ */
+const GLOW_CSS = `
+@keyframes kncc-orbit { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.kncc-glow { --kncc-c: var(--kn-accent, var(--color-indigo-500, #6366f1)); position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity var(--kn-dur-slow, ${MOTION.slow}ms) var(--kn-ease-out, ${EASE.out}); }
+.dark .kncc-glow, [data-theme="dark"] .kncc-glow { --kncc-c: var(--kn-accent, var(--color-indigo-400, #818cf8)); }
+.kncc-glow[data-on] { opacity: 1; }
+.kncc-glow:not([data-on]) { transition-duration: var(--kn-dur, ${MOTION.base}ms); }
+.kncc-ring, .kncc-bloom { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.kncc-ring { padding: 2px; }
+.kncc-bloom { padding: 14px; opacity: .6; }
+.kncc-band { position: absolute; left: 50%; top: 50%; width: 240%; aspect-ratio: 1; transform: translate(-50%, -50%); background: conic-gradient(from 0deg, transparent 0deg, transparent 236deg, color-mix(in srgb, var(--kncc-c) 28%, transparent) 280deg, color-mix(in srgb, var(--kncc-c) 75%, transparent) 330deg, var(--kncc-c) 352deg, color-mix(in srgb, var(--kncc-c) 55%, white) 358deg, transparent 360deg); animation: kncc-orbit 3.2s linear infinite; }
+.kncc-bloom .kncc-band { filter: blur(12px); }
+.kncc-glow:not([data-on]) .kncc-band { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .kncc-band { animation: none !important; transform: translate(-50%, -50%); background: var(--kncc-c); }
+  .kncc-ring { opacity: .6; }
+  .kncc-bloom { display: none; }
+  .kncc-glow { transition: none; }
+}`;
+
+/** The travelling border light. Decorative: the Stop button and the live region carry the state. */
+function WorkingGlow({ on }: { on: boolean }) {
+  return (
+    <span aria-hidden className="kncc-glow" data-on={on || undefined} data-kn-m="glow">
+      <style href="kncc-glow" precedence="default">
+        {GLOW_CSS}
+      </style>
+      <span className="kncc-bloom">
+        <span className="kncc-band" />
+      </span>
+      <span className="kncc-ring">
+        <span className="kncc-band" />
+      </span>
+    </span>
+  );
+}
+
+/* ── Attachment tiles ── */
+
+const TILE_CSS = `
+.kncc-tile { display: grid; grid-template-columns: 1fr; transition: grid-template-columns var(--kn-dur-fast, ${MOTION.fast}ms) var(--kn-ease-out, ${EASE.out}), opacity var(--kn-dur-fast, ${MOTION.fast}ms) var(--kn-ease-out, ${EASE.out}); min-width: 0; }
+.kncc-tile > * { min-width: 0; overflow: hidden; }
+.kncc-tile[data-exiting] { grid-template-columns: 0fr; opacity: 0; pointer-events: none; }
+.kncc-tile[data-exiting] { margin-right: -6px; }
+@keyframes kncc-land { from { opacity: 0; transform: translateY(6px) scale(.94); } }
+.kncc-tile[data-entering] > * { animation: kncc-land var(--kn-dur, ${MOTION.base}ms) var(--kn-ease-out, ${EASE.out}) var(--kncc-delay, 0ms) backwards; }
+.kncc-bar { position: absolute; inset: auto 0 0 0; height: 2px; transform-origin: left; transform: scaleX(var(--kncc-p, 0)); background: var(--kn-accent, var(--color-indigo-500, #6366f1)); transition: transform var(--kn-dur-slow, ${MOTION.slow}ms) var(--kn-ease-inout, ${EASE.inOut}), opacity var(--kn-dur-fast, ${MOTION.fast}ms) var(--kn-ease-out, ${EASE.out}); }
+.kncc-bar[data-done] { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .kncc-tile, .kncc-tile > *, .kncc-bar { animation: none !important; transition: none !important; } }
+`;
+
+/* ── Skill chips ── */
+
+const CodeGlyph = () => <svg {...S}><path d="m5.75 4.5-3.5 3.5 3.5 3.5M10.25 4.5l3.5 3.5-3.5 3.5" /></svg>;
+
+export interface ComposerSkillsProps {
+  skills: ComposerSkill[];
+  /** Line above the chips. Default "Run a skill or ask anything". Pass null for none. */
+  label?: ReactNode;
+  /** Called with the skill id when a chip is pressed. */
+  onPick: (id: string) => void;
+  disabled?: boolean;
+  /** Wrap the chips in even rows, so the last line is never a stray chip. Default true. */
+  balance?: boolean;
+  className?: string;
+}
+
+/** "Run a skill or ask anything" and a wrap of "<> /command" chips. Stand-alone, so it can sit outside the card. */
+export function ComposerSkills({ skills, label = "Run a skill or ask anything", onPick, disabled, balance = true, className }: ComposerSkillsProps) {
+  const box = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const [maxWidth, setMaxWidth] = useState<number | undefined>();
+  // Measure the chips and the room, and cap the row at the width that gives the most even wrap.
+  useLayoutEffect(() => {
+    const el = box.current;
+    const ul = list.current;
+    if (!balance || !el || !ul) return;
+    const measure = () => {
+      const widths = Array.from(ul.children, (c) => (c as HTMLElement).offsetWidth);
+      const gap = parseFloat(getComputedStyle(ul).columnGap) || 0;
+      const cs = getComputedStyle(el);
+      setMaxWidth(balancedWidth(widths, gap, el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [balance, skills]);
+  return (
+    <div ref={box} className={cn("flex flex-col gap-2.5", className)}>
+      {label !== null && <p className="text-[14px] leading-6 text-muted-foreground">{label}</p>}
+      <ul ref={list} aria-label="Skills" style={balance ? { maxWidth } : undefined} className="flex flex-wrap gap-2 @max-[419px]:gap-1.5">
+        {skills.map((k) => (
+          <li key={k.id}>
+            <button
+              type="button"
+              disabled={disabled}
+              title={k.description}
+              onClick={() => onPick(k.id)}
+              className="inline-flex h-8 items-center gap-2 rounded-xl bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-3 text-[13.5px] @max-[419px]:gap-1.5 @max-[419px]:px-2 @max-[419px]:text-[13px] text-foreground/85 transition-[background-color,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) outline-none hover:bg-[color-mix(in_srgb,var(--foreground)_11%,transparent)] focus-visible:ring-2 focus-visible:ring-ring/70 active:scale-[.97] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none"
+            >
+              <span aria-hidden className="grid text-muted-foreground [&_svg]:size-3.5 @max-[419px]:[&_svg]:size-3">
+                <CodeGlyph />
+              </span>
+              /{k.id}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /* ── Component ── */
 
 /**
@@ -219,7 +386,16 @@ export function ChatComposer({
   placeholder = "Ask anything…",
   onSubmit,
   busy = false,
+  sendPressed = false,
   onStop,
+  agents,
+  agent: agentProp,
+  defaultAgent,
+  onAgentChange,
+  header = false,
+  effort,
+  skills,
+  skillsLabel,
   models = DEFAULT_MODELS,
   model: modelProp,
   defaultModel,
@@ -240,6 +416,9 @@ export function ChatComposer({
   onFolderChange,
   dictation,
   footer,
+  attachMenu = true,
+  modeMenu = true,
+  size = "md",
   maxRows = 8,
   disabled = false,
   frame = true,
@@ -251,6 +430,7 @@ export function ChatComposer({
   const [attachments, setAttachments] = useControllable(attachmentsProp, [] as ComposerAttachment[], onAttachmentsChange);
   const [connected, setConnected] = useControllable(connectedProp, defaultConnectedApps, onConnectedAppsChange);
   const [folder, setFolder] = useControllable(folderProp, defaultFolder, onFolderChange);
+  const [agentId, setAgentId] = useControllable(agentProp, defaultAgent ?? agents?.[0]?.id ?? "", onAgentChange);
 
   const area = useRef<HTMLTextAreaElement>(null);
   useAutosize(area, text, maxRows);
@@ -260,8 +440,11 @@ export function ChatComposer({
   const [said, setSaid] = useState({ text: "", n: 0 });
   const say = useCallback((t: string) => setSaid((s) => ({ text: t, n: s.n + 1 })), []);
 
+  const currentAgent = agents?.find((a) => a.id === agentId) ?? agents?.[0];
+  const who: ComposerHeader | undefined = header === true ? currentAgent : header || undefined;
   const current = models.find((m) => m.id === model) ?? models[0];
-  const modeInfo = MODES.find((m) => m.id === mode) ?? MODES[0];
+  // MODES always lists at least one mode, so the first is the fallback.
+  const modeInfo = MODES.find((m) => m.id === mode) ?? (MODES[0] as (typeof MODES)[number]);
   const listening = !!dictation?.listening;
   const sendable = canSend(text, attachments.length);
 
@@ -289,9 +472,11 @@ export function ChatComposer({
     }
   };
 
-  /* Keep the newest attachment chip from jumping: chips only animate in after first paint. */
-  const mounted = useRef(false);
-  useLayoutEffect(() => void (mounted.current = true), []);
+  /* Tiles land one by one (a tile added after first paint rises in, 40ms apart, at most 4) and collapse when removed. */
+  const tiles = useMotionList(attachments, (a) => a.id);
+  const landing = useRef(new Map<string, number>());
+  let batch = 0;
+  for (const t of tiles) if (t.entering && !landing.current.has(t.key)) landing.current.set(t.key, Math.min(batch++, 3));
 
   /* ── Menus ── */
 
@@ -320,6 +505,21 @@ export function ChatComposer({
     kind: "radio",
     checked: m.id === current?.id,
   }));
+
+  const agentItems: MenuItem[] = (agents ?? []).map((a) => ({
+    id: a.id,
+    label: a.name,
+    textValue: a.name,
+    description: a.detail ?? a.role,
+    icon: <Logo>{a.icon ?? <Spark />}</Logo>,
+    kind: "radio",
+    checked: a.id === currentAgent?.id,
+  }));
+
+  const pickSkill = (id: string) => {
+    setText(insertSkill(text, id));
+    area.current?.focus();
+  };
 
   const folderItems: MenuItem[] = [
     ...folders.map((f): MenuItem => ({ id: f, label: f, textValue: f, icon: <FolderGlyph />, kind: "radio", checked: f === folder })),
@@ -408,7 +608,7 @@ export function ChatComposer({
                       {connectedApps.slice(0, 3).map((a) => (
                         <span
                           key={a.id}
-                          className="grid size-[18px] place-items-center rounded-full bg-card p-[3px] shadow-[0_0_0_1.5px_var(--card),0_0_0_2.5px_color-mix(in_srgb,var(--foreground)_10%,transparent)] animate-[kn-pop_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none"
+                          className="grid size-[18px] place-items-center rounded-full bg-card p-[3px] shadow-[0_0_0_1.5px_var(--card),0_0_0_2.5px_color-mix(in_srgb,var(--foreground)_10%,transparent)] animate-[kn-pop_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none"
                         >
                           <Logo className="size-full">{a.icon ?? toolIcon(a.name) ?? <AppsGlyph />}</Logo>
                         </span>
@@ -428,16 +628,52 @@ export function ChatComposer({
       </>
     ) : null;
 
+  const withAgents = !!agents && agents.length > 0;
+  const modelMenu =
+    models.length > 0 ? (
+      <Menu
+        role="listbox"
+        align="end"
+        aria-label="Model"
+        items={modelItems}
+        onSelect={(item) => {
+          if (item.id === current?.id) return;
+          setModel(item.id);
+          say(`Model: ${models.find((m) => m.id === item.id)?.name ?? item.id}`);
+        }}
+        trigger={
+          <TipButton
+            tip={current?.name}
+            tipClassName="@min-[420px]:[&>[role=tooltip]]:hidden"
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            aria-label={`Model: ${current?.name ?? "none"}${effort ? `, ${effort} effort` : ""}`}
+            className={cn("px-2!", !withAgents && "@max-[419px]:w-7 @max-[419px]:px-0! pointer-coarse:@max-[419px]:w-9")}
+          >
+            <span key={current?.id} className="flex items-center gap-1.5 animate-[kn-word_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none">
+              <Logo className="size-3.5">{current?.icon ?? modelIcon(current?.name) ?? <Spark />}</Logo>
+              <span className={cn("max-w-[140px] truncate text-foreground/85", !withAgents && "@max-[419px]:hidden")}>{current?.name}</span>
+              {effort && <span className="text-muted-foreground @max-[419px]:hidden">({effort})</span>}
+              <span className={cn("contents", !withAgents && "@max-[419px]:hidden")}>
+                <Chevron />
+              </span>
+            </span>
+          </TipButton>
+        }
+      />
+    ) : null;
+
   return (
     <div
       onKeyDown={onRootKey}
       aria-disabled={disabled || undefined}
       className={cn(
-        "@container w-full text-foreground",
+        "@container relative w-full text-foreground",
         ...(frame ? [
           "max-w-[640px] overflow-hidden rounded-2xl bg-card",
           "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
-          "transition-[box-shadow] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
+          "transition-[box-shadow] duration-(--kn-dur) ease-(--kn-ease-out)",
           "has-[textarea:focus-visible]:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_70%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_14%,transparent),0_8px_24px_-12px_rgb(0_0_0/0.12)]",
           "dark:bg-[color-mix(in_srgb,var(--muted)_30%,var(--card))]",
         ] : []),
@@ -445,6 +681,7 @@ export function ChatComposer({
         className,
       )}
     >
+      {frame && <WorkingGlow on={busy} />}
       <div aria-live="polite" aria-atomic className="sr-only">
         <span key={said.n}>{said.text}</span>
       </div>
@@ -459,34 +696,62 @@ export function ChatComposer({
           area.current?.focus();
         }}
       >
-        {attachments.length > 0 && (
+        {who && (
+          <div className="mb-2 flex items-center gap-2.5 px-1 pt-0.5">
+            {who.avatarNode ?? <Avatar label={who.name} src={who.avatar} icon={who.icon} shape="circle" size="sm" decorative />}
+            <p key={who.name} className="min-w-0 truncate text-[13.5px] leading-6 animate-[kn-word_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none">
+              <span className="font-medium text-foreground">{who.name}</span>
+              {who.role && <span className="text-muted-foreground">: {who.role}</span>}
+            </p>
+          </div>
+        )}
+
+        {tiles.length > 0 && (
           <ul aria-label="Attachments" className="mb-2 flex flex-wrap gap-1.5">
-            {attachments.map((a) => {
+            <style href="kncc-tiles" precedence="default">
+              {TILE_CSS}
+            </style>
+            {tiles.map(({ item: a, key, exiting, entering }) => {
               const Icon = KIND_ICON[a.kind ?? "file"];
               const size = formatBytes(a.size);
+              const uploading = a.progress !== undefined && a.progress < 1;
+              const slot = landing.current.get(key) ?? 0;
               return (
                 <li
-                  key={a.id}
-                  className={cn(
-                    "group flex h-7 max-w-[240px] items-center gap-1.5 rounded-lg bg-muted/60 pr-0.5 pl-2 text-[12.5px] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]",
-                    mounted.current && "animate-[kn-rise_180ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
-                  )}
+                  key={key}
+                  className="kncc-tile"
+                  data-entering={entering && !exiting ? "" : undefined}
+                  data-exiting={exiting ? "" : undefined}
+                  aria-hidden={exiting || undefined}
+                  style={{ "--kncc-delay": `${slot * 40}ms` } as CSSProperties}
                 >
-                  <span aria-hidden className="grid flex-none text-muted-foreground [&_svg]:size-3.5">
-                    <Icon />
-                  </span>
-                  <span className="min-w-0 truncate">{a.name}</span>
-                  {size && <span className="flex-none text-[11.5px] text-muted-foreground tabular-nums">{size}</span>}
-                  <TipButton
-                    tip="Remove"
-                    variant="ghost"
-                    size="sm"
-                    disabled={disabled}
-                    aria-label={`Remove ${a.name}`}
-                    icon={<Close />}
-                    onClick={() => removeAttachment(a)}
-                    className="size-6! rounded-md! [&_svg]:size-3! pointer-coarse:size-8!"
-                  />
+                  <div className="group relative flex h-7 max-w-[240px] items-center gap-1.5 overflow-hidden rounded-lg bg-muted/60 pr-0.5 pl-2 text-[12.5px] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]">
+                    <span aria-hidden className="grid flex-none text-muted-foreground [&_svg]:size-3.5">
+                      <Icon />
+                    </span>
+                    <span className="min-w-0 truncate">{a.name}</span>
+                    {size && !uploading && <span className="flex-none text-[11.5px] text-muted-foreground tabular-nums">{size}</span>}
+                    {uploading && <span className="flex-none text-[11.5px] text-muted-foreground tabular-nums">{Math.round(a.progress! * 100)}%</span>}
+                    <TipButton
+                      tip="Remove"
+                      variant="ghost"
+                      size="sm"
+                      disabled={disabled || exiting}
+                      aria-label={`Remove ${a.name}`}
+                      icon={<Close />}
+                      onClick={() => removeAttachment(a)}
+                      className="size-6! rounded-md! [&_svg]:size-3! pointer-coarse:size-8!"
+                    />
+                    {a.progress !== undefined && (
+                      <span
+                        aria-hidden
+                        role="presentation"
+                        className="kncc-bar"
+                        data-done={a.progress >= 1 ? "" : undefined}
+                        style={{ "--kncc-p": Math.min(1, Math.max(0, a.progress)) } as CSSProperties}
+                      />
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -504,7 +769,8 @@ export function ChatComposer({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKey}
           className={cn(
-            "block w-full resize-none bg-transparent px-1 py-1 text-[14.5px] leading-6 text-foreground outline-none",
+            "block w-full resize-none bg-transparent px-1 text-foreground outline-none",
+            size === "lg" ? "py-2 text-[clamp(20px,4.6cqw,28px)] leading-[1.35] tracking-[-0.01em]" : "py-1 text-[14.5px] leading-6",
             "placeholder:text-muted-foreground disabled:cursor-not-allowed",
           )}
         />
@@ -515,7 +781,7 @@ export function ChatComposer({
         {words.length > 0 && (
           <p aria-hidden className="px-1 pb-1 text-[14.5px] leading-6 text-muted-foreground">
             {words.map((w, i) => (
-              <span key={i} className="animate-[kn-word_320ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
+              <span key={i} className="animate-[kn-word_var(--kn-dur-slow)_var(--kn-ease-out)_both] motion-reduce:animate-none">
                 {w}{" "}
               </span>
             ))}
@@ -523,86 +789,91 @@ export function ChatComposer({
         )}
 
         {/* Toolbar */}
-        <div className="mt-1 flex items-center gap-1">
-          <Menu
-            aria-label="Add to message"
-            items={attachItems}
-            onSelect={(item) => onAttach?.(item.id as AttachKind)}
-            trigger={<TipButton tip="Add files and more" variant="ghost" size="sm" disabled={disabled} aria-label="Add files and more" icon={<Plus />} />}
-          />
-
-          <Menu
-            role="menu"
-            aria-label="Permission mode"
-            items={modeItems}
-            footer="You can change this any time."
-            width={288}
-            onSelect={(item) => {
-              const next = item.id as PermissionMode;
-              if (next === mode) return;
-              setMode(next);
-              say(`Permission mode: ${MODES.find((m) => m.id === next)?.label}`);
-            }}
-            trigger={
-              <TipButton
-                tip={modeInfo.label}
-                tipClassName="@min-[420px]:[&>[role=tooltip]]:hidden"
-                variant="ghost"
-                size="sm"
-                disabled={disabled}
-                aria-label={`Permission mode: ${modeInfo.label}`}
-                className={cn(
-                  "px-2! @max-[419px]:w-7 @max-[419px]:px-0! pointer-coarse:@max-[419px]:w-9",
-                  mode === "full" &&
-                    "text-red-600 hover:bg-red-500/[0.08] hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/12 dark:hover:text-red-300",
-                )}
-              >
-                {/* Keyed so a new mode cross-fades in rather than snapping. */}
-                <span key={mode} className="flex items-center gap-1.5 animate-[kn-word_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
-                  <span aria-hidden className="grid [&_svg]:size-3.5">
-                    <modeInfo.icon />
-                  </span>
-                  <span className="@max-[419px]:hidden @min-[680px]:hidden">{modeInfo.short}</span>
-                  <span className="hidden @min-[680px]:inline">{modeInfo.label}</span>
-                </span>
-              </TipButton>
-            }
-          />
-
-          <div className="flex-1" />
-
-          {models.length > 0 && (
+        <div className={cn("mt-1 flex items-center gap-1", withAgents && "-mx-3 mt-2 border-t border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] pt-2 pr-4 pl-2")}>
+          {attachMenu && (
             <Menu
-              role="listbox"
-              align="end"
-              aria-label="Model"
-              items={modelItems}
+              aria-label="Add to message"
+              items={attachItems}
+              onSelect={(item) => onAttach?.(item.id as AttachKind)}
+              trigger={<TipButton tip="Add files and more" variant="ghost" size="sm" disabled={disabled} aria-label="Add files and more" icon={<Plus />} />}
+            />
+          )}
+
+          {modeMenu && (
+            <Menu
+              role="menu"
+              aria-label="Permission mode"
+              items={modeItems}
+              footer="You can change this any time."
+              width={288}
               onSelect={(item) => {
-                if (item.id === current?.id) return;
-                setModel(item.id);
-                say(`Model: ${models.find((m) => m.id === item.id)?.name ?? item.id}`);
+                const next = item.id as PermissionMode;
+                if (next === mode) return;
+                setMode(next);
+                say(`Permission mode: ${MODES.find((m) => m.id === next)?.label}`);
               }}
               trigger={
                 <TipButton
-                  tip={current?.name}
+                  tip={modeInfo.label}
                   tipClassName="@min-[420px]:[&>[role=tooltip]]:hidden"
                   variant="ghost"
                   size="sm"
                   disabled={disabled}
-                  aria-label={`Model: ${current?.name ?? "none"}`}
-                  className="px-2! @max-[419px]:w-7 @max-[419px]:px-0! pointer-coarse:@max-[419px]:w-9"
+                  aria-label={`Permission mode: ${modeInfo.label}`}
+                  className={cn(
+                    "px-2! @max-[419px]:w-7 @max-[419px]:px-0! pointer-coarse:@max-[419px]:w-9",
+                    mode === "full" &&
+                      "text-red-600 hover:bg-red-500/[0.08] hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/12 dark:hover:text-red-300",
+                  )}
                 >
-                  <span key={current?.id} className="flex items-center gap-1.5 animate-[kn-word_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none">
-                    <Logo className="size-3.5">{current?.icon ?? modelIcon(current?.name) ?? <Spark />}</Logo>
-                    <span className="max-w-[140px] truncate text-foreground/85 @max-[419px]:hidden">{current?.name}</span>
-                    <span className="contents @max-[419px]:hidden">
-                      <Chevron />
+                  {/* Keyed so a new mode cross-fades in rather than snapping. */}
+                  <span key={mode} className="flex items-center gap-1.5 animate-[kn-word_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none">
+                    <span aria-hidden className="grid [&_svg]:size-3.5">
+                      <modeInfo.icon />
                     </span>
+                    <span className="@max-[419px]:hidden @min-[680px]:hidden">{modeInfo.short}</span>
+                    <span className="hidden @min-[680px]:inline">{modeInfo.label}</span>
                   </span>
                 </TipButton>
               }
             />
           )}
+
+          {withAgents && (
+            <Menu
+              role="listbox"
+              aria-label="Agent"
+              items={agentItems}
+              onSelect={(item) => {
+                if (item.id === currentAgent?.id) return;
+                setAgentId(item.id);
+                say(`Agent: ${agents?.find((a) => a.id === item.id)?.name ?? item.id}`);
+              }}
+              trigger={
+                <TipButton
+                  tip="Choose an agent"
+                  tipClassName="[&>[role=tooltip]]:hidden"
+                  variant="ghost"
+                  size="sm"
+                  disabled={disabled}
+                  aria-label={`Agent: ${currentAgent?.name ?? "none"}`}
+                  className="px-2!"
+                >
+                  <span key={currentAgent?.id} className="flex items-center gap-1.5 animate-[kn-word_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none">
+                    <span className="text-muted-foreground">Agent:</span>
+                    <span className="max-w-[120px] truncate text-foreground/85">{currentAgent?.name}</span>
+                    <Chevron />
+                  </span>
+                </TipButton>
+              }
+            />
+          )}
+
+          {withAgents && modelMenu}
+
+          <div className="flex-1" />
+
+          {!withAgents && modelMenu}
 
           {dictation && (
             <TipButton
@@ -622,7 +893,7 @@ export function ChatComposer({
           )}
 
           {busy ? (
-            <TipButton tip="Stop" variant="primary" size="sm" aria-label="Stop" icon={<StopGlyph />} onClick={onStop} className="rounded-full! animate-[kn-pop_200ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none" />
+            <TipButton tip="Stop" variant="primary" size="sm" aria-label="Stop" icon={<StopGlyph />} onClick={onStop} className="rounded-full! animate-[kn-pop_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none" />
           ) : (
             <TipButton
               tip="Send"
@@ -632,11 +903,18 @@ export function ChatComposer({
               icon={<ArrowUp />}
               disabled={disabled || !sendable}
               onClick={submit}
-              className="rounded-full!"
+              data-pressed={sendPressed || undefined}
+              className="rounded-full! data-[pressed=true]:scale-[.97]"
             />
           )}
         </div>
       </div>
+
+      {skills && skills.length > 0 && (
+        <div className="border-t border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] px-3 py-2.5">
+          <ComposerSkills skills={skills} label={skillsLabel} disabled={disabled} onPick={pickSkill} />
+        </div>
+      )}
 
       {bottom && (
         <div className="flex min-h-10 items-center justify-between gap-2 border-t border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-muted/40 px-1.5 py-1 text-muted-foreground">

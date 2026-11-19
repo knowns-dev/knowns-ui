@@ -31,7 +31,9 @@ export function Sparkline({ values, label, color, area = false, endDot = true, s
   const nums = values.filter(isNum);
   const c = color ?? seriesColor({ key: "", label: "" }, 0);
   const last = pts.length ? [...pts].reverse().find((p) => p.y !== null) : undefined;
-  const desc = nums.length ? `${label}: from ${compact(nums[0])} to ${compact(nums[nums.length - 1])}` : `${label}: no data`;
+  const from = nums[0];
+  const to = nums[nums.length - 1];
+  const desc = from !== undefined && to !== undefined ? `${label}: from ${compact(from)} to ${compact(to)}` : `${label}: no data`;
   return (
     <svg role="img" aria-label={desc} viewBox={`0 0 ${vw} ${height}`} width={fluid ? "100%" : width} height={height} preserveAspectRatio={fluid ? "none" : undefined} className={cn("block max-w-full flex-none overflow-visible", className)} style={{ color: c }}>
       {baseline && <line x1={0} x2={vw} y1={height - 0.5} y2={height - 0.5} stroke="currentColor" strokeOpacity={0.18} vectorEffect="non-scaling-stroke" />}

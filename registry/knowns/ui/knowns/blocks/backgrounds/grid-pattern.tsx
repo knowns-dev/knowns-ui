@@ -70,6 +70,7 @@ export function GridPattern({
     const el = root.current;
     if (!el) return;
     const ro = new ResizeObserver(([e]) => {
+      if (!e) return;
       const cols = Math.max(1, Math.floor(e.contentRect.width / size));
       const rows = Math.max(1, Math.floor(e.contentRect.height / size));
       setDims((d) => (d.cols === cols && d.rows === rows ? d : { cols, rows }));

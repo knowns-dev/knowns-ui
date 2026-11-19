@@ -300,7 +300,7 @@ export function GhostText({
         <span className={multiline ? undefined : "shrink-0"}>
           {value}
           {visible && (
-            <span data-ghost-text="" className="text-muted-foreground/65 motion-safe:animate-[knght-in_160ms_ease-out]">
+            <span data-ghost-text="" className="text-muted-foreground/65 motion-safe:animate-[knght-in_var(--kn-dur)_var(--kn-ease-out)]">
               {ghost}
             </span>
           )}
@@ -321,7 +321,7 @@ export function GhostText({
         <span
           aria-hidden="true"
           className={cn(
-            "pointer-events-none absolute right-2.5 flex items-center gap-1 text-[11px] text-muted-foreground transition-opacity duration-200 ease-out",
+            "pointer-events-none absolute right-2.5 flex items-center gap-1 text-[11px] text-muted-foreground transition-opacity duration-(--kn-dur) ease-(--kn-ease-out)",
             multiline ? "bottom-2" : "inset-y-0",
             visible && focused ? "opacity-100" : "opacity-0",
           )}

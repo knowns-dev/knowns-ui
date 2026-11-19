@@ -95,7 +95,7 @@ function Methods({ methods }: { methods: ContactMethod[] }) {
         return (
           <li key={m.label} className="py-4 first:pt-0 last:pb-0">
             {m.href ? (
-              <a href={m.href} className={cn("-m-1 flex items-start gap-3 rounded-lg p-1 transition-colors hover:[&_span.font-medium]:underline", focusRing)}>
+              <a href={m.href} className={cn("-m-1 flex items-start gap-3 rounded-lg p-1 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:[&_span.font-medium]:underline", focusRing)}>
                 {body}
               </a>
             ) : (

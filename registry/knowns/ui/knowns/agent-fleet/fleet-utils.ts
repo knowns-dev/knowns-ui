@@ -9,6 +9,12 @@ export type FleetState = "queued" | "running" | "waiting" | "done" | "failed" | 
 
 export const FLEET_STATES: FleetState[] = ["running", "waiting", "failed", "queued", "done", "stopped"];
 
+/**
+ * The state to draw an agent in. A missing or unknown state (an untyped caller, a status word of your own such as "busy") reads as
+ * "queued" instead of leaving a lookup undefined, which used to crash the page the moment a tree with such an agent opened.
+ */
+export const fleetState = (s: unknown): FleetState => (FLEET_STATES as unknown[]).includes(s) ? (s as FleetState) : "queued";
+
 export const FLEET_LABEL: Record<FleetState, string> = {
   queued: "Queued",
   running: "Running",
@@ -170,7 +176,10 @@ export function treeSpend(agent: FleetAgent): number {
 /** Sub-agents (not the agent itself) per state. */
 export function countByState(agent: FleetAgent): Partial<Record<FleetState, number>> {
   const out: Partial<Record<FleetState, number>> = {};
-  for (const a of walk(agent).slice(1)) out[a.state] = (out[a.state] ?? 0) + 1;
+  for (const a of walk(agent).slice(1)) {
+    const s = fleetState(a.state);
+    out[s] = (out[s] ?? 0) + 1;
+  }
   return out;
 }
 
@@ -353,13 +362,16 @@ export function treeLeft(cardLeft: number, width: number, treeW: number, indent:
 
 /** SVG path through orthogonal points with rounded corners (radius clamped to half of each leg). */
 export function roundedPath(pts: Pt[], r: number): string {
-  if (pts.length < 2) return "";
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  if (pts.length < 2 || !first || !last) return "";
   const f = (n: number) => Math.round(n * 10) / 10;
-  let d = `M${f(pts[0].x)},${f(pts[0].y)}`;
+  let d = `M${f(first.x)},${f(first.y)}`;
   for (let i = 1; i < pts.length - 1; i++) {
     const p = pts[i - 1];
     const c = pts[i];
     const n = pts[i + 1];
+    if (!p || !c || !n) continue;
     const d1 = Math.hypot(c.x - p.x, c.y - p.y) || 1;
     const d2 = Math.hypot(n.x - c.x, n.y - c.y) || 1;
     const rr = Math.min(r, d1 / 2, d2 / 2);
@@ -367,7 +379,6 @@ export function roundedPath(pts: Pt[], r: number): string {
     const b = { x: c.x + ((n.x - c.x) / d2) * rr, y: c.y + ((n.y - c.y) / d2) * rr };
     d += ` L${f(a.x)},${f(a.y)} Q${f(c.x)},${f(c.y)} ${f(b.x)},${f(b.y)}`;
   }
-  const last = pts[pts.length - 1];
   return `${d} L${f(last.x)},${f(last.y)}`;
 }
 

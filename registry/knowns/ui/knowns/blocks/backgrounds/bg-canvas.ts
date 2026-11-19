@@ -20,7 +20,7 @@ export function resolveRgba(el: HTMLElement, css: string): [number, number, numb
   ctx.fillStyle = computed || "rgb(128 128 128)";
   ctx.fillRect(0, 0, 1, 1);
   const d = ctx.getImageData(0, 0, 1, 1).data;
-  return [d[0], d[1], d[2], d[3]];
+  return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0, d[3] ?? 0];
 }
 
 /** Calls `cb` when the theme may have changed: a class, style or data-theme change on <html>, or the OS scheme. */

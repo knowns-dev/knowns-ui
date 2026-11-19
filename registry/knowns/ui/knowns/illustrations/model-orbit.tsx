@@ -3,9 +3,9 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
-import { AGENT_PALETTE, initials } from "@/registry/knowns/lib/knowns/status";
+import { initials } from "@/registry/knowns/lib/knowns/status";
 import { modelIcon } from "@/registry/knowns/lib/knowns/icons/model-icons";
-import type { Pt } from "./illust-utils";
+import { hueAt, type Pt } from "./illust-utils";
 import { MOTION_GATE, useLive } from "./use-in-view";
 
 export interface OrbitModel {
@@ -184,7 +184,7 @@ export function ModelOrbit({
   }, [live, cycle, current, list.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const width = typeof size === "number" ? size : WIDTH[size];
-  const hueOf = (i: number) => AGENT_PALETTE[i % AGENT_PALETTE.length];
+  const hueOf = hueAt;
   const hue = hueOf(idx);
   const spinning = spin > 0 && !reduced;
   const spinStyle = (dir: "normal" | "reverse"): CSSProperties | undefined =>
@@ -247,7 +247,7 @@ export function ModelOrbit({
               <g key={`b${idx}`}>
                 {/* The active beam draws out from the hub (after the spark lands, on a hand-over). */}
                 <path
-                  d={beamPath(angles[idx])}
+                  d={beamPath(angles[idx] ?? 0)}
                   pathLength={100}
                   stroke={hue}
                   strokeOpacity={0.55}
@@ -258,7 +258,7 @@ export function ModelOrbit({
                 />
                 {/* Traffic: a streak running out along the beam. */}
                 <path
-                  d={beamPath(angles[idx])}
+                  d={beamPath(angles[idx] ?? 0)}
                   pathLength={100}
                   stroke={hue}
                   strokeWidth={2.4}
@@ -275,7 +275,7 @@ export function ModelOrbit({
             const isOn = i === idx;
             const logo = m.icon ?? modelIcon(m.model ?? m.name);
             return (
-              <div key={m.name} className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(onRing(angles[i]))}>
+              <div key={m.name} className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(onRing(angles[i] ?? 0))}>
                 <div data-spin="" style={spinStyle("reverse")}>
                   <button
                     type="button"

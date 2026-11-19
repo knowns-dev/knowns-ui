@@ -164,9 +164,9 @@ export function CustomCursor({ children, variant = "arrow", label = "You", color
       {enabled && (
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
           {variant === "crosshair" && visible && <Crosshair layer={layer} />}
-          <div ref={layer} className={cn("absolute top-0 left-0 transition-opacity duration-150", visible ? "opacity-100" : "opacity-0")} style={{ willChange: "transform" }}>
+          <div ref={layer} className={cn("absolute top-0 left-0 transition-opacity ease-(--kn-ease-out) duration-(--kn-dur-fast)", visible ? "opacity-100" : "opacity-0")} style={{ willChange: "transform" }}>
             {variant === "arrow" && (
-              <div className={cn("transition-transform duration-150 ease-out", pressed && "scale-90")} style={{ transformOrigin: "2px 2px" }}>
+              <div className={cn("transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out)", pressed && "scale-90")} style={{ transformOrigin: "2px 2px" }}>
                 <svg width="20" height="22" viewBox="0 0 20 22" className="-translate-x-[2px] -translate-y-[2px] drop-shadow-[0_1px_2px_rgb(0_0_0/0.2)]">
                   <path d={ARROW} fill={color} stroke="white" strokeWidth="1" strokeLinejoin="round" />
                 </svg>

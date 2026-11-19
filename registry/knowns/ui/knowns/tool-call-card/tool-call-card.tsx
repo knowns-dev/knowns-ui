@@ -102,7 +102,7 @@ function StatusMark({ status }: { status: CallStatus }) {
   const play = usePlay(status, (_, next) => (next === "success" ? "draw" : next === "failure" ? "shake" : undefined));
   if (status === "running")
     return (
-      <span key={status} className="flex flex-none text-indigo-600 dark:text-indigo-400" role="img" aria-label="Running">
+      <span key={status} className="flex flex-none text-[color:var(--kn-accent,var(--primary))]" role="img" aria-label="Running">
         <Spinner />
       </span>
     );
@@ -257,7 +257,7 @@ export function ToolCallCard({
                 type="button"
                 onClick={() => onRetry(span)}
                 aria-label={`Retry ${toolName}`}
-                className={cn("rounded-sm font-medium text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400", focusRing)}
+                className={cn("rounded-sm font-medium text-[color:var(--kn-accent,var(--primary))] underline-offset-2 hover:underline", focusRing)}
               >
                 Retry
               </button>
@@ -416,7 +416,7 @@ export function ToolCallGroup({ spans: spansProp, run, spanIds, actors: actorsPr
           )}
         </span>
         {sum.running > 0 && (
-          <span className="flex text-indigo-600 dark:text-indigo-400" role="img" aria-label="Running">
+          <span className="flex text-[color:var(--kn-accent,var(--primary))]" role="img" aria-label="Running">
             <Spinner />
           </span>
         )}

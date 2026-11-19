@@ -36,7 +36,7 @@ export interface ChangelogEntry {
 }
 
 const TAG: Record<ChangeTag, { label: string; cls: string }> = {
-  new: { label: "New", cls: "bg-indigo-500/12 text-indigo-700 dark:text-indigo-300" },
+  new: { label: "New", cls: "bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_12%,transparent)] text-[color:var(--kn-accent,var(--primary))]" },
   improved: { label: "Improved", cls: "bg-sky-500/12 text-sky-700 dark:text-sky-300" },
   fixed: { label: "Fixed", cls: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300" },
   breaking: { label: "Breaking", cls: "bg-red-500/12 text-red-700 dark:text-red-300" },
@@ -199,7 +199,7 @@ export function ChangelogCompact({ entries, max = 4, seenId, title = "What's new
       <div className="flex items-center justify-between gap-2 px-1 pb-2">
         <span className="font-semibold text-foreground">
           {title}
-          {unread > 0 && <span className="ml-2 rounded-full bg-indigo-500/12 px-1.5 py-px text-[13px] text-indigo-700 tabular-nums dark:text-indigo-300">{`${unread} new`}</span>}
+          {unread > 0 && <span className="ml-2 rounded-full bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_12%,transparent)] px-1.5 py-px text-[13px] text-[color:var(--kn-accent,var(--primary))] tabular-nums">{`${unread} new`}</span>}
         </span>
         {allHref && (
           <a href={allHref} className={cn("rounded-[4px] text-[13px] text-muted-foreground hover:text-foreground", focusRing)}>
@@ -212,7 +212,7 @@ export function ChangelogCompact({ entries, max = 4, seenId, title = "What's new
           const isNew = i < unread;
           const inner = (
             <>
-              <span aria-hidden="true" className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", isNew ? "bg-indigo-500" : "bg-transparent")} />
+              <span aria-hidden="true" className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", isNew ? "bg-[color:var(--kn-accent,var(--primary))]" : "bg-transparent")} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5 font-semibold text-foreground">
                   <span className="truncate">{e.title}</span>
@@ -227,7 +227,7 @@ export function ChangelogCompact({ entries, max = 4, seenId, title = "What's new
               </span>
             </>
           );
-          const cls = cn("flex w-full gap-2.5 rounded-[8px] px-1.5 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]", focusRing);
+          const cls = cn("flex w-full gap-2.5 rounded-[8px] px-1.5 py-2 text-left transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]", focusRing);
           return (
             <li key={e.id}>
               {e.href ? (

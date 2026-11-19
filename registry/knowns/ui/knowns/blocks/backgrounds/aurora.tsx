@@ -17,7 +17,7 @@ const CSS = `
 @keyframes knbg-aurora-a { 0% { transform: translate(-6%, -4%) rotate(0deg) scale(1); } 100% { transform: translate(8%, 6%) rotate(18deg) scale(1.12); } }
 @keyframes knbg-aurora-b { 0% { transform: translate(6%, 4%) rotate(0deg) scale(1.05); } 100% { transform: translate(-8%, -5%) rotate(-14deg) scale(0.95); } }
 @keyframes knbg-aurora-c { 0% { transform: translate(0, 6%) scale(0.95); } 100% { transform: translate(-4%, -8%) scale(1.1); } }
-[data-kn-bg="aurora"] .kn-field { will-change: transform; animation: var(--kn-name) var(--knbg-dur) cubic-bezier(.45,0,.55,1) infinite alternate; }
+[data-kn-bg="aurora"] .kn-field { will-change: transform; animation: var(--kn-name) var(--knbg-dur) var(--kn-ease-inout, cubic-bezier(.65,0,.35,1)) infinite alternate; }
 `;
 
 /** Where each field sits and drifts. */
@@ -53,7 +53,7 @@ export function Aurora({ density, speed, color, mask = "radial", focus, intensit
       layer={
         <div className="absolute inset-0 opacity-[0.75] dark:opacity-100">
           {fields.map((f, i) => {
-            const c = colors[i % colors.length];
+            const c = colors[i % colors.length] ?? "";
             return (
               <div
                 key={f.name}

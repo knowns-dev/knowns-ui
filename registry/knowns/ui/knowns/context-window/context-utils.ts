@@ -56,7 +56,7 @@ export function segTokens(s: ContextSegment): number {
 /** Segment colours: its own, else its kind's, else the next extra colour. */
 export function segmentColors(segments: ContextSegment[]): Map<string, string> {
   let k = 0;
-  return new Map(segments.map((s) => [s.id, s.color ?? (s.kind ? KIND_COLOR[s.kind] : EXTRA[k++ % EXTRA.length])]));
+  return new Map(segments.map((s) => [s.id, s.color ?? (s.kind ? KIND_COLOR[s.kind] : EXTRA[k++ % EXTRA.length] ?? "#14b8a6")]));
 }
 
 /**
@@ -66,7 +66,8 @@ export function segmentColors(segments: ContextSegment[]): Map<string, string> {
 export function resolveLimit(limit?: number, model?: string, limits?: Record<string, number>): number | null {
   if (limit !== undefined && limit > 0) return limit;
   if (!model || !limits) return null;
-  if (limits[model] > 0) return limits[model];
+  const own = limits[model];
+  if (own !== undefined && own > 0) return own;
   const norm = (s: string) => s.toLowerCase().replace(/[\s_-]+/g, "");
   const hit = Object.entries(limits).find(([k]) => norm(k) === norm(model));
   return hit && hit[1] > 0 ? hit[1] : null;
@@ -139,7 +140,11 @@ export const thresholdsText = (warnAt: number, fullAt: number) => `Warns at ${fo
 /** Turns where usage dropped by more than a fifth (a compaction, or history cut): their indexes. */
 export function drops(history: number[]): number[] {
   const out: number[] = [];
-  for (let i = 1; i < history.length; i++) if (history[i] < history[i - 1] * 0.8) out.push(i);
+  for (let i = 1; i < history.length; i++) {
+    const now = history[i];
+    const before = history[i - 1];
+    if (now !== undefined && before !== undefined && now < before * 0.8) out.push(i);
+  }
   return out;
 }
 

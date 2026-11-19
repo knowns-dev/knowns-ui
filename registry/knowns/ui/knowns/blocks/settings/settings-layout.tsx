@@ -41,7 +41,7 @@ export interface SettingsLayoutProps {
 
 const itemClass = (on: boolean) =>
   cn(
-    "flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13.5px] whitespace-nowrap outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none",
+    "flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13.5px] whitespace-nowrap outline-none transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none",
     on ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
   );
 
@@ -89,7 +89,7 @@ export function SettingsLayout({ title = "Settings", description, sections, acti
       <div className={cn("grid gap-5", nav && "lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10")}>
         {nav && (
         <nav aria-label="Settings sections" className="-mx-4 min-w-0 lg:mx-0">
-          <div ref={row} className="relative flex gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+          <div ref={row} className="relative flex gap-1 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,#000_14px,#000_calc(100%-14px),transparent)] [scrollbar-width:none] lg:[mask-image:none] lg:sticky lg:top-6 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
             {groupSections(sections).map(({ group, items }, i) => (
               <Fragment key={group ?? `_${i}`}>
                 {i > 0 && <span aria-hidden="true" className="mx-1 my-1.5 w-px shrink-0 self-stretch bg-border lg:mx-0 lg:my-2 lg:h-px lg:w-auto" />}

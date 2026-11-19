@@ -80,7 +80,8 @@ export function typeFrames(script: TypeStep[], typeSpeed = 55, deleteSpeed = 28)
 /** The text after the whole script ran. */
 export function finalText(script: TypeStep[]): string {
   const f = typeFrames(script, 1, 1);
-  return f.length ? f[f.length - 1].text : "";
+  const lastFrame = f[f.length - 1];
+  return lastFrame ? lastFrame.text : "";
 }
 
 /**
@@ -102,7 +103,7 @@ export function Typewriter({ script, phrases, typeSpeed = 55, deleteSpeed = 28, 
   useStep(live, resting ? hold : done ? (loops ? 900 : null) : frames[i + 1]?.wait ?? null, () => setI((k) => (k < -1 || k >= frames.length - 1 ? -1 : k + 1)), `${i}:${frames.length}`);
 
   const still = phrases && !script ? phrases[0] ?? "" : finalText(steps);
-  const text = reduced || resting ? still : i < 0 ? "" : frames[i].text;
+  const text = reduced || resting ? still : i < 0 ? "" : (frames[i]?.text ?? "");
   const spoken = label ?? (phrases && !script ? phrases.join(", ") : still);
 
   return (

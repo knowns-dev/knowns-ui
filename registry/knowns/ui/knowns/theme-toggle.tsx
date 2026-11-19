@@ -15,6 +15,7 @@ import { useEffect, useId, useState, type MouseEvent } from "react";
 import { flushSync } from "react-dom";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { buttonClass, type ButtonSize } from "./button";
+import { EASE, MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 
 export type Theme = "light" | "dark" | "system";
 export type RevealVariant = "circle" | "wipe" | "fade";
@@ -95,7 +96,7 @@ export interface TransitionOptions {
   variant?: RevealVariant;
   /** Where the circle starts, in viewport pixels. Default: the centre of the viewport. */
   origin?: Point;
-  /** Default 450ms. */
+  /** Default 280ms (`MOTION.slow`). */
   duration?: number;
   easing?: string;
   doc?: Document;
@@ -128,8 +129,8 @@ export async function transitionTheme(apply: () => void, o: TransitionOptions = 
     const w = win.innerWidth;
     const h = win.innerHeight;
     root.animate(revealKeyframes(variant, o.origin ?? { x: w / 2, y: h / 2 }, w, h), {
-      duration: o.duration ?? 450,
-      easing: o.easing ?? "cubic-bezier(.22,1,.36,1)",
+      duration: o.duration ?? MOTION.slow,
+      easing: o.easing ?? EASE.out,
       pseudoElement: "::view-transition-new(root)",
     });
     await t.finished;
@@ -146,7 +147,7 @@ export async function transitionTheme(apply: () => void, o: TransitionOptions = 
 /** Sun when light, moon when dark: the rays turn away and shrink, the core grows, and a mask slides in for the crescent. */
 export function SunMoonIcon({ dark, className }: { dark: boolean; className?: string }) {
   const id = `kn-sm-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const ease = "transition-transform duration-300 ease-out motion-reduce:transition-none";
+  const ease = "transition-transform duration-(--kn-dur-slow) ease-(--kn-ease-out) motion-reduce:transition-none";
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true" data-dark={dark || undefined}>
       <mask id={id}>
@@ -158,8 +159,8 @@ export function SunMoonIcon({ dark, className }: { dark: boolean; className?: st
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        className={cn("transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none", dark && "opacity-0")}
-        style={{ transformBox: "view-box", transformOrigin: "12px 12px", transform: dark ? "rotate(-60deg) scale(.4)" : "none" }}
+        className={cn("transition-[transform,opacity] duration-(--kn-dur-slow) ease-(--kn-ease-out) motion-reduce:transition-none", dark && "opacity-0")}
+        style={{ transformBox: "view-box", transformOrigin: "12px 12px", transform: dark ? "rotate(-60deg) scale(.9)" : "none" }}
       >
         <path d="M12 2.5v1.5M12 20v1.5M2.5 12H4M20 12h1.5M5.3 5.3l1 1M17.7 17.7l1 1M5.3 18.7l1-1M17.7 6.3l1-1" />
       </g>

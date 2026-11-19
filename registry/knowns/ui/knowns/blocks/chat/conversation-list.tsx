@@ -132,7 +132,8 @@ export function ConversationList<T extends Conversation = Conversation>({
     const to = moveIndex(e.key, at, order.length);
     if (to !== null) {
       e.preventDefault();
-      focusRow(order[to].id);
+      const next = order[to];
+      if (next) focusRow(next.id);
     } else if (e.key === "F2" && onRename) {
       e.preventDefault();
       startRename(c);
@@ -225,7 +226,7 @@ export function ConversationList<T extends Conversation = Conversation>({
                       aria-current={active ? "page" : undefined}
                       title={c.title}
                       className={cn(
-                        "flex h-8 w-full items-center rounded-[9px] pl-2.5 text-left text-[13px] transition-colors",
+                        "flex h-8 w-full items-center rounded-[9px] pl-2.5 text-left text-[13px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                         menu.length ? "pr-9" : "pr-2.5",
                         active ? "bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] font-medium text-foreground" : "text-foreground/80 hover:bg-[color-mix(in_srgb,var(--foreground)_4.5%,transparent)] hover:text-foreground",
                         focusRing,
@@ -234,7 +235,7 @@ export function ConversationList<T extends Conversation = Conversation>({
                       <span className="truncate">{c.title}</span>
                     </button>
                     {menu.length > 0 && (
-                      <div className="absolute inset-y-0 right-1 flex items-center opacity-0 transition-opacity ease-(--kn-ease-out) group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100">
+                      <div className="absolute inset-y-0 right-1 flex items-center opacity-0 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) group-focus-within:opacity-100 group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:opacity-100">
                         <Menu
                           aria-label={`Actions for ${c.title}`}
                           align="end"

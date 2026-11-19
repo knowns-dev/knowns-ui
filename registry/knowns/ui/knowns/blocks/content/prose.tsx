@@ -26,7 +26,7 @@ export type ProseBlock =
 export function headingIds(blocks: ProseBlock[]): Map<number, string> {
   const heads = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.type === "h2" || b.type === "h3") as { b: Extract<ProseBlock, { type: "h2" | "h3" }>; i: number }[];
   const slugs = uniqueSlugs(heads.map(({ b }) => b.text));
-  return new Map(heads.map(({ b, i }, n) => [i, b.id ?? slugs[n]]));
+  return new Map(heads.map(({ b, i }, n) => [i, b.id ?? slugs[n] ?? ""]));
 }
 
 /** The table of contents for a list of blocks (h2 and h3). */
@@ -121,6 +121,8 @@ function PlaceholderArt({ seed }: { seed: number }) {
   const muted = "color-mix(in srgb, var(--foreground) 38%, transparent)";
   const acc = "color-mix(in srgb, var(--kn-accent, #6366f1) 78%, var(--foreground))";
   const pct = (n: number) => `${n}%`;
+  const yAt = (lane: number) => pct(ys[lane] ?? 0);
+  const at = (pts: Waypoint[], i: number): Waypoint => pts[i] ?? { x: 0, lane: 0 };
   const x0 = 10 + Math.round(rnd() * 14);
   const x1 = 70 + Math.round(rnd() * 20);
   const main = coverRoute(rnd, lanes, x0, x1);
@@ -131,8 +133,8 @@ function PlaceholderArt({ seed }: { seed: number }) {
   const route = (pts: Waypoint[], color: string, width: number) => (
     <g stroke={color} strokeWidth={width} strokeLinecap="round">
       {pts.slice(1).map((p, i) => {
-        const q = pts[i];
-        return <line key={i} x1={pct(q.x)} x2={pct(p.x)} y1={pct(ys[q.lane])} y2={pct(ys[p.lane])} />;
+        const q = at(pts, i);
+        return <line key={i} x1={pct(q.x)} x2={pct(p.x)} y1={yAt(q.lane)} y2={yAt(p.lane)} />;
       })}
     </g>
   );
@@ -151,7 +153,7 @@ function PlaceholderArt({ seed }: { seed: number }) {
       {second && (
         <>
           {route(second, muted, 1.25)}
-          <circle cx={pct(second[second.length - 1].x)} cy={pct(ys[second[second.length - 1].lane])} r="3.5" fill={muted} />
+          <circle cx={pct(at(second, second.length - 1).x)} cy={yAt(at(second, second.length - 1).lane)} r="3.5" fill={muted} />
         </>
       )}
       {cluster && (
@@ -161,17 +163,17 @@ function PlaceholderArt({ seed }: { seed: number }) {
             const x = cluster.x + (i - (cluster.n - 1) / 2) * 7;
             return (
               <g key={i}>
-                <line x1={pct(cluster.x)} y1={pct(ys[cluster.lane])} x2={pct(x)} y2={pct(ys[lane])} />
-                <circle cx={pct(x)} cy={pct(ys[lane])} r="3.5" fill="var(--card)" />
+                <line x1={pct(cluster.x)} y1={yAt(cluster.lane)} x2={pct(x)} y2={yAt(lane)} />
+                <circle cx={pct(x)} cy={yAt(lane)} r="3.5" fill="var(--card)" />
               </g>
             );
           })}
-          <circle cx={pct(cluster.x)} cy={pct(ys[cluster.lane])} r="4.5" fill={muted} stroke="none" />
+          <circle cx={pct(cluster.x)} cy={yAt(cluster.lane)} r="4.5" fill={muted} stroke="none" />
         </g>
       )}
       {route(main, acc, 1.75)}
-      <circle cx={pct(main[0].x)} cy={pct(ys[main[0].lane])} r="4" fill={acc} />
-      <circle cx={pct(main[main.length - 1].x)} cy={pct(ys[main[main.length - 1].lane])} r="4" fill="var(--card)" stroke={acc} strokeWidth="1.75" />
+      <circle cx={pct(at(main, 0).x)} cy={yAt(at(main, 0).lane)} r="4" fill={acc} />
+      <circle cx={pct(at(main, main.length - 1).x)} cy={yAt(at(main, main.length - 1).lane)} r="4" fill="var(--card)" stroke={acc} strokeWidth="1.75" />
     </svg>
   );
 }

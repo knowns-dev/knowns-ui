@@ -206,7 +206,7 @@ export function MessageActions({
     if (next === null) return;
     e.preventDefault();
     setFocusIndex(next);
-    items[next].focus();
+    items[next]?.focus();
   };
   let n = 0;
   const rove = () => {
@@ -239,11 +239,11 @@ export function MessageActions({
       </style>
       <div ref={bar} role="toolbar" aria-label="Message actions" onKeyDown={onKeyDown} className="-ml-1.5 flex flex-wrap items-center gap-0.5">
         {iconButton(copied ? "Copied" : "Copy", <Icon className={cn(copied && "text-emerald-600 dark:text-emerald-400")}>{copied ? I.check : I.copy}</Icon>, copy)}
-        {iconButton("Good response", <Icon className={cn(popped === "up" && feedback === "up" && "motion-safe:[animation:kmsa-pop_.32s_ease-out]")}>{I.up}</Icon>, () => thumb("up"), { pressed: feedback === "up" })}
-        {iconButton("Bad response", <Icon className={cn(popped === "down" && feedback === "down" && "motion-safe:[animation:kmsa-pop_.32s_ease-out]")}>{I.down}</Icon>, () => thumb("down"), { pressed: feedback === "down" })}
+        {iconButton("Good response", <Icon className={cn(popped === "up" && feedback === "up" && "motion-safe:[animation:kmsa-pop_var(--kn-dur-slow)_var(--kn-ease-out)]")}>{I.up}</Icon>, () => thumb("up"), { pressed: feedback === "up" })}
+        {iconButton("Bad response", <Icon className={cn(popped === "down" && feedback === "down" && "motion-safe:[animation:kmsa-pop_var(--kn-dur-slow)_var(--kn-ease-out)]")}>{I.down}</Icon>, () => thumb("down"), { pressed: feedback === "down" })}
         {onRegenerate && iconButton(regenerating ? "Regenerating" : "Regenerate", <Icon className={cn(regenerating && "motion-safe:animate-spin")}>{I.regen}</Icon>, regenerate, { disabled: regenerating })}
         {versions > 1 && (
-          <span className="ml-0.5 flex items-center motion-safe:[animation:kmsa-in_.2s_ease-out]">
+          <span className="ml-0.5 flex items-center motion-safe:[animation:kmsa-in_var(--kn-dur)_var(--kn-ease-out)]">
             {iconButton("Previous version", <Icon>{I.prev}</Icon>, () => onVersionChange?.(stepVersion(version, versions, -1)), { disabled: version <= 1 })}
             <span className="min-w-[2.5rem] text-center text-[13px] text-muted-foreground tabular-nums" aria-live="polite">
               {`${version}/${versions}`}
@@ -268,7 +268,7 @@ export function MessageActions({
       </div>
 
       {asking && (
-        <div role="group" aria-labelledby={`${pickerId}-t`} className="max-w-md rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-3 py-2.5 motion-safe:[animation:kmsa-in_.2s_ease-out]">
+        <div role="group" aria-labelledby={`${pickerId}-t`} className="max-w-md rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-3 py-2.5 motion-safe:[animation:kmsa-in_var(--kn-dur)_var(--kn-ease-out)]">
           <p id={`${pickerId}-t`} className="mb-2 text-[13px] font-semibold text-foreground">
             What went wrong?
           </p>

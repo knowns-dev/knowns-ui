@@ -30,7 +30,7 @@ export function SectionHeading({
   if (!eyebrow && !title && !lead) return null;
   return (
     <div className={cn("flex max-w-2xl flex-col gap-4", align === "center" ? "mx-auto items-center text-center" : "items-start text-left", className)}>
-      {eyebrow && <p className="text-[14px] font-semibold text-indigo-600 dark:text-indigo-400">{eyebrow}</p>}
+      {eyebrow && <p className="text-[14px] font-semibold text-[color:var(--kn-accent,var(--primary))]">{eyebrow}</p>}
       {title && <Tag className="text-balance text-[32px] leading-10 font-semibold sm:text-[36px] sm:leading-[44px]">{title}</Tag>}
       {lead && <p className="text-pretty text-[16px] leading-7 text-muted-foreground">{lead}</p>}
     </div>
@@ -121,7 +121,7 @@ export function MediaFrame({ src, srcDark, alt = "", aspect = "16/10", video, ch
             <button type="button" onClick={() => setPlaying(true)} aria-label={video.label ?? "Play video"} className={cn("group/play absolute inset-0 size-full cursor-pointer", focusRing)}>
               <img src={video.poster} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />
               <span className="absolute inset-0 grid place-items-center">
-                <span className="grid size-14 place-items-center rounded-full bg-background text-foreground shadow-sm transition-transform duration-200 ease-out group-hover/play:scale-105 motion-reduce:transition-none">
+                <span className="grid size-14 place-items-center rounded-full bg-background text-foreground shadow-sm transition-transform duration-(--kn-dur) ease-(--kn-ease-out) group-hover/play:scale-105 motion-reduce:transition-none">
                   <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" className="ml-0.5 size-5">
                     <path d="M5 3.5v9l7.5-4.5z" />
                   </svg>

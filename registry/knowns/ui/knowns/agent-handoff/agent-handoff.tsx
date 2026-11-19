@@ -9,6 +9,8 @@ import type { Actor, Approval, Span, Task } from "@/registry/knowns/lib/knowns/t
 import { formatUsd } from "@/registry/knowns/lib/knowns/status";
 import { actorIcon } from "@/registry/knowns/lib/knowns/icons/actor-icon";
 import { cn, focusRing, localRect } from "@/registry/knowns/lib/knowns/utils";
+import { EASE as KN_EASE } from "@/registry/knowns/lib/knowns/motion-utils";
+import { TickNumber } from "@/registry/knowns/lib/knowns/motion";
 import { Button } from "../button";
 import { Spinner } from "../spinner";
 import { Tooltip } from "../tooltip";
@@ -113,7 +115,7 @@ const Arrow = () => (
   </svg>
 );
 const Chevron = ({ open }: { open: boolean }) => (
-  <svg {...svg} className={cn("size-3 flex-none transition-transform duration-200", EASE, open && "rotate-180")}>
+  <svg {...svg} className={cn("size-3 flex-none transition-transform duration-(--kn-dur)", EASE, open && "rotate-180")}>
     <path d="m4.5 6 3.5 3.5L11.5 6" />
   </svg>
 );
@@ -152,7 +154,7 @@ function WirePath({ d, delay, opacity, bright }: { d: string; delay: number; opa
     const l = line.current;
     const h = head.current;
     if (!l || !h || reducedMotion() || typeof l.animate !== "function") return;
-    const timing = { duration: 760, delay, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" as const };
+    const timing = { duration: 600, delay, easing: KN_EASE.out, fill: "both" as const };
     const a = l.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], timing);
     // The head is a short dash that rides the tip of the line as it draws.
     const b = h.animate(
@@ -171,13 +173,13 @@ function WirePath({ d, delay, opacity, bright }: { d: string; delay: number; opa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <g style={{ opacity }} className={cn("transition-opacity duration-300", EASE)}>
+    <g style={{ opacity }} className={cn("transition-opacity duration-(--kn-dur)", EASE)}>
       <path
         ref={line}
         d={d}
         pathLength={1}
         strokeDasharray="1 1"
-        className={cn("fill-none stroke-[var(--kn-line)] transition-[stroke-width] duration-300", bright ? "[stroke-width:2]" : "[stroke-width:1.5]")}
+        className={cn("fill-none stroke-[var(--kn-line)] transition-[stroke-width] duration-(--kn-dur-slow) ease-(--kn-ease-inout)", bright ? "[stroke-width:2]" : "[stroke-width:1.5]")}
       />
       <path ref={head} d={d} pathLength={1} strokeDasharray="0.06 2" strokeDashoffset={2} className="fill-none stroke-[var(--kn-line-hot)] opacity-0 [stroke-linecap:round] [stroke-width:2.5]" />
     </g>
@@ -192,7 +194,7 @@ function StreakPath({ d, onDone }: { d: string; onDone: () => void }) {
     if (!el || typeof el.animate !== "function") return onDone();
     // Movement eases out; the fade runs on linear time so the light stays visible all the way.
     const duration = 1300;
-    const move = el.animate([{ strokeDashoffset: 0.16 }, { strokeDashoffset: -1 }], { duration, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
+    const move = el.animate([{ strokeDashoffset: 0.16 }, { strokeDashoffset: -1 }], { duration, easing: KN_EASE.out, fill: "forwards" });
     const fade = el.animate([{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 1, offset: 0.82 }, { opacity: 0 }], { duration, easing: "linear", fill: "forwards" });
     move.onfinish = onDone;
     return () => {
@@ -263,7 +265,7 @@ function Lane({
         "relative flex min-w-0 flex-col self-start rounded-[16px] bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)] p-1.5 [grid-column:var(--c)] [grid-row:2]",
         "@max-[759px]/relay:mb-3 @max-[759px]/relay:[grid-column:auto] @max-[759px]/relay:[grid-row:auto]",
         "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_5%,transparent)] dark:bg-[color-mix(in_srgb,#000_30%,transparent)]",
-        "transition-opacity duration-300",
+        "transition-opacity duration-(--kn-dur) ease-(--kn-ease-out)",
         EASE,
         dim && "opacity-60",
       )}
@@ -285,8 +287,8 @@ function Lane({
         <Arrow />
         <Logo actor={to.actor} size="sm" />
         <span className="truncate">{to.name}</span>
-        <span key={count} className="ml-auto pl-2 tabular-nums text-foreground/80 motion-safe:animate-[kn-rise_320ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]">
-          {count}
+        <span className="ml-auto pl-2 text-foreground/80">
+          <TickNumber value={count} />
         </span>
       </div>
       {count ? (
@@ -359,7 +361,7 @@ export function AgentHandoff({
     const out: Handoff[][] = order.slice(0, -1).map(() => []);
     for (const h of list) {
       const i = laneIndex(order, h);
-      if (i >= 0) out[i].push(h);
+      if (i >= 0) out[i]?.push(h);
     }
     return out.map((l) => l.sort((a, b) => b.at - a.at));
   }, [order, list]);
@@ -395,13 +397,17 @@ export function AgentHandoff({
     for (let i = 0; i < order.length - 1; i++) {
       for (const side of ["from", "to"] as const) {
         const agent = side === "from" ? order[i] : order[i + 1];
+        if (agent === undefined) continue;
         const a = at(agentDots.current.get(agent));
         const b = at(laneDots.current.get(`${i}:${side}`));
         if (!a || !b) continue;
         next.push({ key: `${agent}|${i}|${side}`, d: connectorPath(a, b, a.y + (b.y - a.y) / 2, 12), agent, lane: i, side });
       }
     }
-    setWires((prev) => (prev.length === next.length && prev.every((p, k) => p.key === next[k].key && p.d === next[k].d) ? prev : next));
+    setWires((prev) => (prev.length === next.length && prev.every((p, k) => {
+          const nx = next[k];
+          return !!nx && p.key === nx.key && p.d === nx.d;
+        }) ? prev : next));
   }, [order]);
 
   useLayoutEffect(measure);
@@ -496,7 +502,8 @@ export function AgentHandoff({
     setDrag({ ...drag, dx, dy, active: true, rects, box, over: columnAt(rects, e.clientX, e.clientY) });
   };
   const onPointerUp = (h: Handoff) => {
-    if (drag?.active && drag.over >= 0) assign(h, order[drag.over]);
+    const target = drag?.active && drag.over >= 0 ? order[drag.over] : undefined;
+    if (target !== undefined) assign(h, target);
     setDrag(null);
   };
 
@@ -546,7 +553,7 @@ export function AgentHandoff({
   /* ── Pieces ── */
   const agentCard = (agentId: string, i: number) => {
     const actor = byId.get(agentId);
-    const st = status[agentId];
+    const st: RelayStatus = status[agentId] ?? "todo";
     const pill = PILL[st];
     const current = tasks.filter((t) => t.actor === agentId && !t.outcome).sort((a, b) => b.startedAt - a.startedAt)[0];
     const waiting = queued(agentId, list, tasks);
@@ -576,7 +583,7 @@ export function AgentHandoff({
           "@max-[759px]/relay:[grid-column:auto] @max-[759px]/relay:[grid-row:auto]",
           HAIRLINE,
           "dark:[background:color-mix(in_srgb,var(--card)_80%,#000)]",
-          "transition-[opacity,box-shadow] duration-300",
+          "transition-[opacity,box-shadow] duration-(--kn-dur) ease-(--kn-ease-out)",
           EASE,
           isTarget
             ? "shadow-[0_0_0_2px_var(--kn-line),0_10px_24px_-12px_rgb(0_0_0/0.4)]"
@@ -597,14 +604,14 @@ export function AgentHandoff({
                 {actor?.spend !== undefined && (
                   <span className="tabular-nums @min-[340px]/agent:hidden">
                     {actor.model ? " · " : ""}
-                    {formatUsd(actor.spend)}
+                    <TickNumber value={actor.spend} format={formatUsd} />
                   </span>
                 )}
               </span>
             )}
           </div>
           <div className="flex flex-none items-center gap-2">
-            {actor?.spend !== undefined && <span className="text-[12.5px] tabular-nums text-muted-foreground @max-[339px]/agent:hidden">{formatUsd(actor.spend)}</span>}
+            {actor?.spend !== undefined && <span className="text-[12.5px] tabular-nums text-muted-foreground @max-[339px]/agent:hidden"><TickNumber value={actor.spend} format={formatUsd} /></span>}
             <span className={cn("inline-flex h-6 items-center gap-1.5 rounded-[7px] px-2 text-[12px] font-medium", pill.className)}>
               {pill.text}
             </span>
@@ -623,7 +630,7 @@ export function AgentHandoff({
             <>
               <span className="flex-none text-muted-foreground">Up next</span>
               {nextTool && <Logo actor={nextTool} size="sm" />}
-              <span className="min-w-0 truncate font-medium">{waiting[0].title}</span>
+              <span className="min-w-0 truncate font-medium">{waiting[0]?.title}</span>
               {waiting.length > 1 && <span className="flex-none tabular-nums text-muted-foreground">+{waiting.length - 1}</span>}
             </>
           ) : (
@@ -687,7 +694,7 @@ export function AgentHandoff({
     const t = src ? tool(h.from, src.startedAt, src.endedAt) : undefined;
     const lost = h.items.filter((i) => i.lost).length;
     return (
-      <li key={h.id} className={cn("relative", fresh.has(h.id) && !isDragging && "motion-safe:animate-[kn-rise_480ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both]")}>
+      <li key={h.id} className={cn("relative", fresh.has(h.id) && !isDragging && "motion-safe:animate-[kn-rise_var(--kn-dur-slow)_var(--kn-ease-out)_both]")}>
         <article
           data-handoff={h.id}
           tabIndex={0}
@@ -703,7 +710,7 @@ export function AgentHandoff({
             "flex flex-col gap-1.5 rounded-[12px] border bg-card px-3.5 py-3 text-left text-[13px] outline-none",
             HAIRLINE,
             "dark:[background:color-mix(in_srgb,var(--card)_88%,#000)]",
-            !isDragging && cn("transition-[box-shadow,scale] duration-200 motion-reduce:transition-none", EASE),
+            !isDragging && cn("transition-[box-shadow,scale] duration-(--kn-dur) motion-reduce:transition-none", EASE),
             canMove && "cursor-grab touch-none select-none active:cursor-grabbing",
             isDragging
               ? "opacity-40"
@@ -727,7 +734,7 @@ export function AgentHandoff({
                 aria-expanded={open}
                 aria-label={`${h.items.length} item${h.items.length > 1 ? "s" : ""} passed along${lost ? `, ${lost} lost` : ""}`}
                 onClick={() => toggle(h.id)}
-                className={cn("-mx-1 flex min-w-0 cursor-pointer items-center gap-1 rounded-[6px] px-1 text-left text-muted-foreground transition-colors duration-150 hover:text-foreground", focusRing)}
+                className={cn("-mx-1 flex min-w-0 cursor-pointer items-center gap-1 rounded-[6px] px-1 text-left text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground", focusRing)}
               >
                 <span className="min-w-0 flex-1 truncate">
                   {h.items.map((it, k) => (
@@ -743,7 +750,7 @@ export function AgentHandoff({
             {open && (
               <ul
                 aria-label="Passed along"
-                className="flex flex-col gap-1 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] p-2 motion-safe:animate-[kn-rise_220ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] dark:bg-[color-mix(in_srgb,#000_25%,transparent)]"
+                className="flex flex-col gap-1 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] p-2 motion-safe:animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both] dark:bg-[color-mix(in_srgb,#000_25%,transparent)]"
               >
                 {h.items.map((it) => (
                   <li key={it.id} className="flex flex-col gap-0.5 text-[12.5px] leading-[1.4]">
@@ -762,7 +769,7 @@ export function AgentHandoff({
                           <button
                             type="button"
                             aria-label={`Why ${it.label} was lost`}
-                            className={cn("flex cursor-help items-center gap-1 rounded-[6px] px-1 py-0.5 text-[11.5px] text-amber-700 transition-colors duration-150 hover:bg-muted dark:text-amber-300", focusRing)}
+                            className={cn("flex cursor-help items-center gap-1 rounded-[6px] px-1 py-0.5 text-[11.5px] text-amber-700 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted dark:text-amber-300", focusRing)}
                           >
                             <Info />
                             Lost
@@ -826,16 +833,17 @@ export function AgentHandoff({
 
             {order.flatMap((agentId, i) => {
               const out = [agentCard(agentId, i)];
-              if (i < order.length - 1) {
-                const from = order[i];
-                const to = order[i + 1];
+              const from = order[i];
+              const to = order[i + 1];
+              if (from !== undefined && to !== undefined) {
+                const laneList = lanes[i] ?? [];
                 out.push(
                   <Lane
                     key={`lane-${from}-${to}`}
                     index={i}
                     from={{ name: name(from), actor: byId.get(from) }}
                     to={{ name: name(to), actor: byId.get(to) }}
-                    count={lanes[i].length}
+                    count={laneList.length}
                     dim={active !== null && active !== from && active !== to && !moving}
                     maxHeight={laneHeight}
                     dotRef={(side, el) => {
@@ -843,7 +851,7 @@ export function AgentHandoff({
                       else laneDots.current.delete(`${i}:${side}`);
                     }}
                   >
-                    {lanes[i].map((h) => handoffCard(h, from))}
+                    {laneList.map((h) => handoffCard(h, from))}
                   </Lane>,
                 );
               }

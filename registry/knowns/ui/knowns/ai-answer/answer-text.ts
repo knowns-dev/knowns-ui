@@ -20,7 +20,7 @@ export function parseInline(s: string): Inline[] {
     if (m.index > last) out.push({ kind: "text", text: s.slice(last, m.index) });
     if (m[1] !== undefined) out.push({ kind: "bold", text: m[1] });
     else if (m[2] !== undefined) out.push({ kind: "code", text: m[2] });
-    else out.push({ kind: "cite", refs: m[3].split(",").map((n) => Number(n.trim())) });
+    else out.push({ kind: "cite", refs: (m[3] ?? "").split(",").map((n) => Number(n.trim())) });
     last = m.index + m[0].length;
   }
   if (last < s.length) out.push({ kind: "text", text: s.slice(last) });

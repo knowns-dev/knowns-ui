@@ -102,7 +102,10 @@ export function treeKey(rows: VisibleRow[], open: ReadonlySet<string>, from: str
   const row = rows[i];
   if (!row) return enabled[0] ? { focus: enabled[0].id } : null;
   const step = (dir: 1 | -1) => {
-    for (let j = i + dir; j >= 0 && j < rows.length; j += dir) if (!rows[j].disabled) return { focus: rows[j].id };
+    for (let j = i + dir; j >= 0 && j < rows.length; j += dir) {
+      const next = rows[j];
+      if (next && !next.disabled) return { focus: next.id };
+    }
     return null;
   };
   switch (key) {

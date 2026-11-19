@@ -121,7 +121,7 @@ export function pathBounds(d: string): Bounds {
   let sy = 0;
   const pt = (px: number, py: number) => (b = add(b, px, py, px, py));
   const SIZE: Record<string, number> = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 };
-  for (const [, cmd, args] of d.matchAll(/([MLHVCSQTAZmlhvcsqtaz])([^MLHVCSQTAZmlhvcsqtaz]*)/g)) {
+  for (const [, cmd = "", args = ""] of d.matchAll(/([MLHVCSQTAZmlhvcsqtaz])([^MLHVCSQTAZmlhvcsqtaz]*)/g)) {
     const n = args.match(/-?\d*\.?\d+(?:e-?\d+)?/gi)?.map(Number) ?? [];
     const k = cmd.toLowerCase();
     const rel = cmd !== cmd.toUpperCase();
@@ -131,18 +131,19 @@ export function pathBounds(d: string): Bounds {
       continue;
     }
     const size = SIZE[k];
+    if (!size) continue;
     for (let i = 0; i + size <= n.length; i += size) {
-      const g = n.slice(i, i + size);
-      if (k === "h") x = rel ? x + g[0] : g[0];
-      else if (k === "v") y = rel ? y + g[0] : g[0];
+      const g = (j: number) => n[i + j] ?? 0;
+      if (k === "h") x = rel ? x + g(0) : g(0);
+      else if (k === "v") y = rel ? y + g(0) : g(0);
       else if (k === "a") {
-        x = rel ? x + g[5] : g[5];
-        y = rel ? y + g[6] : g[6];
+        x = rel ? x + g(5) : g(5);
+        y = rel ? y + g(6) : g(6);
       } else {
         // Control points count too, so curves stay inside the frame.
-        for (let j = 0; j + 1 < size - 2; j += 2) pt(rel ? x + g[j] : g[j], rel ? y + g[j + 1] : g[j + 1]);
-        x = rel ? x + g[size - 2] : g[size - 2];
-        y = rel ? y + g[size - 1] : g[size - 1];
+        for (let j = 0; j + 1 < size - 2; j += 2) pt(rel ? x + g(j) : g(j), rel ? y + g(j + 1) : g(j + 1));
+        x = rel ? x + g(size - 2) : g(size - 2);
+        y = rel ? y + g(size - 1) : g(size - 1);
       }
       pt(x, y);
       if (k === "m" && i === 0) {

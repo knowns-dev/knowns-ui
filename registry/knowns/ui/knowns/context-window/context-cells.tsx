@@ -5,7 +5,7 @@
  * The context window as a field of equal cells, each worth `cellTokens`. Used cells take their
  * segment's colour, the reserve is pale, free cells are grey, and free room past the thresholds
  * is outlined in amber, then red. Hover a cell (or a legend row) to light that segment; while compacting the
- * conversation's cells shimmer, and when it shrinks they clear in a sweep.
+ * conversation's cells shimmer, and when it shrinks they change colour together (no cell moves).
  */
 import { useMemo } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
@@ -13,8 +13,8 @@ import { cellPlan, type ContextSegment } from "./context-utils";
 
 const CSS_TEXT = `
 @keyframes kncw-shimmer { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
-[data-kncw-cell] { transition: background-color .45s ease-out, opacity .2s; }
-[data-kncw-cell][data-busy="true"] { animation: kncw-shimmer 1s ease-in-out infinite; }
+[data-kncw-cell] { transition: background-color var(--kn-dur-fast, 120ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)), opacity var(--kn-dur-fast, 120ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)); }
+[data-kncw-cell][data-busy="true"] { animation: kncw-shimmer 1s var(--kn-ease-inout, cubic-bezier(.65, 0, .35, 1)) infinite; }
 @media (prefers-reduced-motion: reduce) {
   [data-kncw-cell] { transition: none !important; animation: none !important; }
 }
@@ -69,7 +69,6 @@ export function ContextCells({ segments, span, cellTokens, colors, limit, warnAt
               className={cn("aspect-square rounded-[2px]", zone, i >= limitCell && "ring-1 ring-inset ring-red-500", hot && c.id !== hot && "opacity-25")}
               style={{
                 background: color ? (c.reserve ? `color-mix(in srgb, ${color} 35%, transparent)` : color) : undefined,
-                transitionDelay: `${(i % 48) * 7}ms`,
                 animationDelay: `${(i % 24) * 45}ms`,
               }}
             />

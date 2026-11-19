@@ -26,6 +26,10 @@ export interface Testimonial {
   href?: string;
   /** Bigger type and an accent edge in the grid. */
   highlight?: boolean;
+  /** Proof behind the quote, as figures with units: `{ value: "10 min", label: "review time, was 3 h" }`. The large quote layout shows up to three beside it. */
+  metrics?: { value: string; label: string }[];
+  /** One line of context under the name, e.g. "Rolled out to 42 engineers in March". */
+  context?: string;
 }
 
 /** The section around the quotes: heading, then the quotes, then small print. Shared by every layout. */
@@ -134,9 +138,10 @@ function Grid({ items, columns }: { items: Testimonial[]; columns: 2 | 3 }) {
     <div className={cn("grid items-start gap-4", cols === 3 ? "grid-cols-3" : cols === 2 ? "grid-cols-2" : "grid-cols-1")}>
       {plan.map((col, c) => (
         <div key={c} className="flex min-w-0 flex-col gap-4">
-          {col.map((i) => (
-            <TestimonialCard key={items[i].id ?? i} t={items[i]} />
-          ))}
+          {col.map((i) => {
+            const t = items[i];
+            return t ? <TestimonialCard key={t.id ?? i} t={t} /> : null;
+          })}
         </div>
       ))}
     </div>

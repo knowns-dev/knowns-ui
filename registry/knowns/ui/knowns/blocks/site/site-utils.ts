@@ -18,6 +18,10 @@ export interface NavMegaItem extends NavLink {
   description?: string;
   /** A 16px icon. */
   icon?: ReactNode;
+  /** How many things the entry leads to: a small muted pill after the label. */
+  count?: number;
+  /** A short mark after the label, such as "New": an accent pill that follows --kn-accent (or --kn-badge) and --primary. */
+  badge?: ReactNode;
 }
 
 export interface NavMegaGroup {
@@ -29,7 +33,21 @@ export interface NavMegaGroup {
 export type NavEntry =
   | ({ kind?: "link" } & NavLink)
   | { kind: "dropdown"; label: string; items: NavMegaItem[] }
-  | { kind: "mega"; label: string; groups: NavMegaGroup[]; featured?: ReactNode };
+  | {
+      kind: "mega";
+      label: string;
+      groups: NavMegaGroup[];
+      featured?: ReactNode;
+      /** A quiet row at the bottom of the panel: a line of text and a link. */
+      footer?: NavMegaFooter;
+      /** The mobile drawer: "accordion" (default) folds the entry open; "flat" lists its groups and items, with icons and counts, always visible. */
+      drawer?: "accordion" | "flat";
+    };
+
+export interface NavMegaFooter {
+  text?: ReactNode;
+  link?: NavLink;
+}
 
 export const entryKind = (e: NavEntry) => e.kind ?? "link";
 

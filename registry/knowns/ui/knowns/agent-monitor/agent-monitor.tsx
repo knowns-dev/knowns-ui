@@ -3,6 +3,7 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { MotionStyle, RowShell, TickNumber, useMotionList } from "@/registry/knowns/lib/knowns/motion";
 import { formatUsd } from "@/registry/knowns/lib/knowns/status";
 import { useAgentSnapshot, type AgentRun } from "@/registry/knowns/lib/knowns/run";
 import { modelIcon } from "@/registry/knowns/lib/knowns/icons/model-icons";
@@ -109,7 +110,7 @@ export interface AgentMonitorProps {
   className?: string;
 }
 
-const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
+const EASE = "ease-(--kn-ease-out)";
 const HAIR = "[border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)]";
 
 /* Quiet surface: hairline, a thin inner top light, a deeper card in dark mode. */
@@ -169,7 +170,7 @@ function useNow(on: boolean, fixed?: number) {
 
 const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 const Chevron = ({ up }: { up: boolean }) => (
-  <svg viewBox="0 0 16 16" {...stroke} aria-hidden className={cn("size-3.5 transition-transform duration-300 motion-reduce:transition-none", EASE, up && "rotate-180")}>
+  <svg viewBox="0 0 16 16" {...stroke} aria-hidden className={cn("size-3.5 transition-transform duration-(--kn-dur) motion-reduce:transition-none", EASE, up && "rotate-180")}>
     <path d="M4.5 6.5 8 10l3.5-3.5" />
   </svg>
 );
@@ -310,7 +311,7 @@ function TimeStrip({
   const bars = stripBars(steps, now, { state, waitSince, gap: 3 / width });
   const byId = new Map(steps.map((s) => [s.id, s]));
   // Ticking: 1s linear so the running bar grows smoothly between renders; otherwise settle with the house ease.
-  const motion = isLive(state) ? "duration-1000 ease-linear" : `duration-500 ${EASE}`;
+  const motion = isLive(state) ? "transition-transform duration-1000 ease-linear" : "transition-transform duration-(--kn-dur-slow) ease-(--kn-ease-inout)";
 
   return (
     <div ref={ref} role="presentation" className="relative h-3 w-full">
@@ -318,7 +319,7 @@ function TimeStrip({
         const style: CSSProperties = { transform: `translateX(${b.left * 100}%) scaleX(${b.width})`, transformOrigin: "0 50%" };
         const visual = <span aria-hidden className={cn("absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-[1px]", BAR[b.tone])} />;
         const step = b.step ? byId.get(b.step) : undefined;
-        const cls = cn("absolute inset-0 transition-transform will-change-transform motion-reduce:transition-none", motion);
+        const cls = cn("absolute inset-0 will-change-transform motion-reduce:transition-none", motion);
         if (!step) return <span key={b.id} style={style} className={cls}>{visual}</span>;
         const key = `bar:${step.id}`;
         return (
@@ -410,6 +411,8 @@ export function AgentMonitor(props: AgentMonitorProps) {
   const running = steps.find((s) => s.state === "running");
   const current: AgentMonitorProps["current"] = props.current ?? (live?.current && !props.steps ? live.current : running ? { label: running.label, tool: running.tool, icon: running.icon, since: running.since } : undefined);
   const rows = finishedSteps(steps);
+  // A step that finishes slides into the list; nothing plays on first render or when a poll brings the same steps.
+  const motionRows = useMotionList(rows, (s) => s.id);
   const count = stepCount(steps);
   const total = elapsed(since, now, until, props.pausedFor);
   const busy = state === "running";
@@ -439,7 +442,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
     wellLabel = ask?.title ?? "Needs your input";
     if (ask?.command)
       wellExtra = (
-        <code title={ask.command} className="min-w-16 flex-1 truncate rounded-[6px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-1.5 py-0.5 font-mono text-[11.5px] text-foreground">
+        <code title={ask.command} className="order-last min-w-16 basis-full line-clamp-2 rounded-[6px] break-words bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-1.5 py-0.5 font-mono text-[11.5px] text-foreground">
           {ask.command.replace(/\s*\n\s*/g, " ⏎ ")}
         </code>
       );
@@ -549,7 +552,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
 
         {cost !== undefined && (
           <span className="flex-none text-[12.5px] font-medium tabular-nums" aria-label={`Cost ${cost}`}>
-            <Shimmer on={busy}>{cost}</Shimmer>
+            <Shimmer on={busy}>{typeof costValue === "number" ? <TickNumber value={costValue} format={formatUsd} /> : cost}</Shimmer>
           </span>
         )}
         {!collapsed && (
@@ -569,21 +572,22 @@ export function AgentMonitor(props: AgentMonitorProps) {
         />
       </div>
 
+      <MotionStyle />
       {/* Body folds by grid rows. */}
       <div
         id={bodyId}
         inert={collapsed}
-        className={cn("grid transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none", EASE, collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100")}
+        className={cn("grid transition-[grid-template-rows,opacity] duration-(--kn-dur-slow) motion-reduce:transition-none", EASE, collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100")}
       >
         <div className="min-h-0 overflow-hidden">
           <div className="flex flex-col gap-3 px-3 pb-3">
             {/* Well */}
             <div
               className={cn(
-                "flex h-10 min-w-0 items-center gap-2.5 rounded-[10px] px-2.5",
+                "flex min-h-10 min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-[10px] px-2.5 py-1.5",
                 "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] shadow-[inset_0_1px_2px_rgb(0_0_0/0.05)] dark:bg-[color-mix(in_srgb,#000_30%,transparent)]",
                 WELL[state],
-                "transition-[background-color,box-shadow] duration-300",
+                "transition-[background-color,box-shadow] duration-(--kn-dur)",
                 EASE,
               )}
             >
@@ -592,7 +596,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
                   <Logo icon={wellIcon} />
                 </span>
               )}
-              <span className={cn("min-w-0 truncate font-medium", !wellExtra && "flex-1")}>
+              <span className={cn("min-w-0 flex-1 basis-32 font-medium", wellExtra ? "line-clamp-2 leading-snug" : "truncate")}>
                 {wellLabel}
               </span>
               {wellExtra}
@@ -606,13 +610,14 @@ export function AgentMonitor(props: AgentMonitorProps) {
             <TimeStrip steps={steps} now={now} state={state} waitSince={ask?.since} openKey={openKey} setOpenKey={setOpenKey} />
 
             {/* Finished steps: three rows tall, then it scrolls. */}
-            {rows.length > 0 && (
+            {motionRows.length > 0 && (
               <ul aria-label="Finished steps" className="-mx-1 -mt-1 flex max-h-[84px] flex-col overflow-y-auto overscroll-contain [scrollbar-width:thin]">
-                {rows.map((s) => {
+                {motionRows.map((mr) => {
+                  const s = mr.item;
                   const key = `row:${s.id}`;
                   const took = formatTook(stepDuration(s, now));
                   return (
-                    <li key={s.id} className="flex-none">
+                    <RowShell key={mr.key} row={mr} className="flex-none">
                       <Popover
                         open={openKey === key}
                         onOpenChange={(o) => setOpenKey(o ? key : null)}
@@ -623,7 +628,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
                             type="button"
                             aria-label={`${s.label}${s.tool ? `, ${s.tool}` : ""}, ${s.state === "failed" ? "failed after" : "took"} ${took}`}
                             className={cn(
-                              "flex h-7 w-full min-w-0 items-center gap-2.5 rounded-[8px] px-2 text-left text-[12.5px] transition-colors duration-150",
+                              "flex h-7 w-full min-w-0 items-center gap-2.5 rounded-[8px] px-2 text-left text-[12.5px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                               "hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] aria-expanded:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]",
                               "outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                             )}
@@ -636,7 +641,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
                       >
                         <StepInfo step={s} now={now} />
                       </Popover>
-                    </li>
+                    </RowShell>
                   );
                 })}
               </ul>

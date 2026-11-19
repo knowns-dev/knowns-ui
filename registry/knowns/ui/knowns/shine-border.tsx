@@ -40,8 +40,8 @@ export function shineGradient(colors: string[], arc = 100) {
 export function shineStatic(colors: string[]) {
   const list = colors.length ? colors : SHINE_ACCENT;
   const mix = (c: string, p: number) => `color-mix(in srgb, ${c} ${p}%, transparent)`;
-  const first = list[0];
-  const last = list[list.length - 1];
+  const first = list[0] ?? "";
+  const last = list[list.length - 1] ?? first;
   return `linear-gradient(135deg, ${mix(first, 90)}, ${mix(last, 15)} 45%, ${mix(last, 15)} 55%, ${mix(first, 90)})`;
 }
 
@@ -66,9 +66,9 @@ const CSS_TEXT = `
   opacity: var(--knsb-o);
   animation: knsb-spin var(--knsb-dur) linear infinite;
 }
-[data-kn-shine][data-mode="hover"] { opacity: var(--knsb-rest); animation-play-state: paused; transition: opacity 200ms ease-out; }
+[data-kn-shine][data-mode="hover"] { opacity: var(--knsb-rest); animation-play-state: paused; transition: opacity var(--kn-dur,180ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)); }
 :hover > [data-kn-shine][data-mode="hover"], :focus-visible > [data-kn-shine][data-mode="hover"], :focus-within > [data-kn-shine][data-mode="hover"] { opacity: var(--knsb-o); animation-play-state: running; }
-[data-kn-shine][data-mode="once"] { animation: knsb-spin var(--knsb-dur) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)) 1 both, knsb-fade var(--knsb-dur) ease-out 1 both; }
+[data-kn-shine][data-mode="once"] { animation: knsb-spin var(--knsb-dur) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)) 1 both, knsb-fade var(--knsb-dur) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)) 1 both; }
 [data-kn-shine][data-live="false"] { animation-play-state: paused; }
 [data-kn-shine][data-static="true"] { background: var(--knsb-still); animation: none; opacity: var(--knsb-o); }
 .dark [data-kn-shine], [data-theme="dark"] [data-kn-shine] { --knsb-accent: var(--kn-accent, #a5b4fc); }

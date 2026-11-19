@@ -43,7 +43,8 @@ export function rovingTarget(items: { disabled?: boolean }[], from: number, key:
   const scan = (start: number, dir: 1 | -1) => {
     for (let k = 0; k < n; k++) {
       const i = (((start + dir * k) % n) + n) % n;
-      if (!items[i].disabled) return i;
+      const it = items[i];
+      if (it && !it.disabled) return i;
     }
     return -1;
   };
@@ -69,7 +70,7 @@ const SQUARE: Record<ToggleSize, string> = { sm: "w-7 px-0 pointer-coarse:w-9", 
 
 const BASE = cn(
   "relative inline-flex flex-none cursor-pointer items-center justify-center font-medium whitespace-nowrap select-none",
-  "transition-[background-color,color,box-shadow] duration-150 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+  "transition-[background-color,color,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none",
   "disabled:pointer-events-none disabled:opacity-45 [&_svg]:flex-none",
   focusRing,
 );
@@ -333,7 +334,8 @@ export function ToggleGroup(props: ToggleGroupProps) {
     const to = rovingTarget(items, from, e.key, orientation);
     if (to === null || to < 0) return;
     e.preventDefault();
-    const v = items[to].value;
+    const v = items[to]?.value;
+    if (v === undefined) return;
     setActive(v);
     els.current.get(v)?.focus();
   };

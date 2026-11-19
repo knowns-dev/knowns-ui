@@ -5,6 +5,23 @@ export interface CatalogEntry {
   id: string;
   category: string;
   title: string;
+  /** Filters by tier read these. Both optional: an entry with neither is Free and not new. */
+  pro?: boolean;
+  isNew?: boolean;
+}
+
+/** The tier filter: everything, what is new, Free (not Pro) or Pro. */
+export type CatalogTier = "all" | "new" | "free" | "pro";
+export const CATALOG_TIERS: CatalogTier[] = ["all", "new", "free", "pro"];
+
+/** Whether an entry belongs to a tier filter. */
+export function inTier(item: Pick<CatalogEntry, "pro" | "isNew">, tier: CatalogTier): boolean {
+  return tier === "all" || (tier === "new" ? Boolean(item.isNew) : tier === "pro" ? Boolean(item.pro) : !item.pro);
+}
+
+/** How many entries each tier filter holds. */
+export function tierCounts(items: Pick<CatalogEntry, "pro" | "isNew">[]): Record<CatalogTier, number> {
+  return { all: items.length, new: items.filter((i) => inTier(i, "new")).length, free: items.filter((i) => inTier(i, "free")).length, pro: items.filter((i) => inTier(i, "pro")).length };
 }
 
 /** Categories in the given order, then any others in order of first use. Empty given categories are dropped. */
@@ -19,10 +36,10 @@ export function categoryCounts<T extends CatalogEntry>(items: T[], categories: s
   return [{ id: "all", count: items.length }, ...categories.map((id) => ({ id, count: items.filter((i) => i.category === id).length }))];
 }
 
-/** Items in a category ("all": every item), optionally narrowed by a text query on the title. */
-export function filterCatalog<T extends CatalogEntry>(items: T[], category: string, query = ""): T[] {
+/** Items in a category ("all": every item), optionally narrowed by a text query on the title and by tier. */
+export function filterCatalog<T extends CatalogEntry>(items: T[], category: string, query = "", tier: CatalogTier = "all"): T[] {
   const q = query.trim().toLowerCase();
-  return items.filter((i) => (category === "all" || i.category === category) && (!q || i.title.toLowerCase().includes(q)));
+  return items.filter((i) => (category === "all" || i.category === category) && (!q || i.title.toLowerCase().includes(q)) && inTier(i, tier));
 }
 
 /** "3 examples", "1 example"; nothing for 0 or 1 unless `always`. */

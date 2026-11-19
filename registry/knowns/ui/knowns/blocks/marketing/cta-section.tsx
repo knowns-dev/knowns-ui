@@ -38,7 +38,7 @@ export interface CTASectionProps {
 
 const TONE = {
   plain: "bg-card text-foreground border",
-  accent: "bg-indigo-600 text-white dark:bg-indigo-500",
+  accent: "bg-[color:var(--kn-accent,var(--primary))] text-[color:var(--kn-accent-foreground,var(--primary-foreground))]",
   inverted: "bg-foreground text-background",
 };
 

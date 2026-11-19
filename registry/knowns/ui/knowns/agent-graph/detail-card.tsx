@@ -103,7 +103,7 @@ export function DetailCard({
                 <span
                   className={`flex-none tabular-nums ${
                     !s.outcome
-                      ? "text-indigo-600 dark:text-indigo-400"
+                      ? "text-[color:var(--kn-accent,var(--primary))]"
                       : s.outcome === "failure"
                         ? "font-semibold text-red-600 dark:text-red-400"
                         : "text-muted-foreground"

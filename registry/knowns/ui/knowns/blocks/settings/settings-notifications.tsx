@@ -116,6 +116,7 @@ export function NotificationSettings({ events, channels = DEFAULT_CHANNELS, valu
               <div className="divide-y">
                 {g.rows.map((e) => {
                   const c = channels[0];
+                  if (!c) return null;
                   const offered = chOf(e).includes(c.id);
                   return (
                     <SettingsRow key={e.id} label={e.label} description={e.required ? `${e.description ? `${e.description} ` : ""}Always on.` : e.description} className="py-2.5 first:pt-2.5 last:pb-2.5">

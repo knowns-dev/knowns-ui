@@ -21,7 +21,7 @@ export const TEXT_GATE = `
 @keyframes kntx-in { from { opacity: 0; transform: translateY(.12em) } to { opacity: 1; transform: none } }
 `;
 
-export const EASE = "cubic-bezier(.22,1,.36,1)";
+export const EASE = "var(--kn-ease-out, cubic-bezier(.22,1,.36,1))";
 
 export interface TextShellProps {
   /** Which effect, for data-kn-text and the style key. */

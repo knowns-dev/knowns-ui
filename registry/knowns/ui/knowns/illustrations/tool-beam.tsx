@@ -3,9 +3,9 @@
 
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
-import { AGENT_PALETTE, initials } from "@/registry/knowns/lib/knowns/status";
+import { initials } from "@/registry/knowns/lib/knowns/status";
 import { toolIcon } from "@/registry/knowns/lib/knowns/icons/tool-icons";
-import { cubicPath, type Pt } from "./illust-utils";
+import { cubicPath, hueAt, type Pt } from "./illust-utils";
 import { MOTION_GATE, useLive } from "./use-in-view";
 
 export interface BeamTool {
@@ -57,8 +57,8 @@ export function beamLayout(left: number, right: number): BeamSeat[] {
       const at = { x: HUB.x + dir * (196 - Math.abs(off) * 0.32), y: HUB.y + off };
       const edge = { x: HUB.x + dir * 38, y: HUB.y + off * 0.18 };
       const mid = (at.x + edge.x) / 2;
-      const p = dir < 0 ? [at, { x: mid, y: at.y }, { x: mid, y: edge.y }, edge] : [edge, { x: mid, y: edge.y }, { x: mid, y: at.y }, at];
-      return { side: dir < 0 ? "left" : "right", at, d: cubicPath(p[0], p[1], p[2], p[3]) } as BeamSeat;
+      const p: [Pt, Pt, Pt, Pt] = dir < 0 ? [at, { x: mid, y: at.y }, { x: mid, y: edge.y }, edge] : [edge, { x: mid, y: edge.y }, { x: mid, y: at.y }, at];
+      return { side: dir < 0 ? "left" : "right", at, d: cubicPath(...p) } as BeamSeat;
     });
   };
   return [...side(left, -1), ...side(right, 1)];
@@ -101,7 +101,10 @@ export function ToolBeam({ left = DEFAULT_LEFT, right = DEFAULT_RIGHT, hub, hubL
   const l = left.slice(0, 4);
   const r = right.slice(0, 4);
   const seats = beamLayout(l.length, r.length);
-  const tools = [...l, ...r].map((t, i) => ({ ...t, key: `${i < l.length ? "l" : "r"}:${t.name}`, seat: seats[i], hue: AGENT_PALETTE[i % AGENT_PALETTE.length] }));
+  const tools = [...l, ...r].flatMap((t, i) => {
+    const seat = seats[i];
+    return seat ? [{ ...t, key: `${i < l.length ? "l" : "r"}:${t.name}`, seat, hue: hueAt(i) }] : [];
+  });
   const period = 2.4 / Math.max(0.1, speed);
   const count = tools.length;
   const toggle = (k: string) =>
@@ -159,7 +162,7 @@ export function ToolBeam({ left = DEFAULT_LEFT, right = DEFAULT_RIGHT, hub, hubL
         <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pct(HUB)} aria-hidden="true">
           <div
             className="absolute -inset-[5cqw] rounded-full [animation:kntb-halo_4s_ease-in-out_infinite]"
-            style={{ background: `radial-gradient(closest-side, color-mix(in srgb, ${AGENT_PALETTE[0]} 22%, transparent), transparent)` }}
+            style={{ background: `radial-gradient(closest-side, color-mix(in srgb, ${hueAt(0)} 22%, transparent), transparent)` }}
           />
           <div className={cn("relative grid size-[13cqw] place-items-center rounded-[3.8cqw] text-foreground", SURFACE)}>
             <span className="grid size-[6cqw] place-items-center [&>*]:size-full [&_svg]:size-full">{hub ?? <HubGlyph />}</span>
@@ -190,7 +193,7 @@ export function ToolBeam({ left = DEFAULT_LEFT, right = DEFAULT_RIGHT, hub, hubL
               style={{ ...pct(t.seat.at), ["--hue" as string]: t.hue }}
               className={cn(
                 "absolute grid size-[9.4cqw] -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-[2.8cqw]",
-                "transition-[opacity,scale,box-shadow] duration-300 ease-(--kn-ease-out) hover:scale-105 motion-reduce:transition-none",
+                "transition-[opacity,scale,box-shadow] duration-(--kn-dur-slow) ease-(--kn-ease-out) hover:scale-105 motion-reduce:transition-none",
                 SURFACE,
                 focusRing,
                 dim && "opacity-40",

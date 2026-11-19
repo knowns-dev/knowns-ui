@@ -47,14 +47,14 @@ export function DocsLayout({ children, sidebar, toc, tocFrom = "xl", width = "pr
 /** Previous / next page cards. */
 export function DocsPager({ prev, next, linkAs: L = "a", className }: { prev?: DocsPageLink | null; next?: DocsPageLink | null; linkAs?: ElementType; className?: string }) {
   if (!prev && !next) return null;
-  const card = "group rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  const card = "group rounded-xl border bg-card px-4 py-3 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted/40 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
   return (
     <nav aria-label="Previous and next page" className={cn("grid gap-3 border-t pt-6 sm:grid-cols-2", className)}>
       {prev ? (
         <L href={prev.href} rel="prev" className={card}>
           <div className="text-[12px] text-muted-foreground">Previous</div>
           <div className="mt-0.5 font-medium">
-            <span aria-hidden="true" className="mr-1 inline-block transition-transform ease-(--kn-ease-out) group-hover:-translate-x-0.5">
+            <span aria-hidden="true" className="mr-1 inline-block transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) group-hover:-translate-x-0.5">
               ←
             </span>
             {prev.title}
@@ -68,7 +68,7 @@ export function DocsPager({ prev, next, linkAs: L = "a", className }: { prev?: D
           <div className="text-[12px] text-muted-foreground">Next</div>
           <div className="mt-0.5 font-medium">
             {next.title}
-            <span aria-hidden="true" className="ml-1 inline-block transition-transform ease-(--kn-ease-out) group-hover:translate-x-0.5">
+            <span aria-hidden="true" className="ml-1 inline-block transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) group-hover:translate-x-0.5">
               →
             </span>
           </div>
@@ -101,7 +101,7 @@ export function DocsHelpCard({ title = "Need help?", children, actions, classNam
             href={a.href}
             target={/^https?:/.test(a.href) ? "_blank" : undefined}
             rel={/^https?:/.test(a.href) ? "noopener noreferrer" : undefined}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-card px-3 text-[13px] font-medium transition-colors hover:bg-muted focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring [&_svg]:size-3.5"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-card px-3 text-[13px] font-medium transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring [&_svg]:size-3.5"
           >
             {a.icon}
             {a.label}

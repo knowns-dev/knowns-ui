@@ -35,6 +35,8 @@ export interface UptimeBarProps {
   /** The right end of the row. Default "Today". Pass "" to hide both. */
   endLabel?: string;
   /** Bar height: sm 24px, md 32px. Default "md". */
+  /** Soften the "up" days so only trouble stands out. Default false. */
+  quiet?: boolean;
   size?: "sm" | "md";
   /** Enter (or a click) on a day. The row stays one tab stop; the inspected day is the one you pass here. */
   onDaySelect?: (day: UptimeDay, index: number) => void;
@@ -51,7 +53,7 @@ const BAR: Record<DayStatus, string> = {
 };
 const TIP_POS = { start: "left-0", center: "-translate-x-1/2", end: "right-0" } as const;
 
-export function UptimeBar({ days, label, sublabel, uptime, showUptime = true, startLabel, endLabel = "Today", size = "md", onDaySelect, "aria-label": ariaLabel, className }: UptimeBarProps) {
+export function UptimeBar({ days, label, sublabel, uptime, showUptime = true, startLabel, endLabel = "Today", size = "md", quiet = false, onDaySelect, "aria-label": ariaLabel, className }: UptimeBarProps) {
   const uid = useId();
   const n = days.length;
   const computed = useMemo(() => (uptime === undefined ? uptimePercent(days) : uptime), [days, uptime]);
@@ -107,7 +109,8 @@ export function UptimeBar({ days, label, sublabel, uptime, showUptime = true, st
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              if (onDaySelect) onDaySelect(days[cursor], cursor);
+              const day = days[cursor];
+              if (onDaySelect && day) onDaySelect(day, cursor);
               return;
             }
             const next = moveIndex(cursor, e.key, n);
@@ -133,6 +136,7 @@ export function UptimeBar({ days, label, sublabel, uptime, showUptime = true, st
               className={cn(
                 "min-w-[2px] flex-1 rounded-[2px] transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) @md:rounded-[3px]",
                 BAR[d.status],
+                quiet && d.status === "up" && "opacity-45",
                 onDaySelect && "cursor-pointer",
                 shown !== null && i !== shown && "opacity-50",
               )}

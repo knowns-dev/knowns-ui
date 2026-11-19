@@ -106,7 +106,7 @@ export function Tag({
     <span
       className={cn(
         "inline-flex max-w-full min-w-0 flex-none items-center font-medium whitespace-nowrap text-foreground/90 select-none",
-        "transition-[background-color,box-shadow,color,opacity] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]",
+        "transition-[background-color,box-shadow,color,opacity] duration-(--kn-dur) ease-(--kn-ease-out)",
         SIZE[size],
         selected ? SELECTED : TONE[tone],
         onRemove && SIZE_REMOVABLE[size],
@@ -132,7 +132,7 @@ export function Tag({
           }}
           className={cn(
             "grid flex-none cursor-pointer place-items-center rounded-[5px] text-muted-foreground",
-            "transition-[background-color,color] duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:text-foreground",
+            "transition-[background-color,color] ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:text-foreground",
             "disabled:pointer-events-none",
             size === "sm" ? "size-5 [&_svg]:size-3" : "size-5.5 [&_svg]:size-3.5",
             "pointer-coarse:size-7",
@@ -291,9 +291,10 @@ export function TagGroup({
         return;
       case " ":
       case "Enter":
-        if (selectable && !visible[i].disabled) {
+        const cur = visible[i];
+        if (selectable && cur && !cur.disabled) {
           e.preventDefault();
-          setValue(toggleSelection(value, visible[i].id, selectionMode));
+          setValue(toggleSelection(value, cur.id, selectionMode));
         }
     }
   };
@@ -346,7 +347,7 @@ export function TagGroup({
           aria-expanded={false}
           onClick={() => setExpanded(true)}
           className={cn(
-            "inline-flex cursor-pointer items-center rounded-[8px] px-2 font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground",
+            "inline-flex cursor-pointer items-center rounded-[8px] px-2 font-medium text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground",
             size === "sm" ? "h-6 text-[12px]" : "h-7 text-[13px]",
             focusRing,
           )}

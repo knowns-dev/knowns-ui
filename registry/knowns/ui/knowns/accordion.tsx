@@ -130,7 +130,7 @@ export function AccordionTrigger({ children, className }: { children: ReactNode;
           strokeWidth="1.6"
           strokeLinecap="round"
           aria-hidden="true"
-          className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", on ? "rotate-180" : "rotate-0")}
+          className={cn("size-4 shrink-0 text-muted-foreground transition-transform ease-(--kn-ease-out) duration-(--kn-dur)", on ? "rotate-180" : "rotate-0")}
         >
           <path d="M4 6.5 8 10.5 12 6.5" />
         </svg>
@@ -150,7 +150,7 @@ export function AccordionContent({ children, className }: { children: ReactNode;
       role="region"
       inert={!on}
       className={cn(
-        "grid transition-[grid-template-rows,opacity] duration-200 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+        "grid transition-[grid-template-rows,opacity] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
         on ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
       )}
     >

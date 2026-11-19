@@ -26,6 +26,8 @@ export interface Feature {
   badge?: ReactNode;
   /** Bento only: a picture, chart or live component, on a muted inset above the text. */
   visual?: ReactNode;
+  /** Bento only: classes for the visual's frame, to give one cell more room than its size does (for example "h-48"). */
+  visualClassName?: string;
 }
 
 export interface FeatureGridProps {
@@ -80,7 +82,7 @@ export function FeatureGrid({ eyebrow, title, lead, features, variant = "grid", 
                 bentoSpan(f.size),
               )}
             >
-              {f.visual && <div className={cn("relative mx-2 mt-2 flex-none overflow-hidden rounded-lg bg-muted/60", VISUAL_H[f.size ?? "sm"])}>{f.visual}</div>}
+              {f.visual && <div className={cn("relative mx-2 mt-2 flex-none overflow-hidden rounded-lg bg-muted/60", VISUAL_H[f.size ?? "sm"], f.visualClassName)}>{f.visual}</div>}
               <div className={cn("flex flex-col gap-1.5 px-6 pt-5 pb-6", !f.visual ? "flex-1 justify-end" : f.size === "lg" || f.size === "tall" ? "" : "flex-1")}>
                 <h3 className="flex items-center gap-2 text-[16px] leading-6 font-semibold">
                   {f.icon && <Mark>{f.icon}</Mark>}

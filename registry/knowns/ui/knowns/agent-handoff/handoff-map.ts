@@ -110,7 +110,7 @@ export function forwardTargets(order: string[], to: string): string[] {
 export function stepTarget(order: string[], to: string, current: string, dir: 1 | -1): string {
   const options = [to, ...forwardTargets(order, to)];
   const i = Math.max(0, options.indexOf(current));
-  return options[Math.min(options.length - 1, Math.max(0, i + dir))];
+  return options[Math.min(options.length - 1, Math.max(0, i + dir))] ?? current;
 }
 
 export interface Box {

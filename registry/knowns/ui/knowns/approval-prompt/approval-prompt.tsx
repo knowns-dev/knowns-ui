@@ -16,12 +16,18 @@ export interface ApprovalPromptProps {
   actors?: Actor[];
   /** Called on every decision (with or without a run). */
   onDecision?: (approval: Approval, decision: ApprovalDecision) => void;
+  /** Adds an Edit button between Deny and Approve: the person changes the proposal before deciding. Called with the request; Edit does not resolve it. */
+  onEdit?: (approval: Approval) => void;
   /** How many resolved requests to keep listed under the pending ones. Default 3. */
   history?: number;
   /** Rendered when nothing is waiting and there is no history. Default: nothing. */
   empty?: ReactNode;
   /** Announce new requests to screen readers (an sr-only aria-live region). Default true; turn it off for demos that ask on a timer. */
   live?: boolean;
+  /** Shows that button in its pressed state (scaled to .97), for a scripted demo that decides for the visitor; the real press already scales the same way. */
+  pressed?: ApprovalDecision;
+  /** Replaces the code block under the title: a diff, a cost line, any node. */
+  renderDetail?: (approval: Approval) => ReactNode;
   className?: string;
 }
 
@@ -36,7 +42,7 @@ function ago(ms: number) {
 }
 
 /** Requests waiting for a human decision, newest first, with Approve / Deny. */
-export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsProp, onDecision, history = 3, empty = null, live = true, className }: ApprovalPromptProps) {
+export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsProp, onDecision, onEdit, history = 3, empty = null, live = true, pressed, renderDetail, className }: ApprovalPromptProps) {
   const snap = useAgentSnapshot(run);
   const approvals = snap?.approvals ?? approvalsProp ?? [];
   const actors = snap?.actors ?? actorsProp ?? [];
@@ -68,7 +74,7 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
       <span
         aria-hidden="true"
         style={{ ["--hue" as string]: colors.get(id) ?? "var(--muted-foreground)" }}
-        className={cn("grid flex-none place-items-center rounded-lg border bg-muted/40 text-[11px] font-semibold text-[var(--hue)]", size)}
+        className={cn("grid flex-none place-items-center rounded-lg border [border-color:color-mix(in_srgb,var(--hue)_55%,var(--border))] [background:color-mix(in_srgb,var(--hue)_10%,var(--card))] text-[11px] font-semibold text-[var(--hue)]", size)}
       >
         <span className="grid size-[62%] place-items-center [&>svg]:size-full">{actor ? actorIcon(actor, actor === root) : "?"}</span>
       </span>
@@ -112,14 +118,23 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
               <h3 className="mt-0.5 text-[15px] font-semibold leading-snug">{a.title}</h3>
             </div>
           </div>
-          {a.detail && (
-            <CodeBlock code={a.detail} label={false} copy={false} wrapToggle={false} defaultWrap maxHeight={192} aria-label={`${a.title}, details`} className="mx-4 mb-3 rounded-lg [&_pre]:py-2.5! [&_pre]:text-[12px]! [&_[data-line]]:px-3!" />
-          )}
+          {renderDetail
+            ? renderDetail(a)
+            : a.detail && (
+                <CodeBlock code={a.detail} label={false} copy={false} wrapToggle={false} defaultWrap maxHeight={192} aria-label={`${a.title}, details`} className="mx-4 mb-3 rounded-lg [&_pre]:py-2.5! [&_pre]:text-[12px]! [&_[data-line]]:px-3!" />
+              )}
           <div className="flex justify-end gap-2 border-t bg-muted/30 px-4 py-2.5">
-            <Button variant="secondary" onClick={() => decide(a, "denied")}>
+            <Button variant="secondary" data-pressed={pressed === "denied" || undefined} className="data-[pressed=true]:scale-[.97]" onClick={() => decide(a, "denied")}>
               Deny
             </Button>
-            <Button onClick={() => decide(a, "approved")}>Approve</Button>
+            {onEdit && (
+              <Button variant="ghost" onClick={() => onEdit(a)}>
+                Edit
+              </Button>
+            )}
+            <Button data-pressed={pressed === "approved" || undefined} className="data-[pressed=true]:scale-[.97]" onClick={() => decide(a, "approved")}>
+              Approve
+            </Button>
           </div>
         </article>
       ))}
@@ -129,7 +144,7 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
           {resolved.map((a) => (
             <li key={a.id} className="flex items-center gap-2.5 px-4 py-2.5">
               {avatar(a.actor, "size-6")}
-              <span className="min-w-0 flex-1 truncate">
+              <span className="min-w-0 flex-1 leading-snug">
                 <span className="font-medium">{nameOf(a.actor)}</span> <span className="text-muted-foreground">· {a.title}</span>
               </span>
               <span

@@ -251,7 +251,7 @@ function Row({
           className={cn("block w-full rounded-md text-left outline-none", focusRing)}
         >
           <span className="flex items-center gap-1.5">
-            {!n.read && <span className="size-1.5 shrink-0 rounded-full bg-indigo-500" aria-hidden="true" />}
+            {!n.read && <span className="size-1.5 shrink-0 rounded-full bg-[color:var(--kn-accent,var(--primary))]" aria-hidden="true" />}
             <span className={cn("truncate text-[14px] leading-5", n.read ? "text-foreground/85" : "font-medium text-foreground")}>
               {!n.read && <span className="sr-only">Unread: </span>}
               {n.title}
@@ -318,11 +318,11 @@ export function NotificationCenter({ open: openProp, onOpenChange, label = "Noti
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={() => setOpen(!open)}
-      className={cn("relative grid size-9 place-items-center rounded-[10px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground", focusRing, open && "bg-muted text-foreground")}
+      className={cn("relative grid size-9 place-items-center rounded-[10px] text-foreground/80 transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground", focusRing, open && "bg-muted text-foreground")}
     >
       <BellMark />
       {text && (
-        <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-indigo-600 px-1 text-[10px] font-semibold leading-none tabular-nums text-white">
+        <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--kn-accent,var(--primary))] px-1 text-[10px] font-semibold leading-none tabular-nums text-[color:var(--kn-accent-foreground,var(--primary-foreground))]">
           {text}
         </span>
       )}

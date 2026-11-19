@@ -85,9 +85,11 @@ export function mediaSide(i: number, start: "left" | "right" = "right"): "left" 
 export function parseStat(text: string): { prefix: string; value: number; decimals: number; suffix: string } | null {
   const m = /^([^0-9-]*)(-?\d[\d,]*(?:\.\d+)?)(.*)$/.exec(text.trim());
   if (!m) return null;
-  const raw = m[2].replace(/,/g, "");
-  const decimals = raw.includes(".") ? raw.split(".")[1].length : 0;
-  return { prefix: m[1], value: Number(raw), decimals, suffix: m[3] };
+  // The pattern has three groups and all of them take part in a match.
+  const [, prefix = "", num = "", suffix = ""] = m;
+  const raw = num.replace(/,/g, "");
+  const decimals = raw.includes(".") ? (raw.split(".")[1] ?? "").length : 0;
+  return { prefix, value: Number(raw), decimals, suffix };
 }
 
 /* ── Copy ── */

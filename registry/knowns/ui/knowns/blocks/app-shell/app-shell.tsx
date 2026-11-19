@@ -60,6 +60,10 @@ export interface AppShellProps {
   groups?: AppShellGroup[];
   /** The bottom of the sidebar: a usage meter, an upgrade card. Hidden in the rail. */
   sidebarFooter?: ReactNode;
+  /** Expanded sidebar width in px. Default 256. */
+  sidebarWidth?: number;
+  /** Extra classes on the sidebar panel, e.g. to tighten its rows. */
+  sidebarClassName?: string;
 
   /* Topbar */
   breadcrumb?: BreadcrumbItem[];
@@ -145,6 +149,8 @@ export function AppShell({
   linkAs,
   groups = [],
   sidebarFooter,
+  sidebarWidth,
+  sidebarClassName,
   breadcrumb,
   search,
   notifications,
@@ -165,10 +171,10 @@ export function AppShell({
   return (
     <SidebarProvider storageKey={storageKey} defaultCollapsed={defaultCollapsed} hotkey={hotkey} mobileBelow={mobileBelow} className={cn(fill ? "h-full min-h-0" : "min-h-dvh", className)}>
       {/* Without a switcher the sheet needs its own top row for the close button. */}
-      <Sidebar label={named(label)} landmark={!embedded} sticky={!fill} sheetHeader={workspaces && workspaces.length > 0 ? undefined : label}>
+      <Sidebar label={named(label)} width={sidebarWidth} className={sidebarClassName} landmark={!embedded} sticky={!fill} sheetHeader={workspaces && workspaces.length > 0 ? undefined : label}>
         {workspaces && workspaces.length > 0 && (
           <SidebarHeader>
-            <SidebarSwitcher workspaces={workspaces} value={workspace ?? workspaces[0].id} onChange={onWorkspaceChange} onCreate={onCreateWorkspace} />
+            <SidebarSwitcher workspaces={workspaces} value={workspace ?? workspaces[0]?.id ?? ""} onChange={onWorkspaceChange} onCreate={onCreateWorkspace} />
           </SidebarHeader>
         )}
         <SidebarContent className={cn(!workspaces?.length && "pt-3")}>

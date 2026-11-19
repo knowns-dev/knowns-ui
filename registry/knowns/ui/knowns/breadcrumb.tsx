@@ -78,12 +78,12 @@ export function Breadcrumb({ items, maxItems = 4, keepStart = 1, keepEnd = 2, se
       );
     if (item.href)
       return (
-        <a href={item.href} onClick={item.onClick} className={cn(base, "text-muted-foreground transition-colors duration-150 hover:text-foreground")}>
+        <a href={item.href} onClick={item.onClick} className={cn(base, "text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:text-foreground")}>
           {inner}
         </a>
       );
     return (
-      <button type="button" onClick={item.onClick} className={cn(base, "cursor-pointer text-muted-foreground transition-colors duration-150 hover:text-foreground")}>
+      <button type="button" onClick={item.onClick} className={cn(base, "cursor-pointer text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:text-foreground")}>
         {inner}
       </button>
     );
@@ -113,7 +113,7 @@ export function Breadcrumb({ items, maxItems = 4, keepStart = 1, keepEnd = 2, se
                   type="button"
                   aria-label={`Show ${hidden.length} more`}
                   className={cn(
-                    "grid h-6 min-w-7 cursor-pointer place-items-center rounded-[6px] px-1 text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+                    "grid h-6 min-w-7 cursor-pointer place-items-center rounded-[6px] px-1 text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
                     focusRing,
                   )}
                 >

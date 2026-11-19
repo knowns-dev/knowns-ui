@@ -20,6 +20,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cn, focusRing, localRect } from "@/registry/knowns/lib/knowns/utils";
+import { EASE as KN_EASE, MOTION } from "@/registry/knowns/lib/knowns/motion-utils";
 import { modelIcon } from "@/registry/knowns/lib/knowns/icons/model-icons";
 import { toolMark } from "@/registry/knowns/lib/knowns/icons/tool-icons";
 import { formatUsd } from "@/registry/knowns/lib/knowns/status";
@@ -41,6 +42,7 @@ import {
   fleetTotals,
   formatDuration,
   fleetColumns,
+  fleetState,
   hiddenStats,
   inlineExpanded,
   mainSummary,
@@ -100,7 +102,9 @@ export type FleetDensity = "compact" | "comfortable";
 
 /* ── Tokens ── */
 
-const EASE = "cubic-bezier(.22,1,.36,1)";
+const EASE = KN_EASE.out;
+// A constant loop (the lit packet along a wire): the time is a period, not a transition.
+const PACKET_LOOP_MS = 1800;
 /** Indent per nesting level. */
 const NEST = 56;
 /** Indent of the tree from the left edge of its main card. */
@@ -178,7 +182,7 @@ const LIST_TASK_X = 16 + 32 + 12 + 176 + 12;
 /** A first-level sub-row's content edge (tree indent 32 + item 24 + row padding 8), and each level deeper (20 + 24). */
 const SUB_LEFT = 64;
 const SUB_STEP = 44;
-const ROW_HOVER = "transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)]";
+const ROW_HOVER = "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)]";
 
 const WIRE = "[--fleet-wire:rgb(59_110_230/0.6)] dark:[--fleet-wire:rgb(120_156_255/0.72)] [--fleet-head:rgb(59_110_230)] dark:[--fleet-head:rgb(190_210_255)]";
 
@@ -320,7 +324,8 @@ function Logo({ agent, z, size }: { agent: FleetAgent; z: Sizes; size?: string }
   );
 }
 
-function Pill({ state, z }: { state: FleetState; z: Sizes }) {
+function Pill({ state: given, z }: { state: FleetState; z: Sizes }) {
+  const state = fleetState(given);
   const Icon = PILL_ICON[state];
   return (
     <span className={cn("inline-flex flex-none items-center rounded-md font-medium whitespace-nowrap", z.pill, PILL[state])}>
@@ -504,9 +509,9 @@ function TasksPopover({
         }}
         className={cn(
           "flex min-h-11 cursor-default flex-col justify-center rounded-lg px-2.5 py-1.5 outline-none",
-          "transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--fleet-wire)]",
+          "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--fleet-wire)]",
           s.summary && "cursor-pointer",
-          fresh(s.id) && "animate-[kn-rise_200ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
+          fresh(s.id) && "animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none",
         )}
       >
         <span className="flex min-w-0 items-center gap-3">
@@ -542,7 +547,7 @@ function TasksPopover({
         "z-[60] flex flex-col gap-2 overflow-auto rounded-2xl bg-popover p-2 pt-3 text-popover-foreground",
         "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent),0_18px_40px_-14px_rgb(0_0_0/0.4),0_2px_6px_rgb(0_0_0/0.08)]",
         "dark:[background:color-mix(in_srgb,var(--popover)_80%,#000)]",
-        ready && "animate-[kn-rise_160ms_var(--kn-ease-out,cubic-bezier(.22,1,.36,1))_both] motion-reduce:animate-none",
+        ready && "animate-[kn-rise_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none",
       )}
     >
       <div className="flex items-baseline justify-between px-2.5">
@@ -601,7 +606,10 @@ interface Dot {
   y: number;
 }
 
-const lengthOf = (pts: Pt[]) => pts.slice(1).reduce((n, p, i) => n + Math.abs(p.x - pts[i].x) + Math.abs(p.y - pts[i].y), 0);
+const lengthOf = (pts: Pt[]) => pts.slice(1).reduce((n, p, i) => {
+    const q = pts[i];
+    return q ? n + Math.abs(p.x - q.x) + Math.abs(p.y - q.y) : n;
+  }, 0);
 
 /* ── Fleet ── */
 
@@ -664,7 +672,8 @@ export function AgentFleet({
   const [taskFor, setTaskFor] = useState<{ id: string; anchor: HTMLElement } | null>(null);
   const shown = fleet.find((a) => a.id === shownId) ?? null;
   const depths = useMemo(() => (shown ? depthMap(shown) : new Map<string, number>()), [shown]);
-  const trail = shown && path.length ? findPath(shown, path[path.length - 1]) : [];
+  const tip = path[path.length - 1];
+  const trail = shown && tip !== undefined ? findPath(shown, tip) : [];
   const panelRoot = trail.length > 1 ? trail[trail.length - 1] : shown;
   const drilled = !!shown && !!panelRoot && panelRoot !== shown;
   const limit = expandAll ? EXPAND_MAX : INLINE;
@@ -687,7 +696,7 @@ export function AgentFleet({
     cancelAnims();
     const dx = dir === "left" ? -14 : 14;
     const out: Keyframe[] = reduced ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateX(${dx}px)` }];
-    const ms = reduced ? 140 : 180;
+    const ms = reduced ? MOTION.fast : MOTION.base;
     for (const el of [treeCol.current, svg.current]) if (el) anims.current.push(el.animate(out, { duration: ms, easing: EASE, fill: "forwards" }));
     timer.current = setTimeout(then, ms);
   };
@@ -864,12 +873,12 @@ export function AgentFleet({
       enterFrom.current = null;
       const go = (el: Element, k: Keyframe[], o: KeyframeAnimationOptions) => anims.current.push(el.animate(k, { easing: EASE, fill: "both", ...o }));
       if (reduced) {
-        go(col, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+        go(col, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.base });
         return;
       }
       const sx = from ? (from === "right" ? 14 : -14) : 0;
       go(col, [{ opacity: 0, transform: `translate(${sx}px, ${sx ? 0 : -4}px)` }, { opacity: 1, transform: "none" }], { duration: 240 });
-      col.querySelectorAll("[data-fleet-node]").forEach((el, i) => i < 10 && go(el, [{ opacity: 0, transform: "translateX(-6px)" }, { opacity: 1, transform: "none" }], { duration: 240, delay: 40 + i * 35 }));
+      col.querySelectorAll("[data-fleet-node]").forEach((el, i) => i < 10 && go(el, [{ opacity: 0, transform: "translateX(-6px)" }, { opacity: 1, transform: "none" }], { duration: MOTION.base, delay: 40 + i * 35 }));
       return;
     }
     const hasKids = drilled || !!shown.children?.length;
@@ -884,26 +893,26 @@ export function AgentFleet({
     const from = enterFrom.current;
     enterFrom.current = null;
     if (reduced) {
-      run(col, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
-      run(s, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
+      run(col, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.base });
+      run(s, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.base });
       return;
     }
     // Drilling: the new level slides in from its side while its connectors draw.
     const sx = from ? (from === "right" ? 18 : -18) : 0;
-    if (sx) run(col, [{ transform: `translateX(${sx}px)` }, { transform: "none" }], { duration: 280 });
-    col.querySelectorAll("[data-fleet-plain]").forEach((el) => run(el, [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 260 }));
+    if (sx) run(col, [{ transform: `translateX(${sx}px)` }, { transform: "none" }], { duration: MOTION.slow });
+    col.querySelectorAll("[data-fleet-plain]").forEach((el) => run(el, [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: MOTION.base }));
 
     const SPEED = 1.5; // px per ms
     const dur = (len: number) => Math.max(150, Math.min(340, len / SPEED));
     const schedule = (parentId: string, start: number) => {
-      run(s?.querySelector(`[data-dot="${CSS.escape(parentId)}"]`), [{ transform: "scale(.9)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: 180, delay: start });
+      run(s?.querySelector(`[data-dot="${CSS.escape(parentId)}"]`), [{ transform: "scale(.9)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: MOTION.base, delay: start });
       geo.wires
         .filter((wi) => wi.parent === parentId)
         .forEach((wi, i) => {
           const t = start + 70 + i * 60;
           const d = dur(wi.len);
           // pathLength=1: the line grows at an even pace along the trunk and around the elbow.
-          run(s?.querySelector(`[data-wire="${CSS.escape(wi.id)}"]`), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: d, delay: t, easing: "cubic-bezier(.22,1,.36,1)" });
+          run(s?.querySelector(`[data-wire="${CSS.escape(wi.id)}"]`), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: d, delay: t, easing: EASE });
           run(
             s?.querySelector(`[data-head="${CSS.escape(wi.id)}"]`),
             [
@@ -911,11 +920,11 @@ export function AgentFleet({
               { strokeDashoffset: -0.88, opacity: 1, offset: 0.92 },
               { strokeDashoffset: -0.94, opacity: 0 },
             ],
-            { duration: d, delay: t, easing: "cubic-bezier(.22,1,.36,1)" },
+            { duration: d, delay: t, easing: EASE },
           );
           const arrive = t + d;
           const card = col.querySelector(`[data-fleet-node="${CSS.escape(wi.id)}"]`);
-          run(card, [{ opacity: 0, transform: "translateX(-10px)" }, { opacity: 1, transform: "none" }], { duration: 260, delay: arrive - 50 });
+          run(card, [{ opacity: 0, transform: "translateX(-10px)" }, { opacity: 1, transform: "none" }], { duration: MOTION.base, delay: arrive - 50 });
           // A soft glow on the card's left edge as the line touches it.
           run(card?.querySelector("[data-contact]"), [{ opacity: 0 }, { opacity: 0.9, offset: 0.3 }, { opacity: 0 }], { duration: 560, delay: arrive - 30, fill: "none" });
           schedule(wi.id, arrive + 40);
@@ -946,7 +955,7 @@ export function AgentFleet({
             { opacity: 1, offset: 0.8 },
             { strokeDashoffset: -0.9, opacity: 0 },
           ],
-          { duration: 1800, delay: 1200 + i * 240, iterations: Infinity, easing: "linear" },
+          { duration: PACKET_LOOP_MS, delay: 1200 + i * 240, iterations: Infinity, easing: "linear" },
         ),
       );
     });
@@ -1098,7 +1107,7 @@ export function AgentFleet({
       "aria-level": depths.get(a.id) ?? 1,
       "aria-expanded": kids.length ? !collapsed : undefined,
       "aria-selected": a.id === activeId,
-      "aria-label": `${a.name}, ${FLEET_LABEL[a.state]}${a.task ? `, ${a.task}` : ""}${tasks ? `, ${tasks} ${tasks === 1 ? "task" : "tasks"}` : ""}${hidden ? `, ${hidden.count} sub-agents collapsed` : ""}`,
+      "aria-label": `${a.name}, ${FLEET_LABEL[fleetState(a.state)]}${a.task ? `, ${a.task}` : ""}${tasks ? `, ${tasks} ${tasks === 1 ? "task" : "tasks"}` : ""}${hidden ? `, ${hidden.count} sub-agents collapsed` : ""}`,
       tabIndex: a.id === rows[active]?.agent.id ? 0 : -1,
       onFocus: (e: FocusEvent<HTMLDivElement>) => e.target === e.currentTarget && setActiveId(a.id),
     } as const;
@@ -1178,7 +1187,7 @@ export function AgentFleet({
           style={{ maxWidth: z.sub, minWidth: z.subMin }}
           className={cn(
             CARD,
-            "w-full cursor-pointer transition-[border-color,outline-color] duration-200 hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
+            "w-full cursor-pointer transition-[border-color,outline-color] duration-(--kn-dur) ease-(--kn-ease-out) hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
             z.pad,
             // Selected (its Tasks are open): a soft accent ring, set off from the card.
             selected && "outline-2 outline-offset-[3px] [outline-color:var(--fleet-wire)]",
@@ -1268,7 +1277,7 @@ export function AgentFleet({
                       <button
                         type="button"
                         onClick={() => navigate(trail.slice(1, i + 1).map((x) => x.id))}
-                        className={cn("cursor-pointer truncate rounded-md px-1 text-muted-foreground transition-colors hover:text-foreground", focusRing)}
+                        className={cn("cursor-pointer truncate rounded-md px-1 text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground", focusRing)}
                       >
                         {a.name}
                       </button>
@@ -1405,7 +1414,7 @@ export function AgentFleet({
           CARD,
           "block w-full cursor-pointer text-left",
           z.pad,
-          "transition-[opacity,border-color] duration-300 ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
+          "transition-[opacity,border-color] duration-(--kn-dur) ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] motion-reduce:transition-none",
           "hover:[border-color:color-mix(in_srgb,var(--foreground)_16%,transparent)]",
           isOpen && "[border-color:color-mix(in_srgb,var(--foreground)_20%,transparent)]",
           dim && "opacity-45 hover:opacity-100 focus-visible:opacity-100",

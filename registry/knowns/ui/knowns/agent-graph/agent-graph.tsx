@@ -96,6 +96,8 @@ export interface AgentGraphProps {
   intro?: "grow" | "fade" | false;
   /** "grow": ms between nodes. Default 180; scaled down so the whole intro stays near 2.5s. */
   introSpeed?: number;
+  /** Colour-code every agent node: its border and surface take the agent's colour, so a team of agents with the same provider logo can be told apart. Default false (quiet nodes). */
+  tintAgents?: boolean;
   /** Imperative handle: `replayIntro()`. */
   ref?: Ref<AgentGraphHandle>;
   className?: string;
@@ -151,6 +153,7 @@ export function AgentGraph(props: AgentGraphProps) {
     className,
     intro = false,
     introSpeed = 180,
+    tintAgents = false,
     width: frameW,
     fit = "contain",
     zoomControls,
@@ -174,7 +177,9 @@ export function AgentGraph(props: AgentGraphProps) {
     const el = rootRef.current;
     if (!el) return;
     setWidth(el.clientWidth);
-    const ro = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)));
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) setWidth(Math.round(entry.contentRect.width));
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -432,9 +437,10 @@ export function AgentGraph(props: AgentGraphProps) {
     e.currentTarget.setPointerCapture(e.pointerId);
     const v = view.current;
     const pts = [...pointers.current.values()];
+    const [p0, p1] = pts;
     gesture.current =
-      pts.length >= 2
-        ? { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2, vx: v.x, vy: v.y, moved: true, dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) }
+      p0 && p1
+        ? { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2, vx: v.x, vy: v.y, moved: true, dist: Math.hypot(p0.x - p1.x, p0.y - p1.y) }
         : { x: e.clientX, y: e.clientY, vx: v.x, vy: v.y, moved: false };
   };
   const onStagePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -443,11 +449,12 @@ export function AgentGraph(props: AgentGraphProps) {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const pts = [...pointers.current.values()];
     const v = view.current;
-    if (pts.length >= 2 && g.dist) {
-      const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    const [p0, p1] = pts;
+    if (p0 && p1 && g.dist) {
+      const d = Math.hypot(p0.x - p1.x, p0.y - p1.y);
       const r = e.currentTarget.getBoundingClientRect();
       const k = layoutScale(e.currentTarget);
-      zoomAt(d / g.dist, ((pts[0].x + pts[1].x) / 2 - r.left) / k.x, ((pts[0].y + pts[1].y) / 2 - r.top) / k.y, false);
+      zoomAt(d / g.dist, ((p0.x + p1.x) / 2 - r.left) / k.x, ((p0.y + p1.y) / 2 - r.top) / k.y, false);
       g.dist = d;
       return;
     }
@@ -654,7 +661,7 @@ export function AgentGraph(props: AgentGraphProps) {
         : geo.stacked.has(a.id)
           ? narrow ? 34 : 42
           : narrow ? 36 : 48;
-  const labelRoom = (a: Actor) => Math.max(64, Math.min(160, geo.room.get(a.id) ?? 120));
+  const labelRoom = (a: Actor) => Math.max(narrow ? 68 : 64, Math.min(narrow ? 96 : 160, geo.room.get(a.id) ?? 120));
 
   const iconFor = (a: Actor): ReactNode => actorIcon(a, a === lead);
 
@@ -1002,12 +1009,18 @@ export function AgentGraph(props: AgentGraphProps) {
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex gap-1.5" aria-live="polite">
               {blocked.length > 0 && (
-                <Badge tone="warning" size="lg" shape="pill" icon={<ClockGlyph />} onClick={() => select(blocked[0].id)}>
+                <Badge tone="warning" size="lg" shape="pill" icon={<ClockGlyph />} onClick={() => {
+                  const first = blocked[0];
+                  if (first) select(first.id);
+                }}>
                   {blocked.length} {blocked.length === 1 ? "needs" : "need"} you
                 </Badge>
               )}
               {failed.length > 0 && (
-                <Badge tone="danger" size="lg" shape="pill" icon={<span className="grid place-items-center text-[12px] font-bold leading-none">!</span>} onClick={() => select(failed[0].id)}>
+                <Badge tone="danger" size="lg" shape="pill" icon={<span className="grid place-items-center text-[12px] font-bold leading-none">!</span>} onClick={() => {
+                  const first = failed[0];
+                  if (first) select(first.id);
+                }}>
                   {failed.length} failed
                 </Badge>
               )}
@@ -1047,10 +1060,10 @@ export function AgentGraph(props: AgentGraphProps) {
                   className="pointer-events-none absolute rounded-full"
                   style={{
                     // The agent ring is an ellipse (vertical radius × aspect); the glow follows it.
-                    left: targets.get(leadId)!.x - geo.radial.radii[0] * 1.1,
-                    top: targets.get(leadId)!.y - geo.radial.radii[0] * geo.radial.aspect * 1.1,
-                    width: geo.radial.radii[0] * 2.2,
-                    height: geo.radial.radii[0] * geo.radial.aspect * 2.2,
+                    left: targets.get(leadId)!.x - (geo.radial.radii[0] ?? 0) * 1.1,
+                    top: targets.get(leadId)!.y - (geo.radial.radii[0] ?? 0) * geo.radial.aspect * 1.1,
+                    width: (geo.radial.radii[0] ?? 0) * 2.2,
+                    height: (geo.radial.radii[0] ?? 0) * geo.radial.aspect * 2.2,
                     background: `radial-gradient(closest-side, color-mix(in srgb, ${hueOf(leadId)} 16%, transparent), color-mix(in srgb, ${hueOf(leadId)} 5%, transparent) 55%, transparent)`,
                   }}
                 />
@@ -1086,6 +1099,7 @@ export function AgentGraph(props: AgentGraphProps) {
                 const state = stateOf(a);
                 const isLead = a === lead;
                 const alert = state === "blocked" || state === "failed";
+                const tinted = tintAgents && a.type === "agent" && !alert;
                 const rate = perMinute.get(a.id) ?? 0;
                 const sub = alert
                   ? STATE_LABEL[state]
@@ -1131,8 +1145,10 @@ export function AgentGraph(props: AgentGraphProps) {
                         "absolute left-0 top-0 grid -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center border bg-card text-foreground",
                         "transition-[border-color,box-shadow] duration-(--kn-dur-fast) ease-(--kn-ease-out)",
                         // Quiet by default: a faint hairline, a deeper surface and a thin light on the top edge.
-                        !isLead && !(a.type === "agent" && state === "busy") && !alert && "[border-color:color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:[border-color:color-mix(in_srgb,var(--foreground)_18%,transparent)]",
-                        !alert && "dark:[background:color-mix(in_srgb,var(--card)_70%,#000)]",
+                        !isLead && !(a.type === "agent" && state === "busy") && !alert && !tinted && "[border-color:color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:[border-color:color-mix(in_srgb,var(--foreground)_18%,transparent)]",
+                        !alert && !tinted && "dark:[background:color-mix(in_srgb,var(--card)_70%,#000)]",
+                        tinted && !isLead && "[border-color:color-mix(in_srgb,var(--hue)_55%,var(--border))] [background:color-mix(in_srgb,var(--hue)_10%,var(--card))]",
+                        tinted && isLead && "[background:color-mix(in_srgb,var(--hue)_10%,var(--card))]",
                         !isLead && selected !== a.id && "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_6%,transparent),0_1px_2px_rgb(0_0_0/0.06),0_8px_20px_-12px_rgb(0_0_0/0.5)]",
                         "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:[outline-color:var(--hue)]",
                         isLead ? "rounded-[17px]" : geo.stacked.has(a.id) ? "rounded-[11px]" : "rounded-[14px]",
@@ -1209,9 +1225,8 @@ export function AgentGraph(props: AgentGraphProps) {
                         a.type === "tool" && "group-data-[zoom=far]/stage:hidden",
                       )}
                     >
-                      <div className={cn("max-w-full truncate font-semibold", narrow ? "text-[11px]" : "text-[12.5px]")}>
-                        {narrow ? a.short ?? a.label : a.label}
-                      </div>
+                      {/* Narrow: the name wraps to two lines at its own words (no hyphen breaks) instead of being cut. */}
+                      <div className={cn("max-w-full font-semibold", narrow ? "line-clamp-2 text-[11px] leading-[1.15] break-normal hyphens-none" : "truncate text-[12.5px]")}>{a.label}</div>
                       {alert ? (
                         <div
                           className={cn(

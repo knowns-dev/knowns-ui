@@ -3,7 +3,7 @@ import { cn } from "@/registry/knowns/lib/knowns/utils";
 
 /** The surface of a field: card fill, a hairline ring and a whisper of shadow. */
 export const SURFACE =
-  "bg-card text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_1px_2px_rgb(0_0_0/0.04)] transition-[box-shadow] duration-200 ease-out dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]";
+  "bg-card text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_1px_2px_rgb(0_0_0/0.04)] transition-[box-shadow] duration-(--kn-dur) ease-(--kn-ease-out) dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]";
 
 /** Shared field look: hairline ring, soft focus ring, red when invalid. Put it on a native input, select or textarea. */
 export const fieldClass = cn(

@@ -133,7 +133,7 @@ export function masonry<T>(items: T[], cols: number, weight: (it: T) => number):
   items.forEach((it, i) => {
     let c = 0;
     for (let j = 1; j < n; j++) if (h[j] < h[c] - 0.001) c = j;
-    out[c].push(i);
+    out[c]?.push(i); // c is always one of the n columns
     h[c] += weight(it);
   });
   return out;

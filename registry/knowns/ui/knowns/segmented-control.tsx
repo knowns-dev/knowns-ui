@@ -18,7 +18,7 @@ export interface SegmentedOption {
 export type SegmentedTone = "neutral" | "accent";
 
 /** The sliding thumb as a cva map. `accent` fills it with `--kn-accent` (default `--primary`) and the chosen label with `--kn-accent-foreground`. */
-export const segmentedThumbVariants = cva("absolute inset-y-0.5 left-0.5 rounded-[8px] transition-[translate] duration-[var(--kn-dur-fast,120ms)] ease-[var(--kn-ease-inout,cubic-bezier(.65,0,.35,1))] motion-reduce:transition-none", {
+export const segmentedThumbVariants = cva("absolute inset-y-0.5 left-0.5 rounded-[8px] transition-[translate] duration-(--kn-dur-fast) ease-(--kn-ease-inout) motion-reduce:transition-none", {
   variants: {
     tone: {
       neutral: "bg-card shadow-[0_0_0_1px_var(--border),0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[color-mix(in_srgb,var(--foreground)_12%,var(--card))]",
@@ -73,6 +73,7 @@ export function SegmentedControl({
     if ((e.key === "Home" || e.key === "End") && !disabled) {
       e.preventDefault();
       const edge = options[e.key === "Home" ? 0 : options.length - 1];
+      if (!edge) return;
       set(edge.value);
       ref.current?.querySelector<HTMLButtonElement>(`[data-value="${CSS.escape(edge.value)}"]`)?.focus();
       return;
@@ -81,6 +82,7 @@ export function SegmentedControl({
     if (!d || disabled) return;
     e.preventDefault();
     const next = options[(index + d + options.length) % options.length];
+    if (!next) return;
     set(next.value);
     ref.current?.querySelector<HTMLButtonElement>(`[data-value="${CSS.escape(next.value)}"]`)?.focus();
   };

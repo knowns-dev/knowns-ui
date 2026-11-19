@@ -1,100 +1,21 @@
 "use client";
 /** @registry name="date-range-picker" type="ui" title="Date range picker" description="Range or single date in a popover: one or two month calendar, presets, keyboard grid navigation, min/max and disabled days, Field label/hint/error. Intl only, no date library." */
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Popover } from "./popover";
+import { SURFACE } from "./field-class";
+import { Calendar } from "./calendar/calendar";
+import { addDays, addMonths, clampDay, outOfBounds, sameDay, startOfDay, startOfMonth, type DateRange } from "./calendar/calendar-utils";
 
-/** A day range. `to` is missing while only the start is picked, and always in single-date mode. */
-export interface DateRange {
-  from: Date;
-  to?: Date;
-}
+/* The calendar grid and the date helpers live in ./calendar; they are re-exported here so imports of this file keep working. */
+export { Calendar, type CalendarProps } from "./calendar/calendar";
+export { addDays, addMonths, clampDay, compareDay, dayKey, inRange, monthDays, moveFocus, outOfBounds, pickDay, sameDay, startOfDay, startOfMonth, weekdayNames, type DateRange } from "./calendar/calendar-utils";
 
 export interface DatePreset {
   id: string;
   label: string;
   range: DateRange;
-}
-
-/* ── Pure date helpers (exported for tests). Local days, no date library. ── */
-
-export const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-export const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-export const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
-/** Same day of month `n` months later, clamped to that month's length (Jan 31 + 1 → Feb 28/29). */
-export function addMonths(d: Date, n: number) {
-  const first = new Date(d.getFullYear(), d.getMonth() + n, 1);
-  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-  return new Date(first.getFullYear(), first.getMonth(), Math.min(d.getDate(), last));
-}
-export const sameDay = (a?: Date | null, b?: Date | null) => !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-/** -1, 0 or 1 by calendar day (time of day ignored). */
-export const compareDay = (a: Date, b: Date) => Math.sign(startOfDay(a).getTime() - startOfDay(b).getTime());
-export const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-/** True when `d` is outside [min, max] (either bound optional, inclusive). */
-export function outOfBounds(d: Date, min?: Date, max?: Date) {
-  return (!!min && compareDay(d, min) < 0) || (!!max && compareDay(d, max) > 0);
-}
-
-export function clampDay(d: Date, min?: Date, max?: Date) {
-  if (min && compareDay(d, min) < 0) return startOfDay(min);
-  if (max && compareDay(d, max) > 0) return startOfDay(max);
-  return startOfDay(d);
-}
-
-/**
- * The 6×7 days shown for a month, starting on `weekStartsOn` (0 Sunday … 6 Saturday). Days of
- * neighbouring months are `null`, so two months side by side don't repeat days.
- */
-export function monthDays(year: number, month: number, weekStartsOn = 1): (Date | null)[] {
-  const first = new Date(year, month, 1);
-  const lead = (first.getDay() - weekStartsOn + 7) % 7;
-  const count = new Date(year, month + 1, 0).getDate();
-  const cells: (Date | null)[] = Array.from({ length: lead }, () => null);
-  for (let day = 1; day <= count; day++) cells.push(new Date(year, month, day));
-  while (cells.length < 42) cells.push(null);
-  return cells;
-}
-
-/** Applies a click: the first click starts a range, the second ends it (in either order), a third starts over. */
-export function pickDay(range: DateRange | null | undefined, day: Date, mode: "range" | "single" = "range"): DateRange {
-  const d = startOfDay(day);
-  if (mode === "single" || !range || range.to) return { from: d };
-  return compareDay(d, range.from) < 0 ? { from: d, to: range.from } : { from: range.from, to: d };
-}
-
-/** Is `d` strictly inside the range (or the preview range while the end is still being picked)? */
-export function inRange(d: Date, from?: Date, to?: Date | null) {
-  if (!from || !to) return false;
-  const [a, b] = compareDay(from, to) <= 0 ? [from, to] : [to, from];
-  return compareDay(d, a) > 0 && compareDay(d, b) < 0;
-}
-
-/** Where the keyboard moves focus in the grid; null for keys it doesn't handle. */
-export function moveFocus(d: Date, key: string, opts: { weekStartsOn?: number; shift?: boolean } = {}): Date | null {
-  const ws = opts.weekStartsOn ?? 1;
-  switch (key) {
-    case "ArrowLeft":
-      return addDays(d, -1);
-    case "ArrowRight":
-      return addDays(d, 1);
-    case "ArrowUp":
-      return addDays(d, -7);
-    case "ArrowDown":
-      return addDays(d, 7);
-    case "Home":
-      return addDays(d, -((d.getDay() - ws + 7) % 7));
-    case "End":
-      return addDays(d, 6 - ((d.getDay() - ws + 7) % 7));
-    case "PageUp":
-      return addMonths(d, opts.shift ? -12 : -1);
-    case "PageDown":
-      return addMonths(d, opts.shift ? 12 : 1);
-    default:
-      return null;
-  }
 }
 
 /** Common ranges ending today. */
@@ -113,16 +34,6 @@ export function defaultPresets(today = new Date()): DatePreset[] {
   ];
 }
 
-/** Narrow weekday names in display order, e.g. ["M", "T", …] - plus long names for screen readers. */
-export function weekdayNames(locale?: string, weekStartsOn = 1): { short: string; long: string }[] {
-  const short = new Intl.DateTimeFormat(locale, { weekday: "narrow" });
-  const long = new Intl.DateTimeFormat(locale, { weekday: "long" });
-  // Jan 4 2026 is a Sunday.
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(2026, 0, 4 + ((weekStartsOn + i) % 7));
-    return { short: short.format(d), long: long.format(d) };
-  });
-}
 
 /** "Mar 3 – Mar 9, 2026", "Mar 3, 2026" or "" - via Intl.DateTimeFormat.formatRange where available. */
 export function formatRange(range: DateRange | null | undefined, locale?: string): string {
@@ -135,240 +46,6 @@ export function formatRange(range: DateRange | null | undefined, locale?: string
 
 /** Same range (by day)? */
 export const sameRange = (a?: DateRange | null, b?: DateRange | null) => (!a && !b) || (!!a && !!b && sameDay(a.from, b.from) && (sameDay(a.to, b.to) || (!a.to && !b.to)));
-
-/* ── Calendar ── */
-
-export interface CalendarProps {
-  value?: DateRange | null;
-  /** Every click: the start alone, then the full range. */
-  onValueChange?: (value: DateRange) => void;
-  /** Once a range is complete (or a day picked in single mode). */
-  onComplete?: (value: DateRange) => void;
-  mode?: "range" | "single";
-  /** Months side by side. Default 1. */
-  months?: 1 | 2;
-  min?: Date;
-  max?: Date;
-  /** Extra days that can't be picked (weekends, holidays…). */
-  isDateDisabled?: (d: Date) => boolean;
-  /** 0 Sunday, 1 Monday (default). */
-  weekStartsOn?: number;
-  locale?: string;
-  /** Focus the selected day (or today) when mounted, e.g. inside a popover. */
-  autoFocus?: boolean;
-  className?: string;
-}
-
-const Arrow = ({ dir }: { dir: "left" | "right" }) => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-4">
-    <path d={dir === "left" ? "M10 3.5 5.5 8l4.5 4.5" : "M6 3.5 10.5 8 6 12.5"} />
-  </svg>
-);
-
-/** Inline month grid(s) with range selection and full keyboard support. Used by DateRangePicker; usable alone. */
-export function Calendar({
-  value,
-  onValueChange,
-  onComplete,
-  mode = "range",
-  months = 1,
-  min,
-  max,
-  isDateDisabled,
-  weekStartsOn = 1,
-  locale,
-  autoFocus,
-  className,
-}: CalendarProps) {
-  const today = useMemo(() => startOfDay(new Date()), []);
-  const initial = clampDay(value?.from ?? today, min, max);
-  const [view, setView] = useState(() => {
-    // Show the end month too when a range spans into the next month.
-    const end = value?.to ?? value?.from;
-    if (months === 2 && end && value && compareDay(startOfMonth(end), startOfMonth(value.from)) > 0) return startOfMonth(addMonths(end, -1));
-    return startOfMonth(initial);
-  });
-  const [focus, setFocus] = useState(initial);
-  const [hover, setHover] = useState<Date | null>(null);
-  const root = useRef<HTMLDivElement>(null);
-  const moved = useRef(false);
-  const id = useId();
-
-  const blocked = (d: Date) => outOfBounds(d, min, max) || !!isDateDisabled?.(d);
-  const shown = Array.from({ length: months }, (_, i) => addMonths(view, i));
-  const lastShown = shown[shown.length - 1];
-
-  const focusDay = (d: Date) => root.current?.querySelector<HTMLButtonElement>(`[data-day="${dayKey(d)}"]`)?.focus();
-
-  // Move DOM focus after a keyboard move (the target may only exist after the view shifts).
-  useEffect(() => {
-    if (!moved.current) return;
-    moved.current = false;
-    focusDay(focus);
-  });
-
-  // Inside a popover the panel is hidden until it is placed: wait for it, then focus the day.
-  useEffect(() => {
-    if (!autoFocus) return;
-    let frames = 0;
-    let raf = 0;
-    const tryFocus = () => {
-      const btn = root.current?.querySelector<HTMLButtonElement>(`[data-day="${dayKey(focus)}"]`);
-      if (btn && getComputedStyle(btn).visibility !== "hidden") btn.focus({ preventScroll: true });
-      else if (frames++ < 30) raf = requestAnimationFrame(tryFocus);
-    };
-    raf = requestAnimationFrame(tryFocus);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const select = (d: Date) => {
-    if (blocked(d)) return;
-    const next = pickDay(value, d, mode);
-    onValueChange?.(next);
-    setFocus(d);
-    setHover(null);
-    if (mode === "single" || next.to) onComplete?.(next);
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    // Only the day grid is keyboard-driven; the month buttons keep their own Enter / Space.
-    if (!(e.target as HTMLElement).dataset.day) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      select(focus);
-      return;
-    }
-    const raw = moveFocus(focus, e.key, { weekStartsOn, shift: e.shiftKey });
-    if (!raw) return;
-    e.preventDefault();
-    const next = clampDay(raw, min, max);
-    if (compareDay(startOfMonth(next), view) < 0) setView(startOfMonth(next));
-    else if (compareDay(startOfMonth(next), startOfMonth(lastShown)) > 0) setView(startOfMonth(addMonths(next, -(months - 1))));
-    setFocus(next);
-    if (value && !value.to && mode === "range") setHover(next);
-    moved.current = true;
-  };
-
-  const page = (n: number) => {
-    const v = addMonths(view, n);
-    setView(v);
-    // Keep the roving focus inside what is shown.
-    if (compareDay(focus, v) < 0 || compareDay(focus, addMonths(v, months)) >= 0) setFocus(clampDay(v, min, max));
-  };
-  const canPrev = !min || compareDay(view, startOfMonth(min)) > 0;
-  const canNext = !max || compareDay(startOfMonth(lastShown), startOfMonth(max)) < 0;
-
-  const names = weekdayNames(locale, weekStartsOn);
-  const monthFmt = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
-  const dayFmt = new Intl.DateTimeFormat(locale, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-  const previewEnd = value && !value.to && mode === "range" ? hover : null;
-
-  const navBtn = cn(
-    "grid size-7 cursor-pointer place-items-center rounded-[8px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-35",
-    focusRing,
-  );
-
-  return (
-    <div ref={root} className={cn("flex flex-col gap-3 sm:flex-row sm:gap-6", className)} onKeyDown={onKeyDown} onMouseLeave={() => setHover(null)}>
-      {shown.map((m, mi) => {
-        const headingId = `${id}-m${mi}`;
-        const days = monthDays(m.getFullYear(), m.getMonth(), weekStartsOn);
-        return (
-          <div key={dayKey(m)} className="flex w-[17.5rem] max-w-full flex-col gap-2">
-            <div className="flex h-7 items-center justify-between">
-              {mi === 0 ? (
-                <button type="button" className={navBtn} onClick={() => page(-1)} disabled={!canPrev} aria-label="Previous month">
-                  <Arrow dir="left" />
-                </button>
-              ) : (
-                <span className="size-7" />
-              )}
-              <div id={headingId} aria-live="polite" className="text-[13.5px] font-semibold tracking-tight">
-                {monthFmt.format(m)}
-              </div>
-              {mi === shown.length - 1 ? (
-                <button type="button" className={navBtn} onClick={() => page(1)} disabled={!canNext} aria-label="Next month">
-                  <Arrow dir="right" />
-                </button>
-              ) : (
-                <span className="size-7" />
-              )}
-            </div>
-            <table role="grid" aria-labelledby={headingId} aria-multiselectable={mode === "range" || undefined} className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {names.map((n) => (
-                    <th key={n.long} scope="col" abbr={n.long} className="h-7 text-center text-[11.5px] font-medium text-muted-foreground">
-                      {n.short}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 6 }, (_, w) => (
-                  <tr key={w}>
-                    {days.slice(w * 7, w * 7 + 7).map((d, di) => {
-                      if (!d) return <td key={di} />;
-                      const from = value?.from;
-                      const to = value?.to ?? previewEnd ?? undefined;
-                      const isStart = sameDay(d, from) || (!!previewEnd && !value?.to && sameDay(d, previewEnd) && compareDay(previewEnd, from!) < 0);
-                      const isEnd = (!!value?.to && sameDay(d, value.to)) || (!!previewEnd && sameDay(d, previewEnd) && compareDay(previewEnd, from!) >= 0);
-                      const lo = from && to ? (compareDay(from, to) <= 0 ? from : to) : from;
-                      const hi = from && to ? (compareDay(from, to) <= 0 ? to : from) : from;
-                      const edgeStart = !!lo && sameDay(d, lo);
-                      const edgeEnd = !!hi && sameDay(d, hi);
-                      const inside = inRange(d, from, to);
-                      const band = (inside || ((edgeStart || edgeEnd) && !!to && !sameDay(lo, hi))) && mode === "range";
-                      const selected = sameDay(d, value?.from) || sameDay(d, value?.to) || (!!value?.to && inRange(d, value.from, value.to));
-                      const disabled = blocked(d);
-                      const isToday = sameDay(d, today);
-                      return (
-                        <td key={di} role="gridcell" aria-selected={selected || undefined} className="relative p-0 text-center">
-                          {band && (
-                            <span
-                              aria-hidden="true"
-                              className={cn(
-                                "absolute inset-y-0.5 bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]",
-                                edgeStart ? "left-1/2 right-0" : edgeEnd ? "left-0 right-1/2" : "inset-x-0",
-                                !value?.to && "bg-[color-mix(in_srgb,var(--foreground)_4.5%,transparent)]",
-                              )}
-                            />
-                          )}
-                          <button
-                            type="button"
-                            data-day={dayKey(d)}
-                            tabIndex={sameDay(d, focus) ? 0 : -1}
-                            aria-label={`${dayFmt.format(d)}${isToday ? ", today" : ""}`}
-                            aria-disabled={disabled || undefined}
-                            onClick={() => select(d)}
-                            onMouseEnter={() => mode === "range" && value && !value.to && !disabled && setHover(d)}
-                            onFocus={() => setFocus(d)}
-                            className={cn(
-                              "relative mx-auto grid size-9 cursor-pointer place-items-center rounded-[9px] text-[13px] tabular-nums outline-none transition-[background-color,color,box-shadow] duration-150 ease-out pointer-coarse:size-10",
-                              "focus-visible:shadow-[0_0_0_2px_var(--background),0_0_0_3.5px_var(--ring)]",
-                              isStart || isEnd || (mode === "single" && sameDay(d, value?.from))
-                                ? "bg-primary font-medium text-primary-foreground"
-                                : "text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)]",
-                              disabled && "cursor-not-allowed text-muted-foreground/45 line-through decoration-muted-foreground/30 hover:bg-transparent",
-                            )}
-                          >
-                            {d.getDate()}
-                            {isToday && <span aria-hidden="true" className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-current opacity-70" />}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 /* ── DateRangePicker ── */
 
@@ -490,8 +167,8 @@ export function DateRangePicker({
       aria-invalid={bad || undefined}
       aria-required={required || undefined}
       className={cn(
-        "flex w-full min-w-0 cursor-pointer items-center bg-card text-left text-foreground outline-none",
-        "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_1px_2px_rgb(0_0_0/0.04)] transition-[box-shadow] duration-200 ease-out dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]",
+        "flex w-full min-w-0 cursor-pointer items-center text-left outline-none",
+        SURFACE,
         "focus-visible:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_80%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
         "aria-expanded:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_80%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
         "aria-invalid:shadow-[0_0_0_1px_rgb(239_68_68/0.6),0_0_0_4px_rgb(239_68_68/0.12)]",
@@ -531,7 +208,7 @@ export function DateRangePicker({
                       setOpen(false);
                     }}
                     className={cn(
-                      "w-full cursor-pointer whitespace-nowrap rounded-[8px] px-2.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40",
+                      "w-full cursor-pointer whitespace-nowrap rounded-[8px] px-2.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40",
                       on && "bg-muted font-medium text-foreground",
                       focusRing,
                     )}
@@ -588,7 +265,7 @@ function PickerFooter({ text, onClear }: { text: ReactNode; onClear?: () => void
         <button
           type="button"
           onClick={onClear}
-          className={cn("flex-none cursor-pointer rounded-[6px] px-1.5 py-0.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground", focusRing)}
+          className={cn("flex-none cursor-pointer rounded-[6px] px-1.5 py-0.5 text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground", focusRing)}
         >
           Clear
         </button>

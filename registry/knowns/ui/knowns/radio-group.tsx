@@ -21,7 +21,8 @@ export function nextEnabled(options: { disabled?: boolean }[], from: number, dir
   let i = from < 0 ? (dir === 1 ? -1 : n) : from;
   for (let step = 0; step < n; step++) {
     i = (i + dir + n) % n;
-    if (!options[i].disabled) return i;
+    const o = options[i];
+    if (o && !o.disabled) return i;
   }
   return -1;
 }
@@ -157,7 +158,7 @@ export function RadioGroup({
                         ? "bg-[color-mix(in_srgb,var(--primary)_5%,var(--card))] shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_rgb(0_0_0/0.06)]"
                         : "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent),0_1px_2px_rgb(0_0_0/0.04)]",
                       !o.disabled && !on && "hover:bg-[color-mix(in_srgb,var(--muted)_45%,var(--card))]",
-                      "focus-visible:shadow-[0_0_0_1.5px_var(--ring),0_0_0_5px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
+                      "focus-visible:shadow-[0_0_0_1px_color-mix(in_srgb,var(--ring)_80%,transparent),0_0_0_4px_color-mix(in_srgb,var(--ring)_22%,transparent)]",
                       orientation === "horizontal" && "min-w-40 flex-1",
                     )
                   : "rounded-[6px]",
@@ -176,7 +177,7 @@ export function RadioGroup({
                     s.dot,
                   )}
                 >
-                  <span className={cn("rounded-full bg-primary-foreground transition-[scale,opacity] ease-(--kn-ease-out)", s.inner, on ? "scale-100 opacity-100 duration-(--kn-dur)" : "scale-90 opacity-0 duration-(--kn-dur-fast)")} />
+                  <span className={cn("rounded-full bg-primary-foreground transition-[scale,opacity] duration-(--kn-dur-fast) ease-(--kn-ease-out)", s.inner, on ? "scale-100 opacity-100 duration-(--kn-dur)" : "scale-90 opacity-0 duration-(--kn-dur-fast)")} />
                 </span>
               </span>
               <span className="flex min-w-0 flex-col">

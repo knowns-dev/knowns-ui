@@ -66,7 +66,7 @@ const Bell = () => (
     className="relative grid size-8 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
   >
     <span className="grid size-4 [&_svg]:size-4">{glyph("M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3L4 11zM6.5 14h3")}</span>
-    <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-sky-500 ring-2 ring-background" />
+    <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[color:var(--kn-accent,var(--primary))] ring-2 ring-background" />
   </button>
 );
 

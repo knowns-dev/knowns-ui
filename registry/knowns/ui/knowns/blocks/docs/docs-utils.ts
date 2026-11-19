@@ -41,8 +41,9 @@ export function tocTree(items: TocItem[]): TocNode[] {
  * (px from the viewport top), else the first. `tops` are viewport-relative, in document order.
  */
 export function activeHeading(tops: { id: string; top: number }[], offset = 96): string | null {
-  if (!tops.length) return null;
-  let cur = tops[0].id;
+  const firstTop = tops[0];
+  if (!firstTop) return null;
+  let cur = firstTop.id;
   for (const t of tops) if (t.top - offset <= 1) cur = t.id;
   return cur;
 }

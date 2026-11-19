@@ -38,7 +38,7 @@ export interface AnnouncementBarProps {
 const TONE: Record<AnnouncementTone, { bar: string; action: string; close: string }> = {
   neutral: { bar: "bg-muted text-foreground", action: "text-foreground", close: "hover:bg-foreground/8" },
   inverted: { bar: "bg-foreground text-background", action: "text-background", close: "hover:bg-background/15" },
-  accent: { bar: "bg-indigo-600 text-white dark:bg-indigo-500", action: "text-white", close: "hover:bg-white/15" },
+  accent: { bar: "bg-[color:var(--kn-accent,var(--primary))] text-[color:var(--kn-accent-foreground,var(--primary-foreground))]", action: "text-[color:var(--kn-accent-foreground,var(--primary-foreground))]", close: "hover:bg-white/15" },
   warning: { bar: "bg-amber-100 text-amber-950 dark:bg-amber-500/15 dark:text-amber-200", action: "text-amber-950 dark:text-amber-100", close: "hover:bg-amber-950/10 dark:hover:bg-amber-200/10" },
   success: { bar: "bg-emerald-100 text-emerald-950 dark:bg-emerald-500/15 dark:text-emerald-200", action: "text-emerald-950 dark:text-emerald-100", close: "hover:bg-emerald-950/10 dark:hover:bg-emerald-200/10" },
 };
@@ -113,7 +113,7 @@ export function AnnouncementBar({
       inert={!open}
       className={cn(
         "grid w-full",
-        !instant && "transition-[grid-template-rows] duration-300 ease-(--kn-ease-out) motion-reduce:transition-none",
+        !instant && "transition-[grid-template-rows] duration-(--kn-dur-slow) ease-(--kn-ease-out) motion-reduce:transition-none",
         open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         className,
       )}
@@ -164,7 +164,7 @@ export function AnnouncementBar({
               type="button"
               aria-label="Dismiss announcement"
               onClick={dismiss}
-              className={cn("absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-[8px] opacity-80 transition-[background-color,opacity] ease-(--kn-ease-out) hover:opacity-100", t.close, focusRing)}
+              className={cn("absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-[8px] opacity-80 transition-[background-color,opacity] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:opacity-100", t.close, focusRing)}
             >
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" className="size-3.5">
                 <path d="m4 4 8 8M12 4l-8 8" />

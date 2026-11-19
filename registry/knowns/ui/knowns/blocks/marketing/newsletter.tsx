@@ -18,8 +18,8 @@ export type NewsletterState = "idle" | "loading" | "success" | "error";
 export interface NewsletterProps {
   /** Send the address. Resolve on success; throw or return a message on failure. */
   onSubscribe: (email: string) => Promise<void | string | null | undefined> | void | string | null | undefined;
-  /** "inline": copy left, form right (default). "centered": a centred band. "card": a compact card for a sidebar or post. */
-  variant?: "inline" | "centered" | "card";
+  /** "inline": copy left, form right (default). "centered": a centred band. "card": a compact card for a sidebar or post. "plain": just the heading and the form, no padding or border, for inside a footer or another section. */
+  variant?: "inline" | "centered" | "card" | "plain";
   title?: ReactNode;
   text?: ReactNode;
   placeholder?: string;
@@ -140,6 +140,18 @@ export function Newsletter({ onSubscribe, variant = "inline", title = "Get the c
           {shownError ?? noteText}
         </p>
       </form>
+    );
+
+  if (variant === "plain")
+    return (
+      <section data-slot="newsletter" className={cn("flex w-full flex-col gap-2", className)} aria-labelledby={`${id}-title`}>
+        <h2 id={`${id}-title`} className="text-[15px] leading-snug font-semibold">
+          {title}
+        </h2>
+        {text && <p className="text-pretty text-[14px] leading-relaxed text-muted-foreground">{text}</p>}
+        {meta && <p className="text-[13px] text-muted-foreground">{meta}</p>}
+        <div className="mt-2">{form}</div>
+      </section>
     );
 
   if (variant === "card")

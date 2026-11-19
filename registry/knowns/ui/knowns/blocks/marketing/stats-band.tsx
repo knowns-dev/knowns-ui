@@ -121,7 +121,7 @@ export function StatsBand({ eyebrow, title, lead, stats, footnote, tone = "plain
       {s.context && (
         // The space is always reserved, so showing it never moves the page. Where a mouse is present it fades in
         // on hover or focus; on touch screens it is simply there.
-        <dd className="order-5 text-[13px] leading-5 text-foreground transition-opacity ease-(--kn-ease-out) duration-200 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
+        <dd className="order-5 text-[13px] leading-5 text-foreground transition-opacity ease-(--kn-ease-out) duration-(--kn-dur) [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
           {s.context}
         </dd>
       )}

@@ -30,6 +30,48 @@ export function isSubmitKey(e: { key: string; shiftKey: boolean; altKey?: boolea
   return !e.shiftKey && !e.altKey;
 }
 
+/**
+ * The text after picking a skill chip: a leading command is swapped ("/trace foo" then "/rollback"
+ * gives "/rollback foo"), otherwise the command goes in front of what was typed.
+ */
+export function insertSkill(text: string, id: string): string {
+  return `/${id} ` + text.replace(/^\s*(\/[\w-]*)?\s*/, "");
+}
+
+/**
+ * How wide a wrapping row of chips should be so its rows come out even. Greedy wrapping at `avail` fills the first
+ * rows and leaves a stray chip on the last; this finds the fewest rows that fit, then the narrowest width that
+ * still holds the chips in that many rows (the partition with the shortest longest row). Set it as the row's
+ * max-width and ordinary flex wrapping gives balanced rows. `widths` are the chips' widths in px, `gap` the space
+ * between them.
+ */
+export function balancedWidth(widths: number[], gap: number, avail: number): number {
+  const n = widths.length;
+  if (n === 0 || avail <= 0) return avail;
+  const row = (i: number, j: number) => {
+    let w = gap * (j - i - 1);
+    for (let k = i; k < j; k++) w += widths[k] as number;
+    return w;
+  };
+  let rows = 1;
+  let cur = 0;
+  for (const w of widths) {
+    if (cur > 0 && cur + gap + w > avail) {
+      rows++;
+      cur = w;
+    } else cur += (cur > 0 ? gap : 0) + w;
+  }
+  if (rows === 1) return avail;
+  // best[k][j]: the shortest longest row when the first j chips sit in k rows.
+  let prev = Array.from({ length: n + 1 }, (_, j) => (j === 0 ? 0 : row(0, j)));
+  for (let k = 2; k <= rows; k++) {
+    const next = new Array<number>(n + 1).fill(Infinity);
+    for (let j = 1; j <= n; j++) for (let i = 1; i < j; i++) next[j] = Math.min(next[j] as number, Math.max(prev[i] as number, row(i, j)));
+    prev = next;
+  }
+  return Math.min(avail, Math.ceil(prev[n] as number) + 1);
+}
+
 /** Add `id` if missing, drop it if present; keeps the original order. */
 export function toggleId(ids: string[], id: string): string[] {
   return ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
