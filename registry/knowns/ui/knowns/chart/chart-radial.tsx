@@ -296,7 +296,7 @@ export function RadialChart({ type, data, x, series, label, thickness = 0.32, ce
                         onPointerEnter={() => setActive(r.i)}
                         onClick={onSelect ? () => choose(r.i) : undefined}
                       >
-                        <path data-track="" d={track} fill={r.color} fillOpacity={0.18} fillRule="evenodd" />
+                        <path data-kn-ring-track="" d={track} fill={r.color} fillOpacity={0.18} fillRule="evenodd" />
                         {fillD && <path data-fill="" d={fillD} fill={r.color} fillRule="evenodd" />}
                       </g>
                     ) : null;

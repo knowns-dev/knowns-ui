@@ -94,3 +94,19 @@ export function sampleScale(box: { w: number; h: number }, nat: { w: number; h: 
   const target = Math.min((box.w * 0.65) / nat.w, (box.h * 0.6) / nat.h);
   return Math.min(maxUp, cap, Math.max(1, target));
 }
+
+/**
+ * How many previews may run at once. A one-column phone layout runs only the card nearest the middle of the screen;
+ * everywhere else the cap is `max` (at least 1).
+ */
+export function effectiveMaxLive(max: number, narrow: boolean, interactive: boolean): number {
+  const cap = Math.max(1, Math.floor(Number.isFinite(max) ? max : 1));
+  return interactive && narrow ? 1 : cap;
+}
+
+/** Column classes of the grid. Interactive demos need room to be used, so phones get one column and tablets two. */
+export function gridColumns(size: "card" | "page", interactive: boolean): string {
+  if (size === "page") return "grid grid-cols-1 gap-x-6 gap-y-8 @[640px]:grid-cols-2 @[1080px]:grid-cols-3";
+  if (interactive) return "grid grid-cols-1 gap-x-4 gap-y-6 @[520px]:grid-cols-2 @[900px]:grid-cols-3";
+  return "grid grid-cols-2 gap-x-4 gap-y-6 @[640px]:grid-cols-3 @[1080px]:grid-cols-5";
+}

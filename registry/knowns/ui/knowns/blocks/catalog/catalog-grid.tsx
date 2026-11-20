@@ -6,7 +6,7 @@ import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Toggle } from "../../toggle-group";
 import { SegmentedControl } from "../../segmented-control";
 import { Input } from "../../input";
-import { CATALOG_TIERS, categoryCounts, countLabel, filterCatalog, orderCategories, pickLiveRowGroups, sampleScale, tierCounts, type CatalogTier, type LiveCard } from "./catalog-utils";
+import { CATALOG_TIERS, categoryCounts, countLabel, effectiveMaxLive, filterCatalog, gridColumns, orderCategories, pickLiveRowGroups, sampleScale, tierCounts, type CatalogTier, type LiveCard } from "./catalog-utils";
 
 export interface CatalogItem {
   id: string;
@@ -33,7 +33,12 @@ export interface CatalogItem {
    * The live preview, mounted when the card comes into view (the thumbnail is the poster until then). Laid out
    * at `previewWidth` px and scaled down to the card. Inert and hidden from assistive tech.
    */
-  preview?: (state: { live: boolean }) => ReactNode;
+  preview?: (state: { live: boolean; paused?: boolean }) => ReactNode;
+  /**
+   * The preview takes `paused` and freezes in place. Without it, Pause (in an `interactive` grid) unmounts the live
+   * preview back to the poster, and Play brings it back: a page-sized demo has no per-card pause of its own.
+   */
+  pausable?: boolean;
   /**
    * Render `preview` in the card itself, unscaled, instead of as a scaled overlay on the thumbnail. It is called with
    * `live: false` until the card goes live (and always on touch screens, Save-Data and reduced motion), so it shows its
@@ -81,6 +86,15 @@ export interface CatalogGridProps {
   /** Most live previews mounted at once; the least recently seen is unmounted first. Default 12. */
   maxLive?: number;
   /**
+   * Live demos people can use. Default false. A live card hands the pointer to its demo (the title stays the link, and
+   * an Open arrow joins it), shows Pause and Open buttons over the corner of the thumbnail (on hover or focus with a
+   * mouse, always on touch), and runs on touch and narrow screens too (still never with reduced motion or Save-Data).
+   * The grid is one column on phones, where only the card nearest the middle of the screen runs.
+   */
+  interactive?: boolean;
+  /** A line above the tabs. A function gets whether demos run on this device and whether the screen is narrow. */
+  liveNotice?: ReactNode | ((state: { live: boolean; narrow: boolean }) => ReactNode);
+  /**
    * When a live preview mounts. "view" (default): when the card scrolls into view, a row at a time. "hover": only
    * while a card is hovered or has focus inside it, and it unmounts on leave or blur; nothing at load, so no demo
    * code runs until someone points at a card. Both: never on touch, narrow screens, Save-Data or reduced motion.
@@ -107,14 +121,14 @@ export interface CatalogGridProps {
 /* ── Live previews ── */
 
 /** Whether this device should run live previews: a fine pointer, room, no Save-Data, motion allowed. */
-function useLiveAllowed(enabled: boolean): boolean {
+function useLiveAllowed(enabled: boolean, interactive = false): boolean {
   const [ok, setOk] = useState(false);
   useEffect(() => {
     if (!enabled) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     const check = () => {
       const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
-      setOk(matchMedia("(pointer: fine)").matches && innerWidth >= 768 && !saveData && !motion.matches);
+      setOk((interactive || (matchMedia("(pointer: fine)").matches && innerWidth >= 768)) && !saveData && !motion.matches);
     };
     check();
     motion.addEventListener("change", check);
@@ -123,9 +137,24 @@ function useLiveAllowed(enabled: boolean): boolean {
       motion.removeEventListener("change", check);
       removeEventListener("resize", check);
     };
-  }, [enabled]);
+  }, [enabled, interactive]);
   return enabled && ok;
 }
+
+/** True below 640px: the one-column phone layout. */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = matchMedia("(max-width: 639px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return narrow;
+}
+
+const Interactive = createContext(false);
 
 type LiveCtx = { mode: "view"; observe: (id: string, el: Element) => () => void; mounted: ReadonlySet<string> } | { mode: "hover" };
 const Live = createContext<LiveCtx | null>(null);
@@ -254,7 +283,7 @@ function contentBox(el: HTMLElement, scale: number): { w: number; h: number; x: 
   return { x: (x0 - o.left) / scale, y: (y0 - o.top) / scale, w: (x1 - x0) / scale, h: (y1 - y0) / scale };
 }
 
-function LivePreview({ width, render, align = "top", onShown }: { width: number | "fit"; render: () => ReactNode; align?: "top" | "center"; onShown?: (shown: boolean) => void }) {
+function LivePreview({ width, render, align = "top", onShown, interactive = false }: { width: number | "fit"; render: () => ReactNode; align?: "top" | "center"; onShown?: (shown: boolean) => void; interactive?: boolean }) {
   const box = useRef<HTMLSpanElement>(null);
   const inner = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -323,8 +352,9 @@ function LivePreview({ width, render, align = "top", onShown }: { width: number 
   return (
     <span
       ref={box}
-      aria-hidden="true"
-      inert
+      // A demo people use is neither hidden from assistive tech nor inert; a still one is only a picture.
+      aria-hidden={interactive ? undefined : "true"}
+      inert={interactive ? undefined : true}
       data-catalog-live=""
       // A live page inside a card: its headings are not this page's sections (kept out of "On this page" and the page markdown).
       data-toc="false"
@@ -333,7 +363,7 @@ function LivePreview({ width, render, align = "top", onShown }: { width: number 
         // Same inner padding as the poster (12px). The fade at the bottom edge is a static overlay on the card
         // (a mask here would re-composite the animating preview on every frame).
         // contain: strict keeps each live card's layout, paint and style work inside its own box.
-        "pointer-events-none absolute inset-3 overflow-hidden [contain:strict]",
+        interactive ? "pointer-events-auto absolute inset-3 overflow-hidden [contain:strict]" : "pointer-events-none absolute inset-3 overflow-hidden [contain:strict]",
       )}
     >
       {width === "fit" && (
@@ -387,6 +417,8 @@ function Badge({ children, tone }: { children: ReactNode; tone: "new" | "pro" | 
 export function CatalogCard({ item, countNoun = "example", onSelect }: { item: CatalogItem; countNoun?: string; onSelect?: (item: CatalogItem) => void }) {
   const count = countLabel(item.count, countNoun);
   const live = useContext(Live);
+  const interactive = useContext(Interactive);
+  const [paused, setPaused] = useState(false);
   const thumbRef = useRef<HTMLSpanElement>(null);
   const observe = live?.mode === "view" ? live.observe : undefined;
   const hasPreview = Boolean(item.preview);
@@ -401,19 +433,21 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
     return observe(item.id, el);
   }, [observe, hasPreview, item.id]);
   const isLive = Boolean(item.preview && (live?.mode === "hover" ? hot : live?.mode === "view" && live.mounted.has(item.id)));
+  // A paused page preview is taken off the screen; a pausable one stays and freezes itself.
+  const running = isLive && !(paused && !item.pausable);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    if (isLive) return setMounted(true);
+    if (running) return setMounted(true);
     const t = window.setTimeout(() => setMounted(false), 140);
     return () => window.clearTimeout(t);
-  }, [isLive]);
+  }, [running]);
   const inline = Boolean(item.inline && item.preview);
   // Extras go in visually hidden text after the visible title, count and description, so the accessible name starts with what is shown (WCAG 2.5.3, label in name).
   const extras = [item.kind ?? null, item.pro ? "Pro" : item.proVariants ? "Pro variants" : null, item.isNew ? "New" : null, count].filter(Boolean).join(", ");
   const body = (
     <>
       <span ref={thumbRef} className="relative block aspect-[16/10] w-full overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] transition-[box-shadow,background-color] duration-(--kn-dur) ease-(--kn-ease-out) group-hover:bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))] group-hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_16%,transparent)]">
-        <span className="absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full">{inline ? <span className="block w-full">{item.preview?.({ live: isLive })}</span> : item.thumb}</span>
+        <span className="absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full">{inline ? <span className="block w-full">{item.preview?.({ live: isLive, paused: paused && isLive })}</span> : item.thumb}</span>
 
 
       </span>
@@ -432,8 +466,8 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
   const cls = cn("group flex w-full min-w-0 flex-col rounded-[12px] text-left transition-transform duration-(--kn-dur) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transition-none motion-reduce:active:scale-100", focusRing);
   // Outside the link (a preview has links of its own), over the thumbnail, click-through.
   const overlay = mounted && item.preview && !inline && (
-    <span className={cn("pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground transition-opacity ease-(--kn-ease-out) motion-reduce:transition-none", isLive && shownLive ? "opacity-100 duration-(--kn-dur)" : "opacity-0 duration-(--kn-dur-fast)")}>
-      <LivePreview width={item.previewWidth ?? 720} align={item.previewAlign} render={() => item.preview?.({ live: true })} onShown={setShownLive} />
+    <span className={cn("pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground transition-opacity ease-(--kn-ease-out) motion-reduce:transition-none", running && shownLive ? "opacity-100 duration-(--kn-dur)" : "opacity-0 duration-(--kn-dur-fast)")}>
+      <LivePreview interactive={interactive} width={item.previewWidth ?? 720} align={item.previewAlign} render={() => item.preview?.({ live: true, paused: paused && item.pausable })} onShown={setShownLive} />
       {item.previewWidth !== "fit" && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] to-transparent" />}
       <span aria-hidden="true" className="absolute inset-0 rounded-[12px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]" />
     </span>
@@ -447,9 +481,11 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
       {body}
     </button>
   );
+  const showControls = interactive && isLive && Boolean(item.preview);
+  const btn = "pointer-events-auto inline-flex size-7 items-center justify-center rounded-[8px] bg-background/90 text-foreground shadow-[0_0_0_1px_var(--border)] backdrop-blur-sm transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted pointer-coarse:size-9 [&_svg]:size-3.5";
   return (
     <div
-      className="relative flex w-full min-w-0"
+      className="group/live relative flex w-full min-w-0"
       onPointerEnter={hover ? (e) => e.pointerType === "mouse" && setHot(true) : undefined}
       onPointerLeave={hover ? () => setHot(false) : undefined}
       onFocus={hover ? () => setHot(true) : undefined}
@@ -460,6 +496,29 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
       {item.kind && (
         <span className="pointer-events-none absolute top-2 left-2 flex">
           <Badge tone="kind">{item.kind}</Badge>
+        </span>
+      )}
+      {showControls && (
+        <span data-slot="catalog-live-controls" className="pointer-events-none absolute inset-x-0 top-0 flex aspect-[16/10] items-end justify-end gap-1 p-2 opacity-100 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) pointer-fine:opacity-0 pointer-fine:group-focus-within/live:opacity-100 pointer-fine:group-hover/live:opacity-100">
+          <button type="button" className={btn} aria-label={`${paused ? "Play" : "Pause"} demo: ${item.title}`} onClick={() => setPaused((p) => !p)}>
+            {paused ? (
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                <path d="M5 3.2v9.6a.5.5 0 0 0 .76.43l7.7-4.8a.5.5 0 0 0 0-.86l-7.7-4.8A.5.5 0 0 0 5 3.2Z" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+                <rect x="4" y="3" width="2.8" height="10" rx="0.8" />
+                <rect x="9.2" y="3" width="2.8" height="10" rx="0.8" />
+              </svg>
+            )}
+          </button>
+          {item.href && (
+            <a href={item.href} className={btn} aria-label={`Open ${item.title}`} onClick={onSelect ? () => onSelect(item) : undefined}>
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6" />
+              </svg>
+            </a>
+          )}
         </span>
       )}
       {/* Above the live preview, so Pro always shows. Click-through: the card link underneath stays the target. */}
@@ -489,6 +548,8 @@ export function CatalogGrid({
   size = "card",
   live: liveProp = true,
   maxLive = 12,
+  interactive = false,
+  liveNotice,
   liveOn = "view",
   search = false,
   query: queryProp,
@@ -500,8 +561,9 @@ export function CatalogGrid({
   sectionHref,
   className,
 }: CatalogGridProps) {
-  const liveAllowed = useLiveAllowed(liveProp && items.some((i) => i.preview));
-  const viewCtx = useLiveManager(liveAllowed && liveOn === "view", maxLive);
+  const narrow = useNarrow();
+  const liveAllowed = useLiveAllowed(liveProp && items.some((i) => i.preview), interactive);
+  const viewCtx = useLiveManager(liveAllowed && liveOn === "view", effectiveMaxLive(maxLive, narrow, interactive));
   const liveCtx = useMemo<LiveCtx | null>(() => (liveAllowed && liveOn === "hover" ? { mode: "hover" } : viewCtx), [liveAllowed, liveOn, viewCtx]);
   const [own, setOwn] = useState(defaultCategory);
   const [ownQuery, setOwnQuery] = useState("");
@@ -530,7 +592,8 @@ export function CatalogGrid({
   const counts = useMemo(() => categoryCounts(base, cats), [base, cats]);
   const shown = useMemo(() => filterCatalog(base, sections ? "all" : category), [base, sections, category]);
   const labelOf = (id: string) => (id === "all" ? "All" : (labels[id] ?? id));
-  const gridCls = size === "page" ? "grid grid-cols-1 gap-x-6 gap-y-8 @[640px]:grid-cols-2 @[1080px]:grid-cols-3" : "grid grid-cols-2 gap-x-4 gap-y-6 @[640px]:grid-cols-3 @[1080px]:grid-cols-5";
+  const gridCls = gridColumns(size, interactive);
+  const notice = typeof liveNotice === "function" ? liveNotice({ live: liveAllowed, narrow }) : liveNotice;
   const grid = (list: typeof shown) => (
     <ul data-size={size} className={gridCls}>
       {list.map((item) => (
@@ -544,7 +607,13 @@ export function CatalogGrid({
 
   return (
     <Live.Provider value={liveCtx}>
+    <Interactive.Provider value={interactive}>
     <section aria-label="Catalog" className={cn("@container w-full", className)}>
+      {notice ? (
+        <div data-slot="catalog-live-notice" className="mb-5 text-[13.5px] text-muted-foreground">
+          {notice}
+        </div>
+      ) : null}
       {(search || tiers) && (
         <div className="mb-5 flex flex-wrap items-center gap-3">
           {tiers && (
@@ -604,6 +673,7 @@ export function CatalogGrid({
         {status}
       </p>
     </section>
+    </Interactive.Provider>
     </Live.Provider>
   );
 }

@@ -6,7 +6,7 @@
  * file to copy with its target path. Also exports the pieces (DocsSteps, DocsStep, DocsCallout,
  * CommandBlock) for any step-by-step guide.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { cn, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { CodeBlock } from "../../code-block/code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
@@ -30,11 +30,17 @@ function useCopied() {
   return [done, copy] as const;
 }
 
-function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
+/** `data-track` names for the Copy buttons below, set by DocsInstall's `trackCopy`. Absent: no attribute. */
+const CopyTrackCtx = createContext<{ command?: string; prompt?: string; item?: string } | null>(null);
+
+function CopyBtn({ text, label = "Copy", kind }: { text: string; label?: string; kind?: "command" | "prompt" }) {
   const [done, copy] = useCopied();
+  const track = useContext(CopyTrackCtx);
+  const name = kind ? track?.[kind] : undefined;
   return (
     <button
       type="button"
+      {...(name ? { "data-track": name, ...(track?.item ? { "data-item": track.item } : {}) } : {})}
       onClick={() => void copy(text)}
       className="h-6 shrink-0 rounded-[7px] px-2 text-[11.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
     >
@@ -153,7 +159,7 @@ export function CommandBlock({
         ) : (
           <span className="px-1 font-mono text-[11.5px] text-muted-foreground">Terminal</span>
         )}
-        <CopyBtn text={cmd} />
+        <CopyBtn text={cmd} kind="command" />
       </div>
       <div tabIndex={0} role="group" aria-label="Command" className={cn("flex items-baseline gap-2 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring", wrap && "[&_code]:whitespace-pre-wrap! [&_pre]:whitespace-pre-wrap! [&_code]:[overflow-wrap:normal] [&_pre]:[overflow-wrap:normal] [&_code]:[word-break:normal] [&_pre]:[word-break:normal]")}>
         <span aria-hidden="true" className="text-muted-foreground select-none">
@@ -206,7 +212,7 @@ export function PromptBlock({ label = "Prompt", text }: { label?: string; text: 
     <div className="min-w-0 overflow-hidden rounded-xl border bg-card" data-lang="md">
       <div data-md="skip" className="flex h-9 items-center justify-between gap-2 border-b bg-muted/30 pr-2 pl-3.5">
         <span className="truncate text-[12px] text-muted-foreground">{label}</span>
-        <CopyBtn text={text} label="Copy prompt" />
+        <CopyBtn text={text} label="Copy prompt" kind="prompt" />
       </div>
       <div className={cn("relative", !open && "max-h-[280px] overflow-hidden")}>
         <pre tabIndex={0} className="p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap break-words text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
@@ -255,6 +261,12 @@ export interface DocsInstallProps {
   commands?: Partial<Record<PackageManager, string>>;
   /** More tabs after CLI | Manual (e.g. "With AI"). Kept mounted, so the page's text includes them. */
   extraTabs?: { value: string; label: string; content: ReactNode }[];
+  /**
+   * Analytics event names for the Copy buttons, as `data-track` attributes (OpenPanel reads them on a click; so does
+   * any tool that follows that convention). `command`: the CLI command's Copy. `prompt`: Copy prompt in the With AI
+   * tab. `item` is sent as `data-item`. Leave it out and the buttons carry no attributes.
+   */
+  trackCopy?: { command?: string; prompt?: string; item?: string };
   className?: string;
 }
 
@@ -283,7 +295,7 @@ function Manual({ plan, pm, onPm, renderCode, notes }: { plan: ManualPlan; pm?: 
   );
 }
 
-export function DocsInstall({ targets, manual, packageManager, onPackageManagerChange, cliNotes, manualNotes, locked, footer, renderCode, extraTabs, wrapCommand, alt, commands, className }: DocsInstallProps) {
+export function DocsInstall({ targets, manual, packageManager, onPackageManagerChange, cliNotes, manualNotes, locked, footer, renderCode, extraTabs, wrapCommand, alt, commands, trackCopy, className }: DocsInstallProps) {
   const [tab, setTab] = useState("cli");
   const [plan, setPlan] = useState<ManualPlan | null>(typeof manual === "object" ? manual : null);
   const [error, setError] = useState(false);
@@ -312,6 +324,7 @@ export function DocsInstall({ targets, manual, packageManager, onPackageManagerC
     </div>
   );
   return (
+    <CopyTrackCtx.Provider value={trackCopy ?? null}>
     <div className={cn("grid min-w-0 gap-3", className)}>
       {manual || extraTabs?.length ? (
         <Tabs value={tab} onValueChange={setTab} size="sm">
@@ -349,5 +362,6 @@ export function DocsInstall({ targets, manual, packageManager, onPackageManagerC
       )}
       {footer}
     </div>
+    </CopyTrackCtx.Provider>
   );
 }
