@@ -25,6 +25,8 @@ export interface CatalogItem {
   pro?: boolean;
   /** A Free item with Pro variants: an outline "Pro variants" badge. Ignored when `pro` is set. */
   proVariants?: boolean;
+  /** One line under the description on how to use the real component ("Drag to zoom"). Plain text, 5 words or fewer, for items that answer to input only. */
+  hint?: string;
   /** The drawing: an <img>, an SVG, or a <Sketch> from ./sketch. */
   thumb?: ReactNode;
   /**
@@ -422,6 +424,7 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
           {count && <span className="ml-auto flex-none text-[12.5px] leading-5 text-muted-foreground tabular-nums">{item.count}</span>}
         </span>
         {item.description && <span className="mt-0.5 block truncate text-[13px] leading-5 text-muted-foreground">{item.description}</span>}
+        {item.hint && <span data-slot="catalog-hint" className="mt-0.5 block truncate text-[12px] leading-4 text-muted-foreground/80">{item.hint}</span>}
         {extras && <span className="sr-only">{`, ${extras}`}</span>}
       </span>
     </>

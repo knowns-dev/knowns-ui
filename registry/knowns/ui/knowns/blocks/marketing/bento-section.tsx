@@ -29,6 +29,8 @@ export interface BentoTile {
   rows?: number;
   /** Padding inside the tile. Default true; turn it off for a picture or a chart that runs to the edge. */
   pad?: boolean;
+  /** One line under the content that says how to use the tile ("Drag to zoom"). Plain text, 5 words or fewer. Set it only on a tile that answers to input. */
+  hint?: string;
   /** The tile's content. A function gets `revealed` (false until the section has scrolled in), to start a count or a grow once. */
   children: ReactNode | ((revealed: boolean) => ReactNode);
   className?: string;
@@ -80,6 +82,11 @@ export function BentoSection({ tiles, eyebrow, title, lead, align = "center", re
             {t.label && <div className={cn("mb-2 truncate text-[12px] leading-4 font-medium text-muted-foreground", t.pad === false && "px-4 pt-4")}>{t.label}</div>}
             {/* A lone child fills the tile, so a component with its own surface is as tall as the row. */}
             <div className="flex min-h-0 min-w-0 flex-1 flex-col [&>:only-child]:flex-1">{typeof t.children === "function" ? t.children(phase === "in") : t.children}</div>
+            {t.hint && (
+              <p data-slot="bento-hint" className={cn("mt-2 truncate text-[12px] leading-4 text-muted-foreground", t.pad === false && "px-4 pb-3")}>
+                {t.hint}
+              </p>
+            )}
           </li>
         ))}
       </ul>
