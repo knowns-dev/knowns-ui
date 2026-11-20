@@ -7,7 +7,7 @@ import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/util
 import { Button } from "../button";
 import { Spinner } from "../spinner";
 import { Tooltip } from "../tooltip";
-import { countWords, parseAnswer, toPlainText, trimPartialCite, wordPrefix, type Inline } from "./answer-text";
+import { countWords, parseAnswer, toPlainText, trimPartialCite, wordPrefix, type Inline } from "./ai-answer-utils";
 
 export interface AnswerSource {
   title: string;

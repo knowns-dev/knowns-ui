@@ -21,7 +21,7 @@ export interface AvatarProps {
   shape?: "square" | "circle";
   /** Tint for glyphs and initials, e.g. an agent colour. */
   hue?: string;
-  /** Presence dot, bottom-right. Included in the accessible name ("Ada Lovelace, online"). */
+  /** Presence dot, bottom-right. Included in the accessible name ("Noor Haddad, online"). */
   status?: AvatarStatus;
   /** Small mark on the corner, e.g. a company or model logo. Moves the status dot to the top. */
   badge?: ReactNode;
@@ -39,12 +39,12 @@ export interface AvatarProps {
 
 /* Box, type and corner radius per size. xs–lg keep their original look. */
 const SIZE: Record<AvatarSize, string> = {
-  xs: "size-5 text-[9px] rounded-md",
-  sm: "size-6 text-[10px] rounded-md",
+  xs: "size-5 text-[10px] rounded-md",
+  sm: "size-6 text-[11px] rounded-md",
   md: "size-8 text-xs rounded-lg",
   lg: "size-11 text-sm rounded-xl",
   xl: "size-14 text-base rounded-2xl",
-  "2xl": "size-18 text-xl rounded-[20px]",
+  "2xl": "size-18 text-xl rounded-2xl",
 };
 /* Presence dot diameter, ~a fifth of the avatar. */
 const DOT: Record<AvatarSize, string> = {
@@ -83,7 +83,7 @@ const STATUS_DOT: Record<AvatarStatus, string> = {
 };
 const STATUS_TEXT: Record<AvatarStatus, string> = { online: "online", offline: "offline", busy: "busy", away: "away" };
 
-/** Two letters: first + second word ("Ada Lovelace" → "AL"), else the first two characters. */
+/** Two letters: first + second word ("Noor Haddad" → "NH"), else the first two characters. */
 export function initials(label: string): string {
   const parts = label.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "";
@@ -93,7 +93,7 @@ export function initials(label: string): string {
   return chars(first).slice(0, 2).join("").toUpperCase();
 }
 
-/** Accessible name: the label plus anything only shown visually ("Ada Lovelace, online, verified"). */
+/** Accessible name: the label plus anything only shown visually ("Noor Haddad, online, verified"). */
 export function avatarName(label: string, status?: AvatarStatus, verified?: boolean): string {
   // An unnamed avatar with no status still needs a name, or role="img" is announced as nothing.
   return [label, status && STATUS_TEXT[status], verified && "verified"].filter(Boolean).join(", ") || "Unknown";
@@ -106,7 +106,7 @@ export function splitGroup(total: number, max?: number): { shown: number; hidden
   return { shown: max, hidden: total - max };
 }
 
-/** "Ada, Grace and Alan" */
+/** "Noor, Tessa and Owen" */
 export function listNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;

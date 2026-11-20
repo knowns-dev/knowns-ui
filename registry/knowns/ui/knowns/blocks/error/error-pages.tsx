@@ -46,7 +46,7 @@ export function ErrorLayout({ code, art, title, description, children, footer, f
         {art && <div className="mb-6 flex h-40 w-full items-center justify-center [&>*]:max-h-full">{art}</div>}
         {code && <p className="mb-2 font-mono text-[12.5px] font-medium tracking-wide text-muted-foreground">{code}</p>}
         <H className="text-balance text-[26px] font-semibold tracking-[-0.02em] sm:text-[30px]">{title}</H>
-        {description && <p className="mt-2.5 max-w-sm text-pretty text-[14.5px] leading-relaxed text-muted-foreground">{description}</p>}
+        {description && <p className="mt-2.5 max-w-sm text-pretty text-[14px] leading-relaxed text-muted-foreground">{description}</p>}
         {children && <div className="mt-6 flex w-full flex-col items-center gap-4">{children}</div>}
         {footer && <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">{footer}</div>}
       </div>

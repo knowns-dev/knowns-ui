@@ -63,7 +63,7 @@ const link = (v?: View) => (v ? { href: `#/${v}`, title: title(v) } : null);
 
 const Mark = () => (
   <span className="flex items-center gap-2 font-semibold tracking-[-0.01em]">
-    <span aria-hidden className="grid size-6 place-items-center rounded-md bg-foreground text-[12px] font-bold text-background">N</span>
+    <span aria-hidden className="grid size-6 place-items-center rounded-md bg-foreground text-[12px] font-semibold text-background">N</span>
     Northwind Docs
   </span>
 );
@@ -117,7 +117,7 @@ export function DocsSiteTemplate({ scrollRoot, defaultView = "home", className }
             <p className="mt-4 text-balance text-[16px] leading-7 text-muted-foreground">Guides and references for Northwind Flow, from the first install to webhooks.</p>
             <button
               type="button"
-              className="mt-8 flex h-12 w-full items-center gap-3 rounded-xl border bg-card px-4 text-left text-[14.5px] text-muted-foreground shadow-xs outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-8 flex h-12 w-full items-center gap-3 rounded-xl border bg-card px-4 text-left text-[14px] text-muted-foreground shadow-xs outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <SearchIcon />
               <span className="flex-1">Search the docs</span>

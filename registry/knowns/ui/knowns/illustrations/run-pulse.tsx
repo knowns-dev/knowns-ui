@@ -51,22 +51,22 @@ const H = 300;
 const C = { x: W / 2, y: H / 2 };
 const WIDTH: Record<PulseSize, number> = { sm: 320, md: 480, lg: 640 };
 
-const DEFAULT_LEAD: PulseAgent = { name: "Lead", model: "Opus 5.5" };
+const DEFAULT_LEAD: PulseAgent = { name: "Lead" };
 const DEFAULT_AGENTS: PulseAgent[] = [
-  { name: "Researcher", model: "Gemini 2.5 Pro" },
-  { name: "Writer", model: "GPT-5" },
-  { name: "Coder", model: "Sonnet 5.5" },
-  { name: "Reviewer", model: "Haiku 5.5" },
+  { name: "Researcher" },
+  { name: "Writer" },
+  { name: "Coder" },
+  { name: "Reviewer" },
 ];
 const DEFAULT_TOOLS: PulseTool[] = [
   { name: "Web search", agent: 0 },
-  { name: "Notion", agent: 0 },
-  { name: "Slack", agent: 1 },
-  { name: "GitHub", agent: 2 },
-  { name: "Postgres", agent: 2 },
-  { name: "Linear", agent: 3 },
+  { name: "Docs", agent: 0 },
+  { name: "Chat", agent: 1 },
+  { name: "Code", agent: 2 },
+  { name: "Database", agent: 2 },
+  { name: "Tracker", agent: 3 },
 ];
-const DEFAULT_GROW: PulseTool = { name: "Figma" };
+const DEFAULT_GROW: PulseTool = { name: "Design" };
 
 export interface Pt {
   x: number;

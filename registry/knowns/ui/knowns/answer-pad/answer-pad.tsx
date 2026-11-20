@@ -116,7 +116,7 @@ function Pad({ question: q, onSubmit, revealed, closed, secondsLeft, sent: initi
             disabled={locked}
             aria-label="Your answer"
             autoComplete="off"
-            className={cn("h-14 rounded-2xl border bg-background px-4 text-[17px] outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-80", status === "correct" && "border-emerald-500", status === "wrong" && "border-red-500")}
+            className={cn("h-14 rounded-2xl border bg-background px-4 text-[16px] outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-80", status === "correct" && "border-emerald-500", status === "wrong" && "border-red-500")}
           />
           {!locked && <Lock disabled={!text.trim()} />}
           {revealed && status === "wrong" && <p className="text-[13px] text-muted-foreground">Accepted: {q.answer.join(", ")}</p>}

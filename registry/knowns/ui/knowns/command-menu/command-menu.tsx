@@ -117,7 +117,7 @@ function Highlighted({ text, ranges }: { text: string; ranges: [number, number][
     <>
       {highlightParts(text, ranges).map((p, i) =>
         p.hit ? (
-          <mark key={i} className="rounded-[2px] bg-transparent font-semibold text-foreground underline decoration-[color-mix(in_srgb,var(--foreground)_35%,transparent)] decoration-1 underline-offset-[3px]">
+          <mark key={i} className="rounded-[3px] bg-transparent font-semibold text-foreground underline decoration-[color-mix(in_srgb,var(--foreground)_35%,transparent)] decoration-1 underline-offset-[3px]">
             {p.text}
           </mark>
         ) : (
@@ -400,7 +400,7 @@ export function CommandMenu({
             setQuery(e.target.value);
           }}
           onKeyDown={onKeyDown}
-          className="h-full min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-foreground"
+          className="h-full min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
         />
         {loading && <Spinner className="size-4 text-muted-foreground" label="Loading results" />}
         <Kbd className="hidden sm:inline-flex">Esc</Kbd>

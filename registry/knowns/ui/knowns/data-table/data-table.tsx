@@ -446,7 +446,7 @@ export function DataTable<T>({
                         {c.header}
                         {align !== "end" && <SortGlyph dir={dir} />}
                         {rank > 0 && (
-                          <SwapText value={rank} className="text-[10px] tabular-nums text-muted-foreground">
+                          <SwapText value={rank} className="text-[11px] tabular-nums text-muted-foreground">
                             {rank}
                           </SwapText>
                         )}

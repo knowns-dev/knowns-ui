@@ -107,7 +107,7 @@ export function LiveActivity({ leading, title, subtitle, trailing, state, expand
   );
   const inner = <span className={cn("flex w-full items-center gap-3 transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none", dimmed && "opacity-60")}>{head}</span>;
   return (
-    <section aria-label={name} data-state={state} data-expanded={expanded || undefined} style={accent ? ({ "--kn-accent": accent } as CSSProperties) : undefined} className={cn("w-full max-w-sm overflow-hidden border text-card-foreground", compact ? "w-auto rounded-full" : "rounded-[26px]", resolved === "inverse" ? (pageDark ? "knla-light border-black/10 bg-card text-card-foreground shadow-[0_8px_24px_-10px_rgb(0_0_0/.25)]" : "dark border-white/10 bg-card text-card-foreground") : "border-border bg-card shadow-[0_6px_20px_-8px_rgb(0_0_0/.18)] dark:border-white/8 dark:bg-[color-mix(in_srgb,var(--card),white_5%)] dark:shadow-[0_10px_28px_-10px_rgb(0_0_0/.7)]", className)}>
+    <section aria-label={name} data-state={state} data-expanded={expanded || undefined} style={accent ? ({ "--kn-accent": accent } as CSSProperties) : undefined} className={cn("w-full max-w-sm overflow-hidden border text-card-foreground", compact ? "w-auto rounded-full" : "rounded-2xl", resolved === "inverse" ? (pageDark ? "knla-light border-black/10 bg-card text-card-foreground shadow-[0_8px_24px_-10px_rgb(0_0_0/.25)]" : "dark border-white/10 bg-card text-card-foreground") : "border-border bg-card shadow-[0_6px_20px_-8px_rgb(0_0_0/.18)] dark:border-white/8 dark:bg-[color-mix(in_srgb,var(--card),white_5%)] dark:shadow-[0_10px_28px_-10px_rgb(0_0_0/.7)]", className)}>
       <style href="knla" precedence="default">
         {CSS}
       </style>

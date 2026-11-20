@@ -125,7 +125,7 @@ export function FaqSection({ items, eyebrow, title = "Frequently asked questions
                   type="button"
                   aria-pressed={cat === c}
                   onClick={() => setCat(c)}
-                  className={cn("h-8 flex-none rounded-full border px-3 text-[13px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out)", cat === c ? "border-foreground bg-foreground text-background" : "bg-card text-muted-foreground hover:text-foreground", focusRing)}
+                  className={cn("h-8 flex-none rounded-full px-3 text-[13px] transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out)", cat === c ? "bg-foreground text-background" : "shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)] bg-card text-muted-foreground hover:text-foreground", focusRing)}
                 >
                   {c === "all" ? "All" : c}
                 </button>
@@ -140,7 +140,7 @@ export function FaqSection({ items, eyebrow, title = "Frequently asked questions
       {shown.length === 0 ? (
         <div className="rounded-xl border border-dashed px-4 py-8 text-center text-[14px] text-muted-foreground">
           No questions match{q ? ` "${q}"` : ""}.{" "}
-          <button type="button" className={cn("rounded-sm font-medium text-foreground underline-offset-2 hover:underline", focusRing)} onClick={() => (setQ(""), setCat("all"))}>
+          <button type="button" className={cn("rounded-[4px] font-medium text-foreground underline-offset-2 hover:underline", focusRing)} onClick={() => (setQ(""), setCat("all"))}>
             Show all
           </button>
         </div>

@@ -199,7 +199,7 @@ export function BillingSettings({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[18px] font-semibold tracking-[-0.01em]">{plan.name}</span>
+              <span className="text-[16px] font-semibold tracking-[-0.01em]">{plan.name}</span>
               {/* An active free plan has no billing state worth a badge. */}
               {!(plan.amount === 0 && plan.status === "active") && (
                 <Badge tone={plan.cancelAtPeriodEnd ? "warning" : PLAN_TONE[plan.status]} dot>
@@ -251,7 +251,7 @@ export function BillingSettings({
       >
         {paymentMethod ? (
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="grid h-8 w-12 place-items-center rounded-md border bg-muted text-[10px] font-semibold tracking-wide uppercase">
+            <span aria-hidden="true" className="grid h-8 w-12 place-items-center rounded-[9px] border bg-muted text-[11px] font-semibold tracking-wide uppercase">
               {cardBrand(paymentMethod.brand).slice(0, 4)}
             </span>
             <div className="text-[13.5px]">

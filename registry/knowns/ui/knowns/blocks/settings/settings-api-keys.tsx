@@ -244,7 +244,7 @@ export function ApiKeysSettings({
                     {idle !== null && (
                       <p className="mt-1 text-[12px] text-amber-800 dark:text-amber-300">
                         {idleLabel(idle)}. Revoke it if nothing uses it anymore.{" "}
-                        <button type="button" className={cn("rounded-sm font-medium underline underline-offset-2", focusRing)} onClick={() => (setNotice(null), setRevoking(k.id))}>
+                        <button type="button" className={cn("rounded-[4px] font-medium underline underline-offset-2", focusRing)} onClick={() => (setNotice(null), setRevoking(k.id))}>
                           Revoke
                         </button>
                       </p>
@@ -558,7 +558,7 @@ function HoldButton({ duration, busy, onComplete, describedBy, children }: { dur
       aria-busy={busy || undefined}
       disabled={busy}
       className={cn(
-        "relative inline-flex h-8 touch-manipulation select-none items-center justify-center overflow-hidden rounded-lg border border-red-600/40 px-3 text-[13px] font-medium text-red-700 dark:border-red-400/40 dark:text-red-300",
+        "relative inline-flex h-8 touch-manipulation select-none items-center justify-center overflow-hidden rounded-[9px] shadow-[0_0_0_1px_rgb(220_38_38/0.4)] px-3 text-[13px] font-medium text-red-700 dark:shadow-[0_0_0_1px_rgb(248_113_113/0.4)] dark:text-red-300",
         "active:scale-[0.97] transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) disabled:opacity-70",
         focusRing,
       )}

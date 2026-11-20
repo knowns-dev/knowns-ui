@@ -286,7 +286,7 @@ function SidebarSheet({ children, label, header, className }: { children: ReactN
       type="button"
       onClick={() => setMobileOpen(false)}
       aria-label="Close"
-      className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+      className="grid size-11 shrink-0 place-items-center rounded-[10px] text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
     >
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" className="size-4">
         <path d="M4 4l8 8M12 4l-8 8" />
@@ -423,7 +423,7 @@ export function SidebarTrigger({ className, label = "Toggle sidebar", labels, lo
               ? "size-9 rounded-[10px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-foreground/70 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-foreground"
               : look === "float"
                 ? "size-9 rounded-[10px] border bg-card text-foreground/70 shadow-[0_1px_2px_rgb(0_0_0/0.06),0_4px_12px_-4px_rgb(0_0_0/0.12)] hover:bg-muted hover:text-foreground"
-                : "size-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "size-8 rounded-[9px] text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
           <PanelGlyph opens={!s.isMobile && s.collapsed} />
@@ -445,7 +445,7 @@ function Fade({ children, className }: { children: ReactNode; className?: string
 }
 
 function Count({ n }: { n: number }) {
-  return <span className="rounded-md bg-muted px-1.5 text-[10.5px] font-medium tabular-nums leading-[18px] text-muted-foreground">{n.toLocaleString("en-US")}</span>;
+  return <span className="h-4.5 rounded-md bg-muted px-1.5 text-[10.5px] font-medium tabular-nums leading-[18px] text-muted-foreground">{n.toLocaleString("en-US")}</span>;
 }
 
 function Chevron({ open, className }: { open: boolean; className?: string }) {
@@ -544,7 +544,7 @@ function Collapse({ id, open, children }: { id?: string; open: boolean; children
 type LinkComponent = ComponentType<{ href: string; className?: string; children?: ReactNode; "aria-current"?: "page"; tabIndex?: number; onClick?: () => void; "data-kn-sidebar-row"?: string; onKeyDown?: (e: ReactKeyboardEvent) => void; onFocus?: () => void }>;
 
 const ROW = cn(
-  "relative flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 text-left text-[13px] text-muted-foreground outline-none",
+  "relative flex h-8 w-full min-w-0 items-center gap-2.5 rounded-[9px] px-3 text-left text-[13px] text-muted-foreground outline-none",
   "hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50",
   "aria-[current=page]:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] aria-[current=page]:font-medium aria-[current=page]:text-foreground",
   "aria-disabled:pointer-events-none aria-disabled:opacity-50",
@@ -915,7 +915,7 @@ export interface SidebarWorkspace {
 /** The avatar of a workspace: its swatch when it has one, otherwise the Avatar. */
 function WorkspaceAvatar({ w, size }: { w: SidebarWorkspace; size: "xs" | "md" }) {
   if (w.swatch && !w.src && !w.icon) {
-    return <span aria-hidden="true" className={cn("block flex-none", size === "md" ? "size-8 rounded-lg" : "size-5 rounded-md")} style={{ background: w.swatch }} />;
+    return <span aria-hidden="true" className={cn("block flex-none", size === "md" ? "size-8 rounded-[9px]" : "size-5 rounded-md")} style={{ background: w.swatch }} />;
   }
   return <Avatar label={w.name} initials={workspaceInitials(w.name)} src={w.src} icon={w.icon} size={size} shape="square" decorative />;
 }
@@ -1020,7 +1020,7 @@ export function SidebarSwitcher({
           ))}
           {onCreate && (
             <button type="button" onClick={onCreate} className="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50">
-              <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-lg bg-muted text-foreground">
+              <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-[9px] bg-muted text-foreground">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="size-4">
                   <path d="M8 3.5v9M3.5 8h9" />
                 </svg>
@@ -1042,7 +1042,7 @@ export function SidebarSwitcher({
         <button
           type="button"
           aria-label={rail ? `${current.name}, ${label}` : undefined}
-          className={cn("flex h-11 w-full min-w-0 items-center gap-2.5 rounded-lg px-1.5 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50", className)}
+          className={cn("flex h-11 w-full min-w-0 items-center gap-2.5 rounded-[10px] px-1.5 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50", className)}
         >
           <WorkspaceAvatar w={current} size="md" />
           <Fade className="flex flex-1 flex-col leading-tight">

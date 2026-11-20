@@ -730,23 +730,26 @@ function LineBarChart({ type = "line", data: rawData, x, series, label, stacked 
       )}
 
       {hasData && (
-        <table className="sr-only">
-          <caption>{label}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{x}</th>
-              {series.map((s) => <th key={s.key} scope="col">{s.label}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {rawData.map((d, i) => (
-              <tr key={i}>
-                <th scope="row">{formatX(String(d[x] ?? ""))}</th>
-                {series.map((s) => { const v = valueAt(d, s.key); return <td key={s.key}>{v === null ? "" : fmtRaw(s.key)(v)}</td>; })}
+        <div className="sr-only">
+          {/* A table ignores width: 1px, so sr-only on the table itself still widens the page; the wrapper collapses. */}
+          <table>
+            <caption>{label}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{x}</th>
+                {series.map((s) => <th key={s.key} scope="col">{s.label}</th>)}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rawData.map((d, i) => (
+                <tr key={i}>
+                  <th scope="row">{formatX(String(d[x] ?? ""))}</th>
+                  {series.map((s) => { const v = valueAt(d, s.key); return <td key={s.key}>{v === null ? "" : fmtRaw(s.key)(v)}</td>; })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </figure>
   );

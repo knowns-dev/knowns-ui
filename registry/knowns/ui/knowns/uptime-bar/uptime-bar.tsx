@@ -134,7 +134,7 @@ export function UptimeBar({ days, label, sublabel, uptime, showUptime = true, st
                 onDaySelect?.(d, i);
               }}
               className={cn(
-                "min-w-[2px] flex-1 rounded-[2px] transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) @md:rounded-[3px]",
+                "min-w-[2px] flex-1 rounded-[3px] transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) @md:rounded-[3px]",
                 BAR[d.status],
                 quiet && d.status === "up" && "opacity-45",
                 onDaySelect && "cursor-pointer",

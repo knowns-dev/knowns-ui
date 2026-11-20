@@ -113,7 +113,7 @@ export function Breadcrumb({ items, maxItems = 4, keepStart = 1, keepEnd = 2, se
                   type="button"
                   aria-label={`Show ${hidden.length} more`}
                   className={cn(
-                    "grid h-6 min-w-7 cursor-pointer place-items-center rounded-[6px] px-1 text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+                    "grid h-6 min-w-7 cursor-pointer place-items-center rounded-[7px] px-1 text-muted-foreground transition-colors ease-(--kn-ease-out) duration-(--kn-dur-fast) hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
                     focusRing,
                   )}
                 >

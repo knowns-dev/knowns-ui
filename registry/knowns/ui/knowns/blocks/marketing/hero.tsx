@@ -172,7 +172,7 @@ export function CommandChip({ command, cycle, onCopy, className }: { command: st
       onPointerLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
-      className={cn("inline-flex h-10 max-w-full items-center gap-2 rounded-lg border bg-card pr-1 pl-3 font-mono text-[13px]", className)}
+      className={cn("inline-flex h-10 max-w-full items-center gap-2 rounded-[10px] border bg-card pr-1 pl-3 font-mono text-[13px]", className)}
     >
       <span aria-hidden="true" className="text-muted-foreground select-none">
         $
@@ -199,7 +199,7 @@ export function CommandChip({ command, cycle, onCopy, className }: { command: st
         type="button"
         onClick={copy}
         aria-label={copied ? "Copied" : "Copy command"}
-        className={cn("grid size-8 flex-none cursor-pointer place-items-center rounded-lg text-muted-foreground transition-[color,background-color,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground", focusRing)}
+        className={cn("grid size-8 flex-none cursor-pointer place-items-center rounded-[9px] text-muted-foreground transition-[color,background-color,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground", focusRing)}
       >
         {copied ? (
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-4 animate-[kn-pop_var(--kn-dur)_var(--kn-ease-out)_both] motion-reduce:animate-none">
@@ -260,7 +260,7 @@ export function Actions({ primary, secondary, center }: { primary?: MarketingAct
 }
 
 function TextAction({ action }: { action: MarketingAction }) {
-  const cls = cn("group/sec inline-flex h-10 items-center gap-1 rounded-lg text-[15px] font-semibold text-foreground", focusRing);
+  const cls = cn("group/sec inline-flex h-10 items-center gap-1 rounded-[10px] text-[15px] font-semibold text-foreground", focusRing);
   const inner = (
     <>
       {action.label}

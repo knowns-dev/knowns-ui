@@ -130,6 +130,11 @@
           "target": "lib/knowns/types.ts"
         },
         {
+          "path": "registry/knowns/lib/knowns/use-abortable.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/use-abortable.ts"
+        },
+        {
           "path": "registry/knowns/lib/knowns/utils.ts",
           "type": "registry:lib",
           "target": "lib/knowns/utils.ts"
@@ -565,9 +570,9 @@
           "target": "components/ui/knowns/ai-answer/ai-answer.tsx"
         },
         {
-          "path": "registry/knowns/ui/knowns/ai-answer/answer-text.ts",
+          "path": "registry/knowns/ui/knowns/ai-answer/ai-answer-utils.ts",
           "type": "registry:ui",
-          "target": "components/ui/knowns/ai-answer/answer-text.ts"
+          "target": "components/ui/knowns/ai-answer/ai-answer-utils.ts"
         }
       ]
     },
@@ -938,6 +943,11 @@
           "path": "registry/knowns/ui/knowns/blocks/backgrounds/dither-field.tsx",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/backgrounds/dither-field.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/backgrounds/dither-field-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/backgrounds/dither-field-utils.ts"
         }
       ]
     },
@@ -2584,6 +2594,11 @@
           "path": "registry/knowns/ui/knowns/date-picker.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/date-picker.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/date-picker-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/date-picker-utils.ts"
         }
       ]
     },
@@ -2709,6 +2724,11 @@
           "path": "registry/knowns/ui/knowns/file-drop.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/file-drop.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/file-drop-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/file-drop-utils.ts"
         }
       ]
     },

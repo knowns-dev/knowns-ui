@@ -36,7 +36,7 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
     <button
       type="button"
       onClick={() => void copy(text)}
-      className="h-6 shrink-0 rounded-md px-2 text-[11.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
+      className="h-6 shrink-0 rounded-[7px] px-2 text-[11.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
     >
       <span aria-live="polite">{done ? "Copied" : label}</span>
     </button>

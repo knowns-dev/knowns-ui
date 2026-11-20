@@ -80,7 +80,7 @@ export interface UserMenuProps {
    * Decorative here: name it with `badgeLabel`.
    */
   badge?: ReactNode;
-  /** What the badge means, added to the trigger's name ("Account: Ada Lovelace, Pro"). */
+  /** What the badge means, added to the trigger's name ("Account: Noor Haddad, Pro"). */
   badgeLabel?: string;
   /** Accessible name of the trigger. Default "Account: <name>", then the badge label and the status. */
   "aria-label"?: string;
@@ -573,7 +573,7 @@ export function UserMenu({
                 if (!busy && entry) pick(entry, o.value);
               }}
               className={cn(
-                "relative z-10 grid h-6 min-w-9 cursor-default place-items-center rounded-md px-2 text-[12px]",
+                "relative z-10 grid h-6 min-w-9 cursor-default place-items-center rounded-[7px] px-2 text-[12px]",
                 o.value === value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >

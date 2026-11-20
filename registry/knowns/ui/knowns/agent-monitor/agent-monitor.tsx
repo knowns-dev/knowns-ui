@@ -124,7 +124,7 @@ const SURFACE = cn(
 const TAG: Record<MonitorState, string> = {
   idle: "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-muted-foreground",
   paused: "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-muted-foreground",
-  running: "bg-blue-500/10 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300",
+  running: "bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300",
   waiting: "bg-amber-500/12 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
   finished: "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300",
   failed: "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300",
@@ -132,7 +132,7 @@ const TAG: Record<MonitorState, string> = {
 const DOT: Record<MonitorState, string> = {
   idle: "bg-foreground/30",
   paused: "bg-foreground/40",
-  running: "bg-blue-500 dark:bg-blue-400",
+  running: "bg-sky-500 dark:bg-sky-400",
   waiting: "bg-amber-500 dark:bg-amber-400",
   finished: "bg-emerald-500 dark:bg-emerald-400",
   failed: "bg-red-500 dark:bg-red-400",
@@ -140,7 +140,7 @@ const DOT: Record<MonitorState, string> = {
 const BAR: Record<BarTone, string> = {
   done: "bg-[color-mix(in_srgb,var(--foreground)_20%,transparent)]",
   failed: "bg-[color-mix(in_srgb,var(--foreground)_40%,transparent)]",
-  running: "bg-blue-500 dark:bg-blue-400",
+  running: "bg-sky-500 dark:bg-sky-400",
   paused: "bg-[color-mix(in_srgb,var(--foreground)_40%,transparent)]",
   waiting: "bg-amber-500 dark:bg-amber-400",
 };
@@ -317,7 +317,7 @@ function TimeStrip({
     <div ref={ref} role="presentation" className="relative h-3 w-full">
       {bars.map((b) => {
         const style: CSSProperties = { transform: `translateX(${b.left * 100}%) scaleX(${b.width})`, transformOrigin: "0 50%" };
-        const visual = <span aria-hidden className={cn("absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-[1px]", BAR[b.tone])} />;
+        const visual = <span aria-hidden className={cn("absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-[3px]", BAR[b.tone])} />;
         const step = b.step ? byId.get(b.step) : undefined;
         const cls = cn("absolute inset-0 will-change-transform motion-reduce:transition-none", motion);
         if (!step) return <span key={b.id} style={style} className={cls}>{visual}</span>;
@@ -340,7 +340,7 @@ function TimeStrip({
           </Popover>
         );
       })}
-      {!bars.length && <span aria-hidden className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-[1px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]" />}
+      {!bars.length && <span aria-hidden className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-[3px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]" />}
     </div>
   );
 }
@@ -543,7 +543,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
                   i > 0 && "-ml-1",
                 )}
               >
-                <Logo icon={toolIcon(t) ?? <span className="text-[9px] font-semibold">{t.charAt(0)}</span>} size="sm" />
+                <Logo icon={toolIcon(t) ?? <span className="grid size-3 place-items-center text-[9px] font-semibold">{t.charAt(0)}</span>} size="sm" />
               </span>
             ))}
             {tools.length > 4 && <span className="ml-1 text-[11px] text-muted-foreground tabular-nums">+{tools.length - 4}</span>}
@@ -557,7 +557,7 @@ export function AgentMonitor(props: AgentMonitorProps) {
         )}
         {!collapsed && (
           <span className={cn("inline-flex h-5 flex-none items-center gap-1 rounded-[6px] px-1.5 text-[11.5px] font-medium", TAG[state])}>
-            <span aria-hidden className={cn("size-1.5 rounded-[2px]", DOT[state])} />
+            <span aria-hidden className={cn("size-1.5 rounded-[3px]", DOT[state])} />
             {STATE_LABEL[state]}
           </span>
         )}

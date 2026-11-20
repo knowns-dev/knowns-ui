@@ -75,7 +75,7 @@ export interface OtpInputProps {
 }
 
 const SLOT = {
-  md: "h-10 w-10 rounded-[10px] text-[17px] pointer-coarse:h-11 pointer-coarse:w-11",
+  md: "h-10 w-10 rounded-[10px] text-[16px] pointer-coarse:h-11 pointer-coarse:w-11",
   lg: "h-12 w-12 rounded-[12px] text-[20px]",
 };
 

@@ -105,7 +105,7 @@ type Tone = ReturnType<typeof tone>;
 function Avatar({ actor, t, size = 22, ring = true }: { actor: Actor; t: Tone; size?: number; ring?: boolean }) {
   return (
     <span
-      className="grid flex-none place-items-center overflow-hidden rounded-full bg-background text-[10px] font-semibold text-foreground [&_svg]:size-[62%]"
+      className="grid flex-none place-items-center overflow-hidden rounded-full bg-background text-[11px] font-semibold text-foreground [&_svg]:size-[62%]"
       style={{ width: size, height: size, boxShadow: ring ? `0 0 0 1.5px ${t.color}` : undefined }}
     >
       {actorIcon(actor)}
@@ -534,9 +534,9 @@ export function AgentCursors({
           {active && t && (
             <div aria-hidden className="pointer-events-none absolute inset-0 rounded-lg" style={{ boxShadow: `0 0 0 1.5px ${t.line}` }}>
               {["-left-1 -top-1", "-right-1 -top-1", "-left-1 -bottom-1", "-right-1 -bottom-1"].map((p) => (
-                <span key={p} className={cn("absolute size-2 rounded-[2px] border bg-background", p)} style={{ borderColor: t.color }} {...(p === "-right-1 -bottom-1" && !done ? { "data-kn-caret": s.agentId } : {})} />
+                <span key={p} className={cn("absolute size-2 rounded-[3px] border bg-background", p)} style={{ borderColor: t.color }} {...(p === "-right-1 -bottom-1" && !done ? { "data-kn-caret": s.agentId } : {})} />
               ))}
-              <span className="absolute -bottom-7 right-0 rounded-md px-1.5 py-0.5 font-mono text-[10.5px] tabular-nums" style={{ background: t.fill, color: t.ink }}>
+              <span className="absolute -bottom-7 right-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] tabular-nums" style={{ background: t.fill, color: t.ink }}>
                 {width} × {height}
               </span>
             </div>

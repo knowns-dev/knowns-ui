@@ -997,7 +997,7 @@ export function AgentGraph(props: AgentGraphProps) {
       {header !== false && (
         <div className="flex min-h-12 items-center justify-between gap-3 border-b [border-color:color-mix(in_srgb,var(--foreground)_6%,transparent)] px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
-            <span aria-hidden="true" className="relative size-[7px] flex-none rounded-full bg-emerald-500">
+            <span aria-hidden="true" className="relative size-2 flex-none rounded-full bg-emerald-500">
             </span>
             <div className="truncate font-semibold">{header}</div>
             {!narrow && (
@@ -1017,7 +1017,7 @@ export function AgentGraph(props: AgentGraphProps) {
                 </Badge>
               )}
               {failed.length > 0 && (
-                <Badge tone="danger" size="lg" shape="pill" icon={<span className="grid place-items-center text-[12px] font-bold leading-none">!</span>} onClick={() => {
+                <Badge tone="danger" size="lg" shape="pill" icon={<span className="grid place-items-center text-[12px] font-semibold leading-none">!</span>} onClick={() => {
                   const first = failed[0];
                   if (first) select(first.id);
                 }}>
@@ -1151,9 +1151,9 @@ export function AgentGraph(props: AgentGraphProps) {
                         tinted && isLead && "[background:color-mix(in_srgb,var(--hue)_10%,var(--card))]",
                         !isLead && selected !== a.id && "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_6%,transparent),0_1px_2px_rgb(0_0_0/0.06),0_8px_20px_-12px_rgb(0_0_0/0.5)]",
                         "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:[outline-color:var(--hue)]",
-                        isLead ? "rounded-[17px]" : geo.stacked.has(a.id) ? "rounded-[11px]" : "rounded-[14px]",
+                        isLead ? "rounded-2xl" : geo.stacked.has(a.id) ? "rounded-[12px]" : "rounded-[14px]",
                         isLead &&
-                          "[border-color:color-mix(in_srgb,var(--hue)_50%,var(--border))] shadow-[0_0_0_4px_color-mix(in_srgb,var(--hue)_12%,transparent),0_10px_28px_-10px_color-mix(in_srgb,var(--hue)_50%,transparent)]",
+                          "[border-color:color-mix(in_srgb,var(--hue)_50%,var(--border))] shadow-[0_0_0_4px_color-mix(in_srgb,var(--hue)_12%,transparent),0_10px_28px_-10px_rgb(0_0_0/0.25)]",
                         !isLead && a.type === "agent" && state === "busy" && "[border-color:color-mix(in_srgb,var(--hue)_40%,var(--border))]",
                         state === "blocked" && "border-amber-500 [background:color-mix(in_srgb,#f59e0b_9%,var(--card))]",
                         state === "failed" && "border-red-500 [background:color-mix(in_srgb,#ef4444_8%,var(--card))]",
@@ -1188,17 +1188,17 @@ export function AgentGraph(props: AgentGraphProps) {
                         </span>
                       </span>
                       {state === "blocked" && (
-                        <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full border-2 border-background bg-amber-500 text-white">
+                        <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full border-2 border-background bg-amber-500 text-amber-950">
                           <ClockGlyph />
                         </span>
                       )}
                       {state === "failed" && (
-                        <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full border-2 border-background bg-red-500 text-[10px] font-extrabold text-white">
+                        <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full border-2 border-background bg-red-500 text-[10px] font-semibold text-red-950">
                           !
                         </span>
                       )}
                       {state === "finished" && (
-                        <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full border-2 border-background bg-emerald-500 text-white">
+                        <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full border-2 border-background bg-emerald-500 text-emerald-950">
                           <CheckGlyph />
                         </span>
                       )}
@@ -1230,7 +1230,7 @@ export function AgentGraph(props: AgentGraphProps) {
                       {alert ? (
                         <div
                           className={cn(
-                            "max-w-full truncate text-[10.5px] font-semibold",
+                            "max-w-full truncate text-[11px] font-semibold",
                             state === "blocked" ? "text-amber-700 dark:text-amber-400" : "text-red-600 dark:text-red-400",
                           )}
                         >

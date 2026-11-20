@@ -4,8 +4,9 @@
 import { useEffect, useRef } from "react";
 import { useLive } from "@/registry/knowns/ui/knowns/illustrations/use-in-view";
 import { BackgroundFrame } from "./background-frame";
+import { clearKey, ditherPitch } from "./dither-field-utils";
 import { contentRects, fitCanvas, resolveRgba, watchContent, watchTheme, type BgClear } from "./bg-canvas";
-import { bayerMatrix, densityScale, ditherImage, glowFalloff, type DitherTone, holeFieldRects, imageRect, workingSize, intensityScale, mulberry32, speedScale, tokenColor, type BackgroundProps } from "./bg-utils";
+import { bayerMatrix, ditherImage, glowFalloff, type DitherTone, holeFieldRects, imageRect, workingSize, intensityScale, mulberry32, speedScale, tokenColor, type BackgroundProps } from "./bg-utils";
 
 export type DitherShape = "glow" | "horizon" | "noise";
 
@@ -78,7 +79,7 @@ function DitherImage({ density, mask = "none", focus, paused, src, fit = "cover"
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const { live } = useLive(root, paused);
-  const pitch = Math.min(12, Math.max(2, cell / Math.sqrt(densityScale(density))));
+  const pitch = ditherPitch(cell, density, 12);
   const [px, py] = position;
 
   // The picture is fetched and decoded once per `src`, so dragging cell size, levels or blur only redraws.
@@ -197,10 +198,10 @@ function DitherShapes({
   const s = speedScale(speed);
   const k = intensityScale(intensity);
   const css = tokenColor(color);
-  const pitch = Math.min(4, Math.max(2, dot / Math.sqrt(densityScale(density))));
+  const pitch = ditherPitch(dot, density, 4);
   const [cxf, cyf] = center;
   // A stable key, so an inline { x, y, w, h } does not rebuild the field every render.
-  const clearKey = typeof clear === "object" ? `${clear.x},${clear.y},${clear.w},${clear.h}` : String(clear);
+  const clearId = clearKey(clear);
 
   const scene = useRef({
     cols: 0,
@@ -419,7 +420,7 @@ function DitherShapes({
       unwatchContent();
       unwatch();
     };
-  }, [css, k, pitch, matrix, shape, drift, cxf, cyf, clearKey]);
+  }, [css, k, pitch, matrix, shape, drift, cxf, cyf, clearId]);
 
   // Motion: runs while drifting, or while the glow eases toward the pointer; idles otherwise.
   useEffect(() => {

@@ -54,7 +54,7 @@ const STATS: [string, string][] = [
 /** What happened earlier today. The agents above already say what they are doing now, so none of this repeats them. */
 const ACTIVITY = [
   { id: "a1", text: "Weekly digest sent to 12 people", at: "1h ago" },
-  { id: "a2", text: "Ada approved a $18.00 refund", at: "2h ago" },
+  { id: "a2", text: "Noor approved a $18.00 refund", at: "2h ago" },
   { id: "a3", text: "Docs agent updated 6 pages", at: "3h ago" },
   { id: "a4", text: "Nightly evals passed: 212 of 212", at: "5h ago" },
 ];
@@ -63,7 +63,7 @@ const Bell = () => (
   <button
     type="button"
     aria-label="Notifications, 2 unread"
-    className="relative grid size-8 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+    className="relative grid size-8 place-items-center rounded-[9px] text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
   >
     <span className="grid size-4 [&_svg]:size-4">{glyph("M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3L4 11zM6.5 14h3")}</span>
     <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[color:var(--kn-accent,var(--primary))] ring-2 ring-background" />
@@ -112,13 +112,13 @@ export function AppDashboardTemplate({ layout = "page", embedded, labelPrefix, c
         breadcrumb={[{ label: "Northwind", href: "#/dashboard" }, { label: node?.label ?? "Dashboard" }]}
         search={{ onOpen: () => {} }}
         notifications={<Bell />}
-        user={<UserMenu user={{ name: "Ada Lovelace", email: "ada@northwind.dev" }} items={[{ id: "profile", label: "Profile" }, { id: "billing", label: "Billing" }]} onSignOut={() => {}} sheet="never" />}
+        user={<UserMenu user={{ name: "Noor Haddad", email: "noor@northwind.dev" }} items={[{ id: "profile", label: "Profile" }, { id: "billing", label: "Billing" }]} onSignOut={() => {}} sheet="never" />}
       >
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-5 sm:p-6">
           <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
             <div className="flex min-w-0 flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[24px] leading-8 font-semibold tracking-[-0.01em]">Good afternoon, Ada</h1>
+                <h1 className="text-[24px] leading-8 font-semibold tracking-[-0.01em]">Good afternoon, Noor</h1>
                 <Badge tone="success" dot>
                   Live
                 </Badge>

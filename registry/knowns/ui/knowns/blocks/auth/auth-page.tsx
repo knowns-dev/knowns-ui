@@ -65,7 +65,7 @@ export function AuthPage({ variant = "centered", logo, topRight, children, foote
           <div className="my-auto max-w-[440px] py-10">
             {aside.eyebrow && <p className="text-[12.5px] font-medium text-muted-foreground">{aside.eyebrow}</p>}
             <h2 className="mt-2 text-[28px] leading-[1.15] font-semibold tracking-[-0.02em] text-balance">{aside.headline}</h2>
-            {aside.description && <p className="mt-3 text-[14.5px] leading-relaxed text-muted-foreground">{aside.description}</p>}
+            {aside.description && <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">{aside.description}</p>}
             {aside.points && aside.points.length > 0 && (
               <ul className="mt-7 grid gap-3.5">
                 {aside.points.map((p, i) => (

@@ -101,7 +101,7 @@ export function DocsHelpCard({ title = "Need help?", children, actions, classNam
             href={a.href}
             target={/^https?:/.test(a.href) ? "_blank" : undefined}
             rel={/^https?:/.test(a.href) ? "noopener noreferrer" : undefined}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-card px-3 text-[13px] font-medium transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring [&_svg]:size-3.5"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[9px] border bg-card px-3 text-[13px] font-medium transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring [&_svg]:size-3.5"
           >
             {a.icon}
             {a.label}

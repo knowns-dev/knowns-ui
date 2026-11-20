@@ -134,7 +134,7 @@ export function QuestionCard({ question: q, value, defaultValue, onValueChange, 
           {q.points !== undefined || q.kind === "multi" ? <span className="ml-2 text-foreground/60">{plural(pointsOf(q), "pt")}</span> : null}
         </span>
       </div>
-      <p id={`${uid}-q`} className="mt-3 text-[17px] leading-snug font-semibold text-balance">
+      <p id={`${uid}-q`} className="mt-3 text-[16px] leading-snug font-semibold text-balance">
         {q.prompt}
       </p>
 
@@ -154,7 +154,7 @@ export function QuestionCard({ question: q, value, defaultValue, onValueChange, 
             aria-invalid={shown && !grade.correct ? true : undefined}
             placeholder="Your answer"
             data-result={shown ? (grade.correct ? "correct" : "wrong") : undefined}
-            className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 read-only:bg-muted/40 data-[result=correct]:border-emerald-500 data-[result=wrong]:border-red-500"
+            className="h-11 w-full rounded-[10px] border border-input bg-background px-3 text-sm transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 read-only:bg-muted/40 data-[result=correct]:border-emerald-500 data-[result=wrong]:border-red-500"
           />
         </div>
       ) : (
@@ -213,7 +213,7 @@ export function QuestionCard({ question: q, value, defaultValue, onValueChange, 
             type="button"
             onClick={submit}
             disabled={!canSubmit}
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-[opacity,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[.97] disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex h-9 items-center rounded-[10px] bg-primary px-4 text-sm font-medium text-primary-foreground transition-[opacity,transform] duration-(--kn-dur-fast) ease-(--kn-ease-out) outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[.97] disabled:pointer-events-none disabled:opacity-50"
           >
             {submitLabel}
           </button>

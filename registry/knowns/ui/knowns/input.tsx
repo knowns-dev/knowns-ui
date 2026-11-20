@@ -134,7 +134,7 @@ export function Input({ size = "md", icon, prefix, suffix, shortcut, trailing, i
           disabled={rest.disabled}
           onClick={() => setShown(!shown)}
           className={cn(
-            "-mr-1.5 grid size-6 flex-none cursor-pointer place-items-center rounded-[6px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground disabled:pointer-events-none",
+            "-mr-1.5 grid size-6 flex-none cursor-pointer place-items-center rounded-[7px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground disabled:pointer-events-none",
             focusRing,
           )}
         >

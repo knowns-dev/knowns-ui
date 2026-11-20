@@ -99,7 +99,8 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
           <div className="flex items-start gap-3 px-4 pb-3 pt-3.5">
             <div className="relative">
               {avatar(a.actor, "size-9")}
-              <span aria-hidden="true" className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border-2 border-card bg-amber-500 text-white">
+              <span aria-hidden="true" className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border-2 border-card bg-amber-500 text-amber-950">
+                {/* Dark ink on the amber fill: a white clock read 2.1:1. */}
                 <svg viewBox="0 0 16 16" className="size-2.5">
                   <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2.2" />
                   <path d="M8 4.5V8l2.5 1.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />

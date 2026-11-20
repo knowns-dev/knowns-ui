@@ -152,7 +152,7 @@ export interface SaasLandingTemplateProps {
 
 const Mark = ({ name }: { name: ReactNode }) => (
   <span className="flex items-center gap-2 font-semibold tracking-[-0.01em]">
-    <span aria-hidden className="grid size-6 place-items-center rounded-md bg-foreground text-[12px] font-bold text-background">N</span>
+    <span aria-hidden className="grid size-6 place-items-center rounded-md bg-foreground text-[12px] font-semibold text-background">N</span>
     {name}
   </span>
 );

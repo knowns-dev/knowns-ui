@@ -293,7 +293,7 @@ export function FilterChips({ fields, value, onChange, collapsed = "auto", searc
             type="button"
             aria-label={`Clear ${f.label} filter`}
             onClick={() => clear(f)}
-            className={cn("inline-flex h-8 w-7 items-center justify-center rounded-r-[9px] border border-l-0 bg-secondary text-muted-foreground", "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground motion-reduce:transition-none pointer-coarse:h-10 pointer-coarse:w-9", focusRing)}
+            className={cn("inline-flex h-8 w-7 items-center justify-center rounded-r-[9px] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)] bg-secondary text-muted-foreground", "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:text-foreground motion-reduce:transition-none pointer-coarse:h-10 pointer-coarse:w-9", focusRing)}
           >
             <CrossGlyph />
           </button>

@@ -322,7 +322,7 @@ export function AgentLanes({
             })}
             <span
               style={{ left: trackW }}
-              className="absolute top-1.5 -translate-x-1/2 rounded bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_12%,transparent)] px-1.5 py-px text-[10.5px] font-medium text-[color:var(--kn-accent,var(--primary))]"
+              className="absolute top-1.5 -translate-x-1/2 rounded bg-[color-mix(in_srgb,var(--kn-accent,var(--primary))_12%,transparent)] px-1.5 py-px text-[11px] font-medium text-[color:var(--kn-accent,var(--primary))]"
             >
               now
             </span>
@@ -343,22 +343,22 @@ export function AgentLanes({
                   <div className="flex items-center gap-1.5">
                     <span className="truncate font-medium leading-tight">{actor.label}</span>
                     {blocked ? (
-                      <span className="flex-none rounded bg-amber-500/12 px-1.5 text-[10.5px] font-medium leading-[18px] text-amber-700 dark:text-amber-300">
+                      <span className="flex-none rounded bg-amber-500/12 px-1.5 text-[11px] font-medium leading-[18px] text-amber-700 dark:text-amber-300">
                         Needs you
                       </span>
                     ) : (
                       !busy &&
                       (last?.outcome === "success" ? (
-                        <span className="inline-flex flex-none items-center gap-0.5 rounded bg-emerald-500/10 pr-1.5 pl-1 text-[10.5px] font-medium leading-[18px] text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300">
+                        <span className="inline-flex flex-none items-center gap-0.5 rounded bg-emerald-500/10 pr-1.5 pl-1 text-[11px] font-medium leading-[18px] text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300">
                           <svg viewBox="0 0 16 16" aria-hidden="true" className="size-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M4 8.5l2.5 2.5L12 5.5" />
                           </svg>
                           Done
                         </span>
                       ) : last?.outcome === "failure" ? (
-                        <span className="flex-none rounded bg-red-500/10 px-1.5 text-[10.5px] font-medium leading-[18px] text-red-700 dark:bg-red-400/15 dark:text-red-300">Failed</span>
+                        <span className="flex-none rounded bg-red-500/10 px-1.5 text-[11px] font-medium leading-[18px] text-red-700 dark:bg-red-400/15 dark:text-red-300">Failed</span>
                       ) : (
-                        <span className="flex-none rounded bg-muted px-1.5 text-[10.5px] leading-[18px] text-muted-foreground">Idle</span>
+                        <span className="flex-none rounded bg-muted px-1.5 text-[11px] leading-[18px] text-muted-foreground">Idle</span>
                       ))
                     )}
                   </div>

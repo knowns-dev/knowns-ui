@@ -46,7 +46,7 @@ export const FloatingDock = forwardRef<HTMLElement, FloatingDockProps>(function 
       aria-label={label}
       data-dock-corner={corner}
       {...rest}
-      className={cn(position === "fixed" ? "fixed" : "absolute", "z-40 overflow-hidden rounded-[22px] border border-border bg-card text-card-foreground shadow-lg", className)}
+      className={cn(position === "fixed" ? "fixed" : "absolute", "z-40 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-lg", className)}
       style={{ ...dockAnchor(corner, margin), maxWidth: `calc(${position === "fixed" ? "100vw" : "100%"} - ${margin * 2}px)`, ...style }}
     >
       {children}

@@ -144,23 +144,21 @@ export interface ChatComposerProps {
 
 const DEFAULT_MODELS: ComposerModel[] = [
   { id: "auto", name: "Auto", detail: "Picks a model for each task" },
-  { id: "opus-5.5", name: "Opus 5.5", detail: "Deepest reasoning" },
-  { id: "sonnet-5.5", name: "Sonnet 5.5", detail: "Fast and capable" },
-  { id: "haiku-5.5", name: "Haiku 5.5", detail: "Quickest, for small tasks" },
-  { id: "gpt-5", name: "GPT-5", detail: "OpenAI" },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", detail: "Google, long context" },
+  { id: "deep", name: "Deep", detail: "Deepest reasoning" },
+  { id: "balanced", name: "Balanced", detail: "Fast and capable" },
+  { id: "quick", name: "Quick", detail: "Quickest, for small tasks" },
 ];
 
 const DEFAULT_APPS: ComposerApp[] = [
-  { id: "gmail", name: "Gmail" },
-  { id: "slack", name: "Slack" },
-  { id: "notion", name: "Notion" },
-  { id: "github", name: "GitHub" },
-  { id: "linear", name: "Linear" },
+  { id: "mail", name: "Mail" },
+  { id: "chat", name: "Chat" },
+  { id: "docs", name: "Docs" },
+  { id: "code", name: "Code" },
+  { id: "tracker", name: "Tracker" },
 ];
 
 const DEFAULT_FOLDERS = ["knowns/ui", "knowns/web", "knowns/docs"];
-const DEFAULT_CONNECTED = ["slack"];
+const DEFAULT_CONNECTED = ["chat"];
 const NONE = "\u0000none";
 
 /* ── Glyphs (16px grid, 1.5 stroke) ── */
@@ -725,7 +723,7 @@ export function ChatComposer({
                   aria-hidden={exiting || undefined}
                   style={{ "--kncc-delay": `${slot * 40}ms` } as CSSProperties}
                 >
-                  <div className="group relative flex h-7 max-w-[240px] items-center gap-1.5 overflow-hidden rounded-lg bg-muted/60 pr-0.5 pl-2 text-[12.5px] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]">
+                  <div className="group relative flex h-7 max-w-[240px] items-center gap-1.5 overflow-hidden rounded-[8px] bg-muted/60 pr-0.5 pl-2 text-[12.5px] shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]">
                     <span aria-hidden className="grid flex-none text-muted-foreground [&_svg]:size-3.5">
                       <Icon />
                     </span>
@@ -770,7 +768,7 @@ export function ChatComposer({
           onKeyDown={onKey}
           className={cn(
             "block w-full resize-none bg-transparent px-1 text-foreground outline-none",
-            size === "lg" ? "py-2 text-[clamp(20px,4.6cqw,28px)] leading-[1.35] tracking-[-0.01em]" : "py-1 text-[14.5px] leading-6",
+            size === "lg" ? "py-2 text-[clamp(20px,4.6cqw,28px)] leading-[1.35] tracking-[-0.01em]" : "py-1 text-[14px] leading-6",
             "placeholder:text-muted-foreground disabled:cursor-not-allowed",
           )}
         />
@@ -779,7 +777,7 @@ export function ChatComposer({
         </span>
 
         {words.length > 0 && (
-          <p aria-hidden className="px-1 pb-1 text-[14.5px] leading-6 text-muted-foreground">
+          <p aria-hidden className="px-1 pb-1 text-[14px] leading-6 text-muted-foreground">
             {words.map((w, i) => (
               <span key={i} className="animate-[kn-word_var(--kn-dur-slow)_var(--kn-ease-out)_both] motion-reduce:animate-none">
                 {w}{" "}

@@ -169,7 +169,7 @@ export function AuthCard({
       type="button"
       disabled={cooldown > 0 || busy || blocked}
       onClick={() => void send()}
-      className="rounded text-muted-foreground underline-offset-[3px] tabular-nums enabled:hover:text-foreground enabled:hover:underline disabled:opacity-60 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
+      className="rounded-[4px] text-muted-foreground underline-offset-[3px] tabular-nums enabled:hover:text-foreground enabled:hover:underline disabled:opacity-60 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
     >
       {cooldown > 0 ? `${step === "link" ? "Resend link" : "Send a new code"} in ${formatCountdown(cooldown)}` : step === "link" ? "Resend link" : "Send a new code"}
     </button>
@@ -177,7 +177,7 @@ export function AuthCard({
   const another = (
     <button
       type="button"
-      className="rounded text-muted-foreground underline-offset-[3px] hover:text-foreground hover:underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
+      className="rounded-[4px] text-muted-foreground underline-offset-[3px] hover:text-foreground hover:underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
       onClick={back}
     >
       Use another email
@@ -239,7 +239,7 @@ export function AuthCard({
           <form onSubmit={send} className="grid gap-4" noValidate>
             {mode === "sign-up" && (
               <Field label="Name" id={ids.name} optional>
-                <Input id={ids.name} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Lovelace" maxLength={80} disabled={busy || social !== null} />
+                <Input id={ids.name} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Noor Haddad" maxLength={80} disabled={busy || social !== null} />
               </Field>
             )}
             <Field label="Email address" id={ids.email} error={errorText ?? undefined}>
@@ -312,7 +312,7 @@ export function AuthCard({
           <button
             type="button"
             onClick={() => (onModeChange(mode === "sign-up" ? "sign-in" : "sign-up"), setError(null))}
-            className="rounded font-medium text-foreground underline-offset-[3px] hover:underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
+            className="rounded-[4px] font-medium text-foreground underline-offset-[3px] hover:underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
           >
             {mode === "sign-up" ? "Sign in" : "Create an account"}
           </button>

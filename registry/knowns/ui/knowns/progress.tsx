@@ -328,7 +328,7 @@ export function ProgressCircle({
   const pct = progressPercent(value, max);
   const fmt = format ?? (formatOptions ? (v: number, p: number) => formatWithOptions(v, p, formatOptions, locale) : formatPercent);
   const valueText = fmt(value, pct);
-  const textCls = box >= 56 ? "text-[13px]" : box >= 36 ? "text-[9px] tracking-[-0.02em]" : "";
+  const textCls = box >= 56 ? "text-[13px]" : box >= 36 ? "text-[11px] tracking-[-0.02em]" : "";
   // Indeterminate: a 28% arc orbiting at Spinner's pace, with a tight halo.
   const offset = indeterminate ? c * 0.72 : c * (1 - pct / 100);
 

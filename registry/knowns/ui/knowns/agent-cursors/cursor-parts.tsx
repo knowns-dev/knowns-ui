@@ -38,7 +38,7 @@ export function CursorTag({ name, status, color, away, trailing, className, ...r
         <span className="truncate">{name}</span>
       </span>
       {(status || trailing) && (
-        <span className="flex gap-1 pl-3 text-[10.5px] leading-4 whitespace-nowrap text-muted-foreground">
+        <span className="flex gap-1 pl-3 text-[11px] leading-4 whitespace-nowrap text-muted-foreground">
           <span className="truncate">{status}</span>
           {trailing}
         </span>

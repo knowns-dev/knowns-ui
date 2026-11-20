@@ -29,9 +29,9 @@ export interface PromptToTeamProps {
 }
 
 const DEFAULT_TEAM: TeamAgent[] = [
-  { role: "Researcher", model: "Gemini 2.5 Pro", tools: ["Web search", "Notion"] },
-  { role: "Analyst", model: "Sonnet 5.5", tools: ["Postgres"] },
-  { role: "Writer", model: "GPT-5", tools: ["Google Drive", "Slack"] },
+  { role: "Researcher", tools: ["Web search", "Docs"] },
+  { role: "Analyst", tools: ["Database"] },
+  { role: "Writer", tools: ["File store", "Chat"] },
 ];
 
 export type TeamPhase = "typing" | "send" | "branch" | "team" | "out";

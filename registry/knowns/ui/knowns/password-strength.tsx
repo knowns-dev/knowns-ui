@@ -303,7 +303,8 @@ function prefersReducedMotion() {
 const Tick = ({ on }: { on: boolean }) => (
   <span aria-hidden="true" className="relative grid size-3.5 flex-none place-items-center">
     <svg viewBox="0 0 16 16" fill="none" className="absolute inset-0 size-full">
-      <circle cx="8" cy="8" r="6.25" strokeWidth="1.25" className="stroke-[color-mix(in_srgb,var(--foreground)_28%,transparent)]" />
+      {/* The unmet ring says "not yet", so it keeps 3:1: 28% read 2.4:1 in dark. */}
+      <circle cx="8" cy="8" r="6.25" strokeWidth="1.25" className="stroke-[color-mix(in_srgb,var(--foreground)_45%,transparent)]" />
     </svg>
     <svg
       viewBox="0 0 16 16"

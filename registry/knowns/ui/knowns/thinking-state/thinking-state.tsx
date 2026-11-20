@@ -179,7 +179,7 @@ function Shimmer({ children, on }: { children: ReactNode; on: boolean }) {
 
 function SourceIcon({ source }: { source: ThinkingSource }) {
   const [broken, setBroken] = useState(false);
-  const box = "grid size-3.5 flex-none place-items-center overflow-hidden rounded-[4px] [&>*]:size-full [&>svg]:size-full";
+  const box = "grid size-3.5 flex-none text-[9px] place-items-center overflow-hidden rounded-[4px] [&>*]:size-full [&>svg]:size-full";
   if (source.icon) return <span aria-hidden className={box}>{source.icon}</span>;
   if (source.favicon && !broken)
     return (
@@ -188,7 +188,7 @@ function SourceIcon({ source }: { source: ThinkingSource }) {
       </span>
     );
   return (
-    <span aria-hidden className={cn(box, "bg-muted text-[8.5px] font-semibold text-muted-foreground")}>
+    <span aria-hidden className={cn(box, "bg-muted font-semibold text-muted-foreground")}>
       {initialOf(domainOf(source.url) || source.title)}
     </span>
   );

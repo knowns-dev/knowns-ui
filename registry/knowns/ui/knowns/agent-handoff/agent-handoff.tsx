@@ -72,7 +72,7 @@ const EASE = "ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))]";
 const HAIRLINE = "[border-color:color-mix(in_srgb,var(--foreground)_8%,transparent)]";
 
 const PILL: Record<RelayStatus, { text: string; className: string }> = {
-  working: { text: "Working", className: "bg-blue-500/10 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300" },
+  working: { text: "Working", className: "bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300" },
   warning: { text: "Needs a look", className: "bg-amber-500/12 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300" },
   done: { text: "Done", className: "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300" },
   todo: { text: "Idle", className: "bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] text-muted-foreground" },
@@ -262,7 +262,7 @@ function Lane({
       aria-label={`${from.name} to ${to.name}, ${count} ${count === 1 ? "handoff" : "handoffs"}`}
       style={{ "--c": `${2 * index + 2} / span 2` } as CSSProperties}
       className={cn(
-        "relative flex min-w-0 flex-col self-start rounded-[16px] bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)] p-1.5 [grid-column:var(--c)] [grid-row:2]",
+        "relative flex min-w-0 flex-col self-start rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)] p-1.5 [grid-column:var(--c)] [grid-row:2]",
         "@max-[759px]/relay:mb-3 @max-[759px]/relay:[grid-column:auto] @max-[759px]/relay:[grid-row:auto]",
         "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_5%,transparent)] dark:bg-[color-mix(in_srgb,#000_30%,transparent)]",
         "transition-opacity duration-(--kn-dur) ease-(--kn-ease-out)",
@@ -579,7 +579,7 @@ export function AgentHandoff({
         onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setActive((a) => (a === agentId ? null : a))}
         style={{ "--c": `${2 * i + 1} / span 2` } as CSSProperties}
         className={cn(
-          "@container/agent relative flex min-w-0 flex-col gap-3 rounded-[16px] border bg-card p-4 outline-none [grid-column:var(--c)] [grid-row:1]",
+          "@container/agent relative flex min-w-0 flex-col gap-3 rounded-2xl border bg-card p-4 outline-none [grid-column:var(--c)] [grid-row:1]",
           "@max-[759px]/relay:[grid-column:auto] @max-[759px]/relay:[grid-row:auto]",
           HAIRLINE,
           "dark:[background:color-mix(in_srgb,var(--card)_80%,#000)]",
@@ -596,7 +596,7 @@ export function AgentHandoff({
         <div className="flex items-start gap-3">
           <Logo actor={actor} />
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[14.5px] font-semibold leading-tight tracking-[-0.01em]">{name(agentId)}</span>
+            <span className="truncate text-[15px] font-semibold leading-tight tracking-[-0.01em]">{name(agentId)}</span>
             {(actor?.model || actor?.spend !== undefined) && (
               <span className="truncate text-[12.5px] text-muted-foreground">
                 {actor?.model}
@@ -656,7 +656,7 @@ export function AgentHandoff({
     const lost = h.items.filter((i) => i.lost).length;
     if (s === "working")
       return (
-        <span className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+        <span className="flex items-center gap-2 text-sky-700 dark:text-sky-300">
           <Spinner label="" className="size-3.5" />
           <span className="text-foreground/80">With {name(h.to)}</span>
         </span>
@@ -796,7 +796,7 @@ export function AgentHandoff({
       ref={root}
       aria-label={label}
       className={cn(
-        "@container/relay relative rounded-[18px] border bg-card text-card-foreground",
+        "@container/relay relative rounded-2xl border bg-card text-card-foreground",
         HAIRLINE,
         "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_5%,transparent),0_1px_2px_rgb(0_0_0/0.04)] dark:[background:color-mix(in_srgb,var(--card)_55%,#000)]",
         "[--kn-line:#4f7df0] [--kn-line-hot:#a9c2ff] dark:[--kn-line:#6b95ff] dark:[--kn-line-hot:#dbe6ff]",

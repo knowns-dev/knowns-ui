@@ -282,7 +282,8 @@ function Row({
           onClick={() => onRead?.(n.id, !n.read)}
           aria-label={n.read ? `Mark "${n.title}" as unread` : `Mark "${n.title}" as read`}
           title={n.read ? "Mark as unread" : "Mark as read"}
-          className={cn("grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground", focusRing, n.read && "opacity-50")}
+          // Read rows quiet the action to 70%, not 50%: the icon keeps 3:1 in dark.
+          className={cn("grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground", focusRing, n.read && "opacity-70")}
         >
           <CheckMark />
         </button>

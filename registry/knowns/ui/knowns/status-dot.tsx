@@ -7,7 +7,7 @@ export type StatusDotTone = "neutral" | "accent" | "success" | "warning" | "dang
 
 const COLOR: Record<StatusDotState, string> = {
   idle: "bg-muted-foreground/50",
-  busy: "bg-indigo-500",
+  busy: "bg-sky-500",
   blocked: "bg-amber-500",
   failed: "bg-red-500",
   finished: "bg-emerald-500",

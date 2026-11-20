@@ -84,7 +84,7 @@ const ICONS = {
 };
 
 const tool =
-  "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-pressed:bg-muted aria-pressed:text-foreground";
+  "grid size-7 place-items-center rounded-[8px] text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring aria-pressed:bg-muted aria-pressed:text-foreground";
 
 function Tool({ label, onClick, pressed, children }: { label: string; onClick: () => void; pressed?: boolean; children: ReactNode }) {
   return (
@@ -206,7 +206,7 @@ function CopyCode({ text }: { text: string }) {
         setDone(true);
         setTimeout(() => setDone(false), 1400);
       }}
-      className="h-7 rounded-md px-2 text-[12px] font-medium text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
+      className="h-7 rounded-[8px] px-2 text-[12px] font-medium text-muted-foreground transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring"
     >
       <span aria-live="polite">{done ? "Copied" : "Copy"}</span>
     </button>

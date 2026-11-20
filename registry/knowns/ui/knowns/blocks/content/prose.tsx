@@ -204,7 +204,7 @@ export interface ContentAuthor {
 }
 
 export function AuthorChip({ author, size = "sm", className }: { author: ContentAuthor; size?: "sm" | "md"; className?: string }) {
-  const box = size === "md" ? "size-8 text-[12.5px]" : "size-6 text-[10.5px]";
+  const box = size === "md" ? "size-8 text-[12.5px]" : "size-6 text-[11px]";
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
       {author.avatar ? (

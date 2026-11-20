@@ -40,8 +40,9 @@ export function PriorityBars({ priority, label, className }: PriorityBarsProps) 
   const text = label === false ? undefined : (label ?? PRIORITY_LABEL[priority]);
   const aria = text ? ({ role: "img", "aria-label": text } as const) : ({ "aria-hidden": true } as const);
   if (priority === "urgent") {
+    // Dark ink on the orange fill: white read 2.9:1.
     return (
-      <span {...aria} data-priority="urgent" className={cn("inline-flex size-[14px] shrink-0 items-center justify-center rounded-[3px] bg-orange-500 text-[10px] font-bold leading-none text-white", className)}>
+      <span {...aria} data-priority="urgent" className={cn("inline-flex size-3.5 shrink-0 items-center justify-center rounded-[3px] bg-orange-500 text-[10px] font-semibold leading-none text-orange-950", className)}>
         !
       </span>
     );

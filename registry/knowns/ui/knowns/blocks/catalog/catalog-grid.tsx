@@ -575,7 +575,7 @@ export function CatalogGrid({
               return (
                 <section key={c} aria-label={labelOf(c)} className="flex flex-col gap-3">
                   <div className="flex items-baseline gap-2">
-                    <h2 id={c.toLowerCase().replace(/[^a-z0-9]+/g, "-")} className="scroll-mt-24 text-lg font-semibold tracking-tight">
+                    <h2 id={c.toLowerCase().replace(/[^a-z0-9]+/g, "-")} className="scroll-mt-24 text-[19px] font-semibold tracking-tight">
                       {href ? (
                         <a href={href} className="hover:underline">
                           {labelOf(c)}

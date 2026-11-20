@@ -147,7 +147,7 @@ const DENSITY = {
     name: "text-[16px] leading-6",
     model: "text-[13.5px] leading-5",
     pill: "h-6.5 gap-1.5 px-2 text-[13px] [&_svg]:size-3.5",
-    task: "text-[14.5px]",
+    task: "text-[15px]",
     row: "h-7",
     foot: "text-[13.5px]",
     chip: "h-7",
@@ -187,7 +187,7 @@ const ROW_HOVER = "transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-ou
 const WIRE = "[--fleet-wire:rgb(59_110_230/0.6)] dark:[--fleet-wire:rgb(120_156_255/0.72)] [--fleet-head:rgb(59_110_230)] dark:[--fleet-head:rgb(190_210_255)]";
 
 const PILL: Record<FleetState, string> = {
-  running: "bg-blue-500/10 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300",
+  running: "bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300",
   done: "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300",
   waiting: "bg-amber-500/12 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
   failed: "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300",
@@ -518,7 +518,7 @@ function TasksPopover({
           <ToolTile tool={s.tool} />
           <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/90">{s.title}</span>
           {s.state === "running" ? (
-            <span className="flex flex-none items-center gap-1.5 text-[13px] text-blue-700 tabular-nums dark:text-blue-300 [&_svg]:size-3.5">
+            <span className="flex flex-none items-center gap-1.5 text-[13px] text-sky-700 tabular-nums dark:text-sky-300 [&_svg]:size-3.5">
               <Spinner />
               {time}
             </span>
@@ -551,7 +551,7 @@ function TasksPopover({
       )}
     >
       <div className="flex items-baseline justify-between px-2.5">
-        <span className="text-[14.5px] font-semibold text-foreground">Tasks</span>
+        <span className="text-[15px] font-semibold text-foreground">Tasks</span>
         <span className="text-[13px] text-muted-foreground tabular-nums">
           {steps.length ? `${done}/${steps.length} done` : "No tasks yet"}
         </span>
@@ -1045,7 +1045,7 @@ export function AgentFleet({
         icon={
           (hidden.running > 0 || hidden.waiting > 0 || hidden.failed > 0) && (
             <span className="flex items-center gap-1">
-              {hidden.running > 0 && <span className="size-1.5 rounded-full bg-blue-500" />}
+              {hidden.running > 0 && <span className="size-1.5 rounded-full bg-sky-500" />}
               {hidden.waiting > 0 && <span className="size-1.5 rounded-full bg-amber-500" />}
               {hidden.failed > 0 && <span className="size-1.5 rounded-full bg-red-500" />}
             </span>

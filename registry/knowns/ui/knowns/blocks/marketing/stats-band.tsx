@@ -89,7 +89,7 @@ function Visual({ visual }: { visual: StatVisual }) {
       {heights.map((h, i) => (
         <span
           key={i}
-          className={cn("min-w-0 flex-1 rounded-[1.5px] bg-current", visual.kind === "distribution" && (i === at ? "opacity-90" : "opacity-20"), visual.kind === "bars" && "opacity-50")}
+          className={cn("min-w-0 flex-1 rounded-[3px] bg-current", visual.kind === "distribution" && (i === at ? "opacity-90" : "opacity-20"), visual.kind === "bars" && "opacity-50")}
           style={{ height: `${Math.max(4, h)}%` }}
         />
       ))}

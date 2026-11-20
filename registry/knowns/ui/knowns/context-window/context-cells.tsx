@@ -66,7 +66,7 @@ export function ContextCells({ segments, span, cellTokens, colors, limit, warnAt
               data-kncw-cell=""
               data-seg={c.id ?? undefined}
               data-busy={(c.id && busy?.includes(c.id)) || undefined}
-              className={cn("aspect-square rounded-[2px]", zone, i >= limitCell && "ring-1 ring-inset ring-red-500", hot && c.id !== hot && "opacity-25")}
+              className={cn("aspect-square rounded-[3px]", zone, i >= limitCell && "ring-1 ring-inset ring-red-500", hot && c.id !== hot && "opacity-25")}
               style={{
                 background: color ? (c.reserve ? `color-mix(in srgb, ${color} 35%, transparent)` : color) : undefined,
                 animationDelay: `${(i % 24) * 45}ms`,

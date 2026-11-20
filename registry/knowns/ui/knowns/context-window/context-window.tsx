@@ -457,7 +457,7 @@ function Ring({
         <span className="flex flex-col gap-0.5">
           {segments.map((s) => (
             <span key={s.id} className="flex items-center gap-1.5">
-              <span className="size-2 rounded-[2px]" style={{ background: colors.get(s.id) }} />
+              <span className="size-2 rounded-[3px]" style={{ background: colors.get(s.id) }} />
               {s.label}: {fmt(segTokens(s))}
               {isReserve(s) ? " (reserved)" : ""}
             </span>
@@ -487,7 +487,7 @@ function Ring({
           ))}
         </svg>
         {size >= 28 && (
-          <span aria-hidden="true" className={cn("absolute text-[10px] font-semibold tabular-nums", state === "ok" ? "text-foreground" : STATE_TONE[state])} style={{ fontSize: Math.max(9, size * 0.3) }}>
+          <span aria-hidden="true" className={cn("absolute text-[11px] font-semibold tabular-nums", state === "ok" ? "text-foreground" : STATE_TONE[state])} style={{ fontSize: Math.max(11, size * 0.3) }}>
             {limit ? <TickNumber value={totals.pct} format={(p) => formatPct(p).replace("%", "")} /> : center}
           </span>
         )}

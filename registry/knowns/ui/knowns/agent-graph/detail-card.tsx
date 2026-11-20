@@ -49,7 +49,7 @@ export function DetailCard({
       <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
-          className="grid size-11 flex-none place-items-center rounded-[11px] border bg-muted/50 font-semibold"
+          className="grid size-11 flex-none place-items-center rounded-[12px] border bg-muted/50 font-semibold"
         >
           <span className="grid size-[55%] place-items-center [&>svg]:size-full">{iconFor(actor)}</span>
         </span>

@@ -379,27 +379,30 @@ export function RadialChart({ type, data, x, series, label, thickness = 0.32, ce
       )}
 
       {hasData && (
-        <table className="sr-only">
-          <caption>{label}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{x}</th>
-              <th scope="col">{series[0]?.label ?? key}</th>
-              {partial && <th scope="col">Max</th>}
-              <th scope="col">{partial ? "Filled" : "Share"}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.i}>
-                <th scope="row">{r.name}</th>
-                <td>{r.v === null ? "" : format(r.v)}</td>
-                {partial && <td>{r.m === null ? "" : format(r.m)}</td>}
-                <td>{off.has(r.i) ? "" : pct(r)}</td>
+        <div className="sr-only">
+          {/* A table ignores width: 1px, so sr-only on the table itself still widens the page; the wrapper collapses. */}
+          <table>
+            <caption>{label}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{x}</th>
+                <th scope="col">{series[0]?.label ?? key}</th>
+                {partial && <th scope="col">Max</th>}
+                <th scope="col">{partial ? "Filled" : "Share"}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.i}>
+                  <th scope="row">{r.name}</th>
+                  <td>{r.v === null ? "" : format(r.v)}</td>
+                  {partial && <td>{r.m === null ? "" : format(r.m)}</td>}
+                  <td>{off.has(r.i) ? "" : pct(r)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </figure>
   );
@@ -639,27 +642,30 @@ export function RingsChart({ data, x, series, label, thickness = 0.62, center, c
       )}
 
       {hasData && (
-        <table className="sr-only">
-          <caption>{label}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{x}</th>
-              <th scope="col">{series[0]?.label ?? key}</th>
-              <th scope="col">Goal</th>
-              <th scope="col">Progress</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.i}>
-                <th scope="row">{r.name}</th>
-                <td>{r.v === null ? "" : format(r.v)}</td>
-                <td>{r.goal === null ? "" : format(r.goal)}</td>
-                <td>{r.v === null || !r.goal ? "" : pct(r)}</td>
+        <div className="sr-only">
+          {/* A table ignores width: 1px, so sr-only on the table itself still widens the page; the wrapper collapses. */}
+          <table>
+            <caption>{label}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{x}</th>
+                <th scope="col">{series[0]?.label ?? key}</th>
+                <th scope="col">Goal</th>
+                <th scope="col">Progress</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.i}>
+                  <th scope="row">{r.name}</th>
+                  <td>{r.v === null ? "" : format(r.v)}</td>
+                  <td>{r.goal === null ? "" : format(r.goal)}</td>
+                  <td>{r.v === null || !r.goal ? "" : pct(r)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </figure>
   );

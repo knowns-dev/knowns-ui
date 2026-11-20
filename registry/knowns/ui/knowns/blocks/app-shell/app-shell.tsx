@@ -128,7 +128,7 @@ function TopbarSearch({ onOpen, label = "Search" }: { onOpen: () => void; label?
         type="button"
         onClick={onOpen}
         aria-label={label}
-        className="grid size-8 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-11 md:hidden"
+        className="grid size-8 place-items-center rounded-[9px] text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-11 md:hidden"
       >
         <SearchGlyph />
       </button>

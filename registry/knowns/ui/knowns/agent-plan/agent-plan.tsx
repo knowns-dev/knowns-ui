@@ -135,7 +135,7 @@ const Chevron = ({ open }: { open: boolean }) => (
 
 /** The marker in front of a step: its number while pending, then a spinner, check, dash or cross. */
 function Marker({ status, n, small }: { status: PlanStepStatus; n?: number; small?: boolean }) {
-  const box = cn("grid shrink-0 place-items-center rounded-full", small ? "size-4" : "size-5");
+  const box = cn("grid shrink-0 place-items-center rounded-full", small ? "size-4 text-[10.5px]" : "size-5 text-[10.5px]");
   if (status === "active")
     return (
       <span className={cn(box, "text-foreground")}>
@@ -151,7 +151,7 @@ function Marker({ status, n, small }: { status: PlanStepStatus; n?: number; smal
     <span
       className={cn(
         box,
-        "text-[10.5px] font-medium tabular-nums text-muted-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)]",
+        "font-medium tabular-nums text-muted-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent)]",
       )}
     >
       {small ? <span className="size-1 rounded-full bg-current opacity-60" /> : n}

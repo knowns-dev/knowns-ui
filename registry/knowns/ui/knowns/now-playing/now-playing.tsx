@@ -123,7 +123,7 @@ export function NowPlayingLevels({ levels, playing, className }: { levels?: read
       {bars.map((v, i) => (
         <span
           key={i}
-          className="h-full w-1 origin-bottom rounded-[1.5px] bg-(--kn-accent,var(--primary)) transition-[transform,opacity] duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none"
+          className="h-full w-1 origin-bottom rounded-[3px] bg-(--kn-accent,var(--primary)) transition-[transform,opacity] duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none"
           style={{ transform: `scaleY(${playing ? v : Math.min(v, 0.5)})`, opacity: playing ? 1 : 0.35 }}
         />
       ))}
@@ -261,7 +261,7 @@ function TrackText({ p, big }: { p: Parts; big?: boolean }) {
   return (
     <span className="min-w-0 flex-1">
       {big && t && p.source && <span className="mb-0.5 block truncate text-[11.5px] font-medium tracking-wide text-muted-foreground uppercase">{p.source}</span>}
-      <span className={cn("block truncate leading-tight font-semibold", big ? "text-[18px]" : "text-[14px]")}>{t ? t.title : p.L.nothingPlaying}</span>
+      <span className={cn("block truncate leading-tight font-semibold", big ? "text-[16px]" : "text-[14px]")}>{t ? t.title : p.L.nothingPlaying}</span>
       {t && <span className="mt-0.5 block truncate text-[12.5px] leading-tight text-muted-foreground">{[t.artist, big ? t.album : undefined].filter(Boolean).join(" · ")}</span>}
     </span>
   );
@@ -371,7 +371,7 @@ export function NowPlaying(props: NowPlayingProps) {
         {...rest}
         // The compact pill keeps one width and one 20px corner (a pill at 40px high) in both states, so opening is only the Fold:
         // no width or radius change, nothing to jump, and the open card has the room its controls need.
-        className={cn(compact && "w-full rounded-[20px]", rest.className)}
+        className={cn(compact && "w-full rounded-2xl", rest.className)}
         compact={compact}
         label={track ? L.trackText(track.title, track.artist) : L.nothingPlaying}
         leading={<NowPlayingCover track={track} size={compact ? 24 : 32} />}

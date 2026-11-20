@@ -504,11 +504,12 @@ export function TraceWaterfall({
             enter && "transition-[opacity,translate] duration-(--kn-dur-slow) ease-[var(--kn-ease-out,cubic-bezier(.22,1,.36,1))] starting:-translate-y-1.5 starting:opacity-0",
             "hover:bg-[color-mix(in_srgb,var(--foreground)_3.5%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:shadow-[inset_2px_0_0_var(--ring)]",
             isOpen && "bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]",
-            dim && "opacity-45",
           )}
         >
           {/* Label column */}
-          <div className="flex h-full w-(--label-w) flex-none items-center gap-1.5 pr-2 pl-2" style={{ paddingLeft: 8 + r.depth * INDENT }}>
+          {/* A dimmed row (filter context, off the critical path) fades its bar, while its text turns muted: a faded label
+              fell to 2.4:1 in dark. */}
+          <div className={cn("flex h-full w-(--label-w) flex-none items-center gap-1.5 pr-2 pl-2", dim && "text-muted-foreground")} style={{ paddingLeft: 8 + r.depth * INDENT }}>
             {hasKids ? (
               <button
                 type="button"
@@ -525,18 +526,18 @@ export function TraceWaterfall({
             ) : (
               <span className="size-4 flex-none" />
             )}
-            <span aria-hidden className={cn("grid size-4 flex-none place-items-center [&>*]:size-full [&_svg]:size-full", !callee?.icon && callee?.type !== "tool" && "text-[10px] font-semibold")}>
+            <span aria-hidden className={cn("grid size-4 flex-none place-items-center text-[10px] font-semibold [&>*]:size-full [&_svg]:size-full")}>
               {callee ? actorIcon(callee, callee.id === rootId) : null}
             </span>
             <span className={cn("flex-none truncate font-medium", failed && "text-red-700 dark:text-red-300")} style={{ maxWidth: "45%" }}>
               {label}
             </span>
             {s.summary && <span className="min-w-0 flex-1 truncate text-[12px] text-muted-foreground">{s.summary}</span>}
-            {isCollapsed && <span className="flex-none rounded-[4px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-1 text-[10.5px] text-muted-foreground tabular-nums">+{r.children.length}</span>}
+            {isCollapsed && <span className="h-4 flex-none rounded-[4px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-1 text-[10.5px] leading-4 text-muted-foreground tabular-nums">+{r.children.length}</span>}
           </div>
 
           {/* Track */}
-          <div className="relative h-full flex-1 overflow-hidden border-l [border-color:color-mix(in_srgb,var(--foreground)_6%,transparent)]" style={barVars}>
+          <div className={cn("relative h-full flex-1 overflow-hidden border-l [border-color:color-mix(in_srgb,var(--foreground)_6%,transparent)]", dim && "opacity-45")} style={barVars}>
             {/* The bar: a full-width layer moved to the start, its fill clipped to the length (hit testing follows the clip). */}
             <div {...kn("at")} className="pointer-events-none absolute inset-0" style={{ transform: `translateX(${X("var(--s)")})` }}>
               <Tooltip
@@ -688,7 +689,7 @@ export function TraceWaterfall({
               <span key={at} data-kn="at" data-kn-s={at} className="pointer-events-none absolute inset-0 overflow-visible" style={{ transform: `translateX(${X(String(at))})` }}>
                 <span className={cn("absolute top-0 left-0 flex h-full items-center transition-opacity duration-(--kn-dur) ease-(--kn-ease-out) starting:opacity-0 motion-reduce:transition-none", x > 0.95 && "-translate-x-full")}>
                   <span className={cn("absolute top-0 h-1.5 w-px bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)]", x > 0.95 ? "right-0" : "left-0")} />
-                  <span className={cn("text-[10.5px] text-muted-foreground tabular-nums", x > 0.95 ? "pr-1" : "pl-1")}>{formatOffset(t, step)}</span>
+                  <span className={cn("text-[11px] text-muted-foreground tabular-nums", x > 0.95 ? "pr-1" : "pl-1")}>{formatOffset(t, step)}</span>
                 </span>
               </span>
             );
@@ -701,7 +702,7 @@ export function TraceWaterfall({
             />
           )}
           {cursorTime !== null && !brush && (
-            <span aria-hidden className="pointer-events-none absolute top-0.5 z-10 -translate-x-1/2 rounded-[4px] bg-foreground px-1 text-[10px] leading-4 font-medium text-background tabular-nums" style={{ left: `${cursor! * 100}%` }}>
+            <span aria-hidden className="pointer-events-none absolute top-0.5 z-10 -translate-x-1/2 h-4 rounded-[4px] bg-foreground px-1 text-[10px] leading-4 font-medium text-background tabular-nums" style={{ left: `${cursor! * 100}%` }}>
               {formatOffset(cursorTime, step / 10)}
             </span>
           )}

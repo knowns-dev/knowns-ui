@@ -316,7 +316,7 @@ export function ActivityFeed({
               type="button"
               onClick={release}
               className={cn(
-                "inline-flex h-8 items-center gap-2 rounded-full border border-border bg-card py-0 pr-3 pl-1.5 text-[13px] font-medium text-foreground shadow-md transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transform-none",
+                "inline-flex h-8 items-center gap-2 rounded-full bg-card py-0 pr-3 pl-1.5 text-[13px] font-medium text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_14%,transparent),0_4px_12px_-4px_rgb(0_0_0/0.18)] transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transform-none",
                 focusRing,
               )}
             >

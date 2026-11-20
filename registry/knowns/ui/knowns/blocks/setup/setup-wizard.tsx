@@ -167,7 +167,7 @@ export function SetupWizard({
       <div className="mt-6 border-t pt-6">
         {phase === "success" ? (
           <div role="status" className="flex flex-col items-start gap-1">
-            <h3 ref={headingRef} tabIndex={-1} className={cn("rounded-sm text-[18px] leading-7 font-semibold text-foreground outline-none", focusRing)}>
+            <h3 ref={headingRef} tabIndex={-1} className={cn("rounded-sm text-[16px] leading-7 font-semibold text-foreground outline-none", focusRing)}>
               {success?.title ?? "Setup complete"}
             </h3>
             <p className="text-[14px] leading-5 text-muted-foreground">{success?.description ?? "Everything is saved. You can change any of it later in Settings."}</p>
@@ -182,7 +182,7 @@ export function SetupWizard({
             }}
           >
             <p className="text-[12.5px] text-muted-foreground">{stepCaption(index, count, hasReview)}</p>
-            <h3 ref={headingRef} tabIndex={-1} className={cn("mt-0.5 rounded-sm text-[18px] leading-7 font-semibold text-foreground outline-none", focusRing)}>
+            <h3 ref={headingRef} tabIndex={-1} className={cn("mt-0.5 rounded-sm text-[16px] leading-7 font-semibold text-foreground outline-none", focusRing)}>
               {phase === "review" ? (review?.title ?? "Review") : step?.title}
             </h3>
             {(phase === "review" ? review?.description : step?.description) && (

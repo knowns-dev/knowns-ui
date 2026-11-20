@@ -156,7 +156,7 @@ function Chevron({ open, className }: { open: boolean; className?: string }) {
 /** The neutral "Soon" tag on an upcoming page; its link name reads "<title>, coming soon". */
 function SoonBadge() {
   return (
-    <span className="ml-auto shrink-0 rounded-md border px-1.5 text-[10.5px] font-medium leading-[16px] text-muted-foreground">
+    <span className="ml-auto shrink-0 rounded-md border px-1.5 text-[11px] font-medium leading-[16px] text-muted-foreground">
       <span aria-hidden="true">Soon</span>
       <span className="sr-only">, coming soon</span>
     </span>
@@ -194,7 +194,7 @@ function FoldButton({ open, label, controls, onToggle, className }: { open: bool
       aria-controls={controls}
       aria-label={`${open ? "Collapse" : "Expand"} ${label}`}
       onClick={onToggle}
-      className={cn("grid size-6 shrink-0 place-items-center rounded-md outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-9", className)}
+      className={cn("grid size-6 shrink-0 place-items-center rounded-[7px] outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:size-9", className)}
     >
       <Chevron open={open} />
     </button>
@@ -254,7 +254,7 @@ function MoreFilter({ filters, value, onPick }: { filters: DocsFilter[]; value: 
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex h-6 w-full items-center justify-center gap-0.5 rounded-lg px-1.5 text-[11.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          "flex h-6 w-full items-center justify-center gap-0.5 rounded-[7px] px-1.5 text-[11.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
           picked ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -275,7 +275,7 @@ function MoreFilter({ filters, value, onPick }: { filters: DocsFilter[]; value: 
                 onPick(f.id);
                 setOpen(false);
               }}
-              className="flex h-8 items-center gap-2 rounded-lg px-2 text-left text-[13px] outline-none hover:bg-muted focus-visible:bg-muted"
+              className="flex h-8 items-center gap-2 rounded-[9px] px-2 text-left text-[13px] outline-none hover:bg-muted focus-visible:bg-muted"
             >
               {f.dot && <span className="size-1.5 rounded-full" style={{ background: f.dot }} aria-hidden="true" />}
               {f.label}
@@ -394,7 +394,7 @@ export function DocsSidebar({
                     aria-checked={filterId === f.id}
                     onClick={() => pick(f.id)}
                     className={cn(
-                      "h-6 flex-1 rounded-lg px-1.5 text-[11.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      "h-6 flex-1 rounded-[7px] px-1.5 text-[11.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                       filterId === f.id ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -421,7 +421,7 @@ export function DocsSidebar({
                 {(s.count ?? Boolean(s.categories)) && <Count n={liveCount(pagesOf(s))} />}
               </>
             );
-            const headClass = "flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 text-[13px] font-semibold text-foreground outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-10";
+            const headClass = "flex h-8 min-w-0 flex-1 items-center gap-2 rounded-[9px] px-1.5 text-[13px] font-semibold text-foreground outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-10";
             return (
               <div key={s.id}>
                 <div className={cn("flex items-center gap-0.5 rounded-lg", on && ON)}>
@@ -448,10 +448,10 @@ export function DocsSidebar({
                           <Count n={liveCount(c.pages)} />
                         </>
                       );
-                      const cClass = "flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md px-1 text-[12.5px] font-medium text-foreground/90 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-10";
+                      const cClass = "flex h-7 min-w-0 flex-1 items-center gap-2 rounded-[8px] px-1 text-[12.5px] font-medium text-foreground/90 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-10";
                       return (
                         <div key={c.id}>
-                          <div className={cn("flex h-7 items-center gap-0.5 rounded-lg pointer-coarse:h-10", cOn && ON)}>
+                          <div className={cn("flex h-7 items-center gap-0.5 rounded-[8px] pointer-coarse:h-10", cOn && ON)}>
                             <FoldButton open={cOpen} label={c.label} controls={cid} onToggle={() => toggle(key)} className="ml-0.5" />
                             {c.href ? (
                               <LinkAs href={c.href} aria-current={cOn ? "page" : undefined} className={cClass}>
