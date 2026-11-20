@@ -1,12 +1,15 @@
 "use client";
-/** @registry name="settings-api-keys" type="block" title="API keys settings" description="API keys with live or test environments, idle detection, inline create that shows the secret once, expandable details and hold to revoke." */
+/** @registry name="settings-api-keys" type="block" title="API keys settings" description="API keys with live or test environments, idle detection, inline create that shows the secret once, rotate, expandable details, hold to revoke and a loading state." */
 /**
  * API keys: the list (name, masked key, environment, scopes, created, last used, expiry), a create form that unfolds
- * in the list and shows the new secret exactly once with a copy button, rename, an expandable details row, idle-key
- * hints, and hold to revoke. Your server creates, stores (hashed) and revokes keys; this block never sees a secret
- * except the one onCreate hands back.
+ * in the list and shows the new secret exactly once with a copy button, rename, rotate (a new secret, shown once the
+ * same way), an expandable details row, idle-key hints, hold to revoke and skeleton rows while loading. Your server
+ * creates, stores (hashed), rotates and revokes keys; this block never sees a secret except the one onCreate or
+ * onRotate hands back. Every callback gets an AbortSignal as its last argument: closing the panel, cancelling or
+ * unmounting aborts it, and an answer that arrives after that is dropped.
  */
 import { Fold, prefersReducedMotion } from "@/registry/knowns/lib/knowns/motion";
+import { useAbortable } from "@/registry/knowns/lib/knowns/use-abortable";
 import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Badge } from "../../badge";
@@ -17,6 +20,7 @@ import { Field, Input } from "../../input";
 import { Menu } from "../../menu";
 import { SegmentedControl } from "../../segmented-control";
 import { Select } from "../../select";
+import { Skeleton } from "../../skeleton";
 import { SettingsSection } from "./settings-layout";
 import {
   ENV_LABEL,
@@ -28,6 +32,7 @@ import {
   idleLabel,
   isHoldKey,
   keyEnv,
+  keyMenuItems,
   keyNameError,
   keyState,
   lastUsed,
@@ -65,9 +70,19 @@ export interface ApiKeysSettingsProps {
   usageLabel?: string;
   /** How long Revoke must be held, in ms. Default 1200. */
   holdMs?: number;
-  onCreate: (input: { name: string; scopes: string[]; expiresInDays: number | null; environment?: KeyEnv }) => Promise<CreateKeyResult>;
-  onRevoke: (id: string) => Promise<SettingsResult>;
-  onRename?: (id: string, name: string) => Promise<SettingsResult>;
+  /** `signal` aborts when the person cancels or closes the form; a later answer is dropped. */
+  onCreate: (input: { name: string; scopes: string[]; expiresInDays: number | null; environment?: KeyEnv }, signal: AbortSignal) => Promise<CreateKeyResult>;
+  onRevoke: (id: string, signal: AbortSignal) => Promise<SettingsResult>;
+  onRename?: (id: string, name: string, signal: AbortSignal) => Promise<SettingsResult>;
+  /**
+   * Adds "Rotate secret" to the row menu: resolves with the key (new last4) and its new secret, shown once like a new
+   * key. Keep the key's id and update `keys` from your side as for create. Not offered for expired keys.
+   */
+  onRotate?: (id: string, signal: AbortSignal) => Promise<CreateKeyResult>;
+  /** What happens to the old secret, shown before the person rotates. Default: it stops working at once. */
+  rotateNote?: string;
+  /** Keys are still loading: skeleton rows replace the list and Create waits. */
+  loading?: boolean;
   /** Max keys; the Create button disables at the limit. */
   limit?: number;
   now?: number;
@@ -107,6 +122,9 @@ export function ApiKeysSettings({
   onCreate,
   onRevoke,
   onRename,
+  onRotate,
+  rotateNote = "Anything using the current secret stops working as soon as the new one is made.",
+  loading = false,
   limit,
   now = Date.now(),
   locale = "en-US",
@@ -114,6 +132,7 @@ export function ApiKeysSettings({
   const uid = useId();
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [rotating, setRotating] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [rename, setRename] = useState<ApiKey | null>(null);
   const [notice, setNotice] = useState<SettingsResult | null>(null);
@@ -130,12 +149,12 @@ export function ApiKeysSettings({
       title="API keys"
       description="Keys let scripts and servers call the API as you. Treat them like passwords: keep them out of code and client apps."
       actions={
-        <Button ref={createBtn} size="sm" onClick={() => (setNotice(null), setCreating(true))} disabled={atLimit || creating} icon={<KeyIcon />}>
+        <Button ref={createBtn} size="sm" onClick={() => (setNotice(null), setCreating(true))} disabled={atLimit || creating || loading} icon={<KeyIcon />}>
           Create key
         </Button>
       }
       footer={
-        notice || limit !== undefined ? (
+        notice || (limit !== undefined && !loading) ? (
           <span role="status" aria-live="polite" className={notice && !notice.ok ? "text-red-600 dark:text-red-400" : undefined}>
             {notice ? (notice.ok ? notice.message : notice.error) : `${keys.length} of ${limit} keys used.`}
           </span>
@@ -159,7 +178,7 @@ export function ApiKeysSettings({
         </div>
       </Fold>
 
-      {showFilter && keys.length > 0 && (
+      {showFilter && keys.length > 0 && !loading && (
         <div className="mb-2 flex items-center justify-between gap-3">
           <SegmentedControl
             size="sm"
@@ -174,7 +193,9 @@ export function ApiKeysSettings({
         </div>
       )}
 
-      {keys.length === 0 ? (
+      {loading ? (
+        <KeySkeleton />
+      ) : keys.length === 0 ? (
         !creating && (
           <div className="grid justify-items-center gap-2 rounded-lg border border-dashed px-4 py-8 text-center">
             <span className="grid size-9 place-items-center rounded-full bg-muted text-muted-foreground">
@@ -244,7 +265,7 @@ export function ApiKeysSettings({
                     {idle !== null && (
                       <p className="mt-1 text-[12px] text-amber-800 dark:text-amber-300">
                         {idleLabel(idle)}. Revoke it if nothing uses it anymore.{" "}
-                        <button type="button" className={cn("rounded-[4px] font-medium underline underline-offset-2", focusRing)} onClick={() => (setNotice(null), setRevoking(k.id))}>
+                        <button type="button" className={cn("rounded-[4px] font-medium underline underline-offset-2", focusRing)} onClick={() => (setNotice(null), setRotating(null), setRevoking(k.id))}>
                           Revoke
                         </button>
                       </p>
@@ -253,8 +274,14 @@ export function ApiKeysSettings({
                   <Menu
                     aria-label={`Actions for ${k.name}`}
                     align="end"
-                    items={[...(onRename ? [{ id: "rename", label: "Rename" }] : []), { id: "revoke", label: "Revoke", danger: true }]}
-                    onSelect={(i) => (setNotice(null), i.id === "rename" ? setRename(k) : setRevoking(k.id))}
+                    items={keyMenuItems(state, { rename: Boolean(onRename), rotate: Boolean(onRotate) })}
+                    onSelect={(i) => {
+                      setNotice(null);
+                      if (i.id === "rename") return setRename(k);
+                      // One strip under a row at a time.
+                      setRevoking(i.id === "revoke" ? k.id : null);
+                      setRotating(i.id === "rotate" ? k.id : null);
+                    }}
                     trigger={<Button size="sm" variant="ghost" icon={<MoreIcon />} aria-label={`Actions for ${k.name}`} />}
                   />
                 </div>
@@ -263,13 +290,19 @@ export function ApiKeysSettings({
                     <KeyDetails k={k} now={now} locale={locale} usageLabel={usageLabel} />
                   </Fold>
                 </div>
+                {onRotate && (
+                  <Fold open={rotating === k.id}>
+                    <RotateStrip target={k} note={rotateNote} onClose={() => setRotating(null)} onRotate={(signal) => settleResult(onRotate(k.id, signal))} />
+                  </Fold>
+                )}
                 <Fold open={revoking === k.id}>
                   <RevokeStrip
                     target={k}
                     holdMs={holdMs}
                     onCancel={() => setRevoking(null)}
-                    onRevoke={async () => {
-                      const r = await settleResult(onRevoke(k.id));
+                    onRevoke={async (signal) => {
+                      const r = await settleResult(onRevoke(k.id, signal));
+                      if (signal.aborted) return r;
                       if (r.ok) {
                         setNotice({ ok: true, message: r.message ?? `Revoked ${k.name}. Requests with it now fail.` });
                         setRevoking(null);
@@ -289,9 +322,9 @@ export function ApiKeysSettings({
           target={rename}
           taken={keys.filter((k) => k.id !== rename?.id).map((k) => k.name)}
           onClose={() => setRename(null)}
-          onRename={async (id, name) => {
-            const r = await settleResult(onRename(id, name));
-            if (r.ok) setNotice({ ok: true, message: r.message ?? "Renamed." });
+          onRename={async (id, name, signal) => {
+            const r = await settleResult(onRename(id, name, signal));
+            if (r.ok && !signal.aborted) setNotice({ ok: true, message: r.message ?? "Renamed." });
             return r;
           }}
         />
@@ -357,8 +390,7 @@ function CreateKeyPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ key: ApiKey; secret: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const secretRef = useRef<HTMLInputElement>(null);
+  const abort = useAbortable();
 
   const nameError = keyNameError(name, taken);
   const submit = async () => {
@@ -366,51 +398,29 @@ function CreateKeyPanel({
     if (nameError || picked.length === 0) return;
     setBusy(true);
     setError(null);
-    const r = await settleResult(onCreate({ name: name.trim(), scopes: picked, expiresInDays: expiry === "never" ? null : Number(expiry), ...(environment ? { environment } : {}) }));
+    const signal = abort.next();
+    const r = await settleResult(onCreate({ name: name.trim(), scopes: picked, expiresInDays: expiry === "never" ? null : Number(expiry), ...(environment ? { environment } : {}) }, signal));
+    if (signal.aborted) return; // cancelled or closed while waiting: drop the answer
     setBusy(false);
     if (!r.ok) return setError(r.error);
     setCreated({ key: r.key, secret: r.secret });
   };
-  const copy = async () => {
-    if (!created) return;
-    try {
-      await writeClipboard(created.secret);
-      setCopied(true);
-    } catch {
-      secretRef.current?.select(); // the user can press Cmd/Ctrl+C
-    }
+  const close = () => {
+    abort.cancel();
+    onClose();
   };
   // The secret lives only in this panel's state: closing unmounts it.
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape" && !created && !busy) {
       e.stopPropagation();
-      onClose();
+      close();
     }
   };
 
   return (
     <section aria-label={created ? "Copy your new key" : "Create API key"} className="rounded-lg border bg-muted/30 p-4" onKeyDown={onKeyDown}>
       {created ? (
-        <div className="grid gap-3">
-          <div>
-            <h3 className="text-[13.5px] font-medium">Copy your new key</h3>
-            <p className="mt-0.5 text-[12.5px] text-muted-foreground">This is the only time you'll see the full key. Store it in a secret manager or an environment variable.</p>
-          </div>
-          <Field label={created.key.name} id={ids.secret}>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-              <Input ref={secretRef} id={ids.secret} readOnly value={created.secret} className="font-mono" autoFocus onFocus={(e) => e.currentTarget.select()} />
-              <Button variant="secondary" onClick={() => void copy()}>
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-          </Field>
-          <p role="status" aria-live="polite" className="rounded-lg bg-amber-500/10 px-3 py-2 text-[12.5px] text-amber-800 dark:text-amber-300">
-            {copied ? "Copied to the clipboard. You won't be able to see this key again." : "Copy it now. You won't be able to see this key again."}
-          </p>
-          <div className="flex justify-end">
-            <Button onClick={onClose}>{copied ? "Done" : "I've stored it"}</Button>
-          </div>
-        </div>
+        <SecretReveal id={ids.secret} title="Copy your new key" name={created.key.name} secret={created.secret} onDone={onClose} />
       ) : (
         <form className="grid gap-4" onSubmit={(e) => (e.preventDefault(), void submit())} noValidate>
           <div>
@@ -441,7 +451,7 @@ function CreateKeyPanel({
             </p>
           )}
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
+            <Button type="button" variant="ghost" onClick={close}>
               Cancel
             </Button>
             <Button type="submit" loading={busy}>
@@ -454,18 +464,137 @@ function CreateKeyPanel({
   );
 }
 
+/** The one-time view of a new secret, after create or rotate: the secret selected in a field, Copy, and a warning. */
+function SecretReveal({ id, title, name, secret, onDone }: { id: string; title: string; name: string; secret: string; onDone: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+  const copy = async () => {
+    try {
+      await writeClipboard(secret);
+      setCopied(true);
+    } catch {
+      ref.current?.select(); // the user can press Cmd/Ctrl+C
+    }
+  };
+  return (
+    <div className="grid gap-3">
+      <div>
+        <h3 className="text-[13.5px] font-medium">{title}</h3>
+        <p className="mt-0.5 text-[12.5px] text-muted-foreground">This is the only time you'll see the full key. Store it in a secret manager or an environment variable.</p>
+      </div>
+      <Field label={name} id={id}>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          <Input ref={ref} id={id} readOnly value={secret} className="font-mono" autoFocus onFocus={(e) => e.currentTarget.select()} />
+          <Button variant="secondary" onClick={() => void copy()}>
+            {copied ? "Copied" : "Copy"}
+          </Button>
+        </div>
+      </Field>
+      <p role="status" aria-live="polite" className="rounded-lg bg-amber-500/10 px-3 py-2 text-[12.5px] text-amber-800 dark:text-amber-300">
+        {copied ? "Copied to the clipboard. You won't be able to see this key again." : "Copy it now. You won't be able to see this key again."}
+      </p>
+      <div className="flex justify-end">
+        <Button onClick={onDone}>{copied ? "Done" : "I've stored it"}</Button>
+      </div>
+    </div>
+  );
+}
+
+/** Rotate under the row: one confirm, then the new secret once. Cancel, Escape or unmounting aborts a call in flight. */
+function RotateStrip({ target, note, onClose, onRotate }: { target: ApiKey; note: string; onClose: () => void; onRotate: (signal: AbortSignal) => Promise<CreateKeyResult> }) {
+  const secretId = useId();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rotated, setRotated] = useState<{ key: ApiKey; secret: string } | null>(null);
+  const abort = useAbortable();
+  const run = async () => {
+    setBusy(true);
+    setError(null);
+    const signal = abort.next();
+    const r = await onRotate(signal);
+    if (signal.aborted) return;
+    setBusy(false);
+    if (!r.ok) return setError(r.error);
+    setRotated({ key: r.key, secret: r.secret });
+  };
+  const cancel = () => {
+    abort.cancel();
+    onClose();
+  };
+  return (
+    <section
+      aria-label={rotated ? "Copy the new secret" : `Rotate ${target.name}`}
+      className="mt-3 rounded-lg border bg-muted/30 px-3 py-3"
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !rotated) {
+          e.stopPropagation();
+          cancel();
+        }
+      }}
+    >
+      {rotated ? (
+        <SecretReveal id={secretId} title="Copy the new secret" name={rotated.key.name} secret={rotated.secret} onDone={onClose} />
+      ) : (
+        <div className="grid gap-2">
+          <p className="text-[13px]">
+            <span className="font-medium">Rotate {target.name}?</span> <span className="text-muted-foreground">{note}</span>
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" loading={busy} onClick={() => void run()}>
+              Rotate secret
+            </Button>
+            <Button size="sm" variant="ghost" onClick={cancel}>
+              Cancel
+            </Button>
+          </div>
+          {error && (
+            <p role="alert" className="text-[13px] text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Skeleton rows shaped like a key row: the chevron, name and masked key, scopes, the menu. */
+function KeySkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div role="status" aria-busy="true" aria-label="Loading API keys" className="-my-2 divide-y">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex items-start gap-2 py-3">
+          <Skeleton className="size-7 flex-none rounded-md" />
+          <div className="grid min-w-0 flex-1 gap-2 pt-1">
+            <Skeleton className={cn("h-3.5 max-w-[60%]", i % 2 ? "w-28" : "w-40")} />
+            <Skeleton className="h-3 w-44 max-w-[75%]" />
+            <div className="flex gap-1">
+              <Skeleton className="h-5 w-12 rounded-full" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="size-7 flex-none rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Revoke without a dialog: hold the button until it fills; release cancels. Reduced motion gets a confirm step instead. */
-function RevokeStrip({ target, holdMs, onCancel, onRevoke }: { target: ApiKey; holdMs: number; onCancel: () => void; onRevoke: () => Promise<SettingsResult> }) {
+function RevokeStrip({ target, holdMs, onCancel, onRevoke }: { target: ApiKey; holdMs: number; onCancel: () => void; onRevoke: (signal: AbortSignal) => Promise<SettingsResult> }) {
   const hintId = useId();
   const [reduced, setReduced] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abort = useAbortable();
   useEffect(() => setReduced(prefersReducedMotion()), []);
   const run = async () => {
     setBusy(true);
     setError(null);
-    const r = await onRevoke();
+    const signal = abort.next();
+    const r = await onRevoke(signal);
+    if (signal.aborted) return;
     setBusy(false);
     if (!r.ok) {
       setError(r.error);
@@ -584,17 +713,25 @@ function HoldButton({ duration, busy, onComplete, describedBy, children }: { dur
   );
 }
 
-function RenameDialog({ target, taken, onClose, onRename }: { target: ApiKey | null; taken: string[]; onClose: () => void; onRename: (id: string, name: string) => Promise<SettingsResult> }) {
+function RenameDialog({ target, taken, onClose, onRename }: { target: ApiKey | null; taken: string[]; onClose: () => void; onRename: (id: string, name: string, signal: AbortSignal) => Promise<SettingsResult> }) {
   const id = useId();
+  const { next, cancel } = useAbortable();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => (setName(target?.name ?? ""), setError(null)), [target]);
+  useEffect(() => {
+    setName(target?.name ?? "");
+    setError(null);
+    setBusy(false);
+    if (!target) cancel(); // closed while saving: abort and drop the answer
+  }, [target, cancel]);
   const invalid = keyNameError(name, taken);
   const run = async () => {
     if (!target || invalid) return setError(invalid);
     setBusy(true);
-    const r = await onRename(target.id, name.trim());
+    const signal = next();
+    const r = await onRename(target.id, name.trim(), signal);
+    if (signal.aborted) return;
     setBusy(false);
     if (r.ok) onClose();
     else setError(r.error);

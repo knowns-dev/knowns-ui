@@ -147,6 +147,20 @@ export function keyState(k: Pick<ApiKey, "expiresAt">, now: number): KeyState {
   return t - now < 7 * DAY ? "expiring" : "active";
 }
 
+export type KeyAction = "rename" | "rotate" | "revoke";
+
+/**
+ * The row menu of a key, in order: Rename and Rotate only when their callback is given, Revoke always. An expired key
+ * is not rotated (make a new one instead), so it offers no Rotate.
+ */
+export function keyMenuItems(state: KeyState, opts: { rename?: boolean; rotate?: boolean }): { id: KeyAction; label: string; danger?: boolean }[] {
+  return [
+    ...(opts.rename ? [{ id: "rename" as const, label: "Rename" }] : []),
+    ...(opts.rotate && state !== "expired" ? [{ id: "rotate" as const, label: "Rotate secret" }] : []),
+    { id: "revoke" as const, label: "Revoke", danger: true },
+  ];
+}
+
 /* ── Team ── */
 
 export type TeamRole = "owner" | "admin" | "member" | "viewer";

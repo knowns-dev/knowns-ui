@@ -1432,6 +1432,34 @@
       ]
     },
     {
+      "name": "bento-section",
+      "type": "registry:block",
+      "title": "Bento section",
+      "description": "A heading and a wall of tiles of mixed sizes, each tile holding any component. Spans clamp to the space the section is given (one, two or four columns), and the tiles rise in once on scroll, or show at once under reduced motion.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/marketing-core.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/bento-section.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/bento-section.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/bento-section-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/bento-section-utils.ts"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/use-reveal.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/use-reveal.ts"
+        }
+      ]
+    },
+    {
       "name": "contact-section",
       "type": "registry:block",
       "title": "Contact section",
@@ -1523,6 +1551,11 @@
           "path": "registry/knowns/ui/knowns/blocks/marketing/feature-trio.tsx",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/marketing/feature-trio.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/use-reveal.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/use-reveal.ts"
         }
       ]
     },
@@ -1789,7 +1822,7 @@
       "name": "settings-api-keys",
       "type": "registry:block",
       "title": "API keys settings",
-      "description": "API keys with live or test environments, idle detection, inline create that shows the secret once, expandable details and hold to revoke.",
+      "description": "API keys with live or test environments, idle detection, inline create that shows the secret once, rotate, expandable details, hold to revoke and a loading state.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/badge.json",
@@ -1801,7 +1834,8 @@
         "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/segmented-control.json",
         "https://ui.knowns.dev/r/select.json",
-        "https://ui.knowns.dev/r/settings-layout.json"
+        "https://ui.knowns.dev/r/settings-layout.json",
+        "https://ui.knowns.dev/r/skeleton.json"
       ],
       "files": [
         {

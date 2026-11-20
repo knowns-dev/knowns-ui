@@ -7,10 +7,10 @@
  * under 640px. The cards rise 6px and fade in once as the section scrolls into view, 40ms apart. Nothing is hidden
  * before JavaScript runs or when the reader asked for no motion.
  */
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { prefersReducedMotion } from "@/registry/knowns/lib/knowns/motion";
 import { SectionHeading } from "./section-heading";
+import { useReveal } from "./use-reveal";
 
 export interface FeatureTrioCard {
   /** A small mono label above the sentence, e.g. "Collaborate". */
@@ -32,30 +32,6 @@ export interface FeatureTrioProps {
   /** Heading alignment. Default "start". */
   align?: "start" | "center";
   className?: string;
-}
-
-type Phase = "idle" | "armed" | "in";
-
-/** Idle (visible) on the server and before JS; armed (hidden) only when the section is below the fold; in once seen. */
-function useReveal(ref: React.RefObject<HTMLElement | null>): Phase {
-  const [phase, setPhase] = useState<Phase>("idle");
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || prefersReducedMotion() || typeof IntersectionObserver === "undefined") return setPhase("in");
-    const r = el.getBoundingClientRect();
-    // Already on screen at mount: show it as is, with no entrance to replay.
-    if (r.top < window.innerHeight * 0.9 && r.bottom > 0) return setPhase("in");
-    setPhase("armed");
-    const io = new IntersectionObserver((e) => {
-      if (e.some((x) => x.isIntersecting)) {
-        setPhase("in");
-        io.disconnect();
-      }
-    }, { threshold: 0.15 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [ref]);
-  return phase;
 }
 
 export function FeatureTrio({ cards, eyebrow, title, lead, align = "start", className }: FeatureTrioProps) {
