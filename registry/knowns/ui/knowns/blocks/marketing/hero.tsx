@@ -6,7 +6,7 @@
  * rotating words, a command chip, facts and a background are opt-in, so each page picks only what it needs.
  *
  * HeroCentered: centred, or left-aligned with `align="start"`; an optional row of facts under the actions.
- * The parts (Eyebrow, Title, Lead, Actions, Facts, Backdrop) are exported for the other hero layouts:
+ * The parts (Eyebrow, Title, Lead, Actions, Proof, Facts, Backdrop) are exported for the other hero layouts:
  * hero-split, hero-product and hero-statement (Knowns UI Pro), which build on this file.
  */
 import { isValidElement, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
@@ -19,6 +19,12 @@ export type { MarketingAction } from "./marketing-utils";
 export { MediaFrame } from "./section-heading";
 
 export interface HeroFact {
+  value: string;
+  label: string;
+}
+
+/** A one-line count under the actions, e.g. { value: "68", label: "developers building with Acme" }. */
+export interface HeroProof {
   value: string;
   label: string;
 }
@@ -44,6 +50,11 @@ export interface HeroCopy {
   command?: string;
   /** The command types through a list of names (see CommandCycle). `command` is the static fallback and the first frame. */
   commandCycle?: CommandCycle;
+  /**
+   * A small line right under the actions: a real count and what it counts. Text only, no faces. Leave it out
+   * (null) until you have a number worth showing; nothing renders and no space is kept.
+   */
+  proof?: HeroProof | null;
   /** Up to 4 short facts under the actions, e.g. { value: "EU", label: "data residency" }. */
   facts?: HeroFact[];
 }
@@ -280,6 +291,16 @@ function TextAction({ action }: { action: MarketingAction }) {
   );
 }
 
+/** The proof line: the number in the foreground with even figures, the label quieter. Renders nothing without one. */
+export function Proof({ proof, center, className }: { proof?: HeroProof | null; center?: boolean; className?: string }) {
+  if (!proof) return null;
+  return (
+    <p data-hero-proof="" className={cn("text-[13px] leading-5 text-muted-foreground", center && "text-center", className)}>
+      <span className="font-semibold text-foreground tabular-nums">{proof.value}</span> {proof.label}
+    </p>
+  );
+}
+
 export function Facts({ facts, center }: { facts?: HeroFact[]; center?: boolean }) {
   if (!facts?.length) return null;
   return (
@@ -315,7 +336,7 @@ export interface HeroCenteredProps extends HeroCopy {
   className?: string;
 }
 
-export function HeroCentered({ eyebrow, title, rotate, rotateAuto, as, lead, primary, secondary, command, commandCycle, facts, align = "center", background, spacing = "default", figure, onCommandCopy, children, className }: HeroCenteredProps) {
+export function HeroCentered({ eyebrow, title, rotate, rotateAuto, as, lead, primary, secondary, proof, command, commandCycle, facts, align = "center", background, spacing = "default", figure, onCommandCopy, children, className }: HeroCenteredProps) {
   const center = align === "center";
   return (
     <section data-slot="hero" data-variant={center ? "centered" : "start"} className={cn("relative isolate overflow-hidden", className)}>
@@ -326,7 +347,15 @@ export function HeroCentered({ eyebrow, title, rotate, rotateAuto, as, lead, pri
         <Title title={title} rotate={rotate} rotateAuto={rotateAuto} as={as} className={cn(DISPLAY, "max-w-4xl")} />
         <Lead balance={center}>{lead}</Lead>
         <div className={cn("mt-2 flex w-full min-w-0 flex-col gap-6", center ? "items-center" : "items-start")}>
-          <Actions primary={primary} secondary={secondary} center={center} />
+          {proof ? (
+            // The proof sits close under the actions, as one group; the command keeps its own gap.
+            <div className={cn("flex flex-col gap-3", center ? "items-center" : "items-start")}>
+              <Actions primary={primary} secondary={secondary} center={center} />
+              <Proof proof={proof} center={center} />
+            </div>
+          ) : (
+            <Actions primary={primary} secondary={secondary} center={center} />
+          )}
           {command && <CommandChip command={command} cycle={commandCycle} onCopy={onCommandCopy} />}
         </div>
         {facts && (
