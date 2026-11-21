@@ -10,6 +10,7 @@
  */
 import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { Avatar } from "../../avatar";
 import { Badge } from "../../badge";
 import { Button } from "../../button";
 import { FilterChips, type FilterField, type FilterValue } from "../../filter-chips";
@@ -44,6 +45,8 @@ export interface RecordTimelineProps {
   /** Controlled filter. Without it the block keeps its own. */
   filter?: TimelineFilter;
   onFilterChange?: (filter: TimelineFilter) => void;
+  /** A picture for an author, by name. Without it (or when it returns nothing) the author is text only. */
+  avatarFor?: (author: string) => string | undefined;
   /** Hide the filter row. */
   filterable?: boolean;
   title?: ReactNode;
@@ -73,7 +76,7 @@ const Glyph = ({ kind }: { kind: EventKind }) => (
   </span>
 );
 
-function EventRow({ e, timeZone }: { e: TimelineEvent; timeZone: string }) {
+function EventRow({ e, timeZone, avatarFor }: { e: TimelineEvent; timeZone: string; avatarFor?: (author: string) => string | undefined }) {
   const [open, setOpen] = useState(false);
   const bodyId = useId();
   const long = isLong(e.body);
@@ -105,7 +108,10 @@ function EventRow({ e, timeZone }: { e: TimelineEvent; timeZone: string }) {
           </time>
         </div>
         {(e.author || e.detail) && (
-          <p className="mt-0.5 text-[12px] text-muted-foreground">{[e.author, e.detail].filter(Boolean).join(" · ")}</p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            {e.author && avatarFor?.(e.author) && <Avatar label={e.author} src={avatarFor(e.author)} size="xs" shape="circle" decorative />}
+            <span className="min-w-0 truncate">{[e.author, e.detail].filter(Boolean).join(" · ")}</span>
+          </p>
         )}
         {e.body && (
           <>
@@ -124,7 +130,7 @@ function EventRow({ e, timeZone }: { e: TimelineEvent; timeZone: string }) {
   );
 }
 
-export function RecordTimeline({ events, today, timeZone = "UTC", order = "newest", onAddNote, filter, onFilterChange, filterable = true, title, className }: RecordTimelineProps) {
+export function RecordTimeline({ events, today, timeZone = "UTC", order = "newest", onAddNote, filter, onFilterChange, avatarFor, filterable = true, title, className }: RecordTimelineProps) {
   const [own, setOwn] = useState<TimelineFilter>({ kinds: [], authors: [] });
   const f = filter ?? own;
   const [draft, setDraft] = useState("");
@@ -232,7 +238,7 @@ export function RecordTimeline({ events, today, timeZone = "UTC", order = "newes
               <h3 className="mb-3 text-[12px] font-semibold tracking-wide text-muted-foreground uppercase">{g.label}</h3>
               <ol className="flex flex-col">
                 {g.events.map((e) => (
-                  <EventRow key={e.id} e={e} timeZone={timeZone} />
+                  <EventRow key={e.id} e={e} timeZone={timeZone} avatarFor={avatarFor} />
                 ))}
               </ol>
             </section>

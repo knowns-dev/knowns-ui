@@ -1320,6 +1320,7 @@
       "description": "One record's history: emails, calls, meetings, notes and stage changes grouped by day, with type and person filters and a note composer.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
         "https://ui.knowns.dev/r/badge.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/filter-chips.json",

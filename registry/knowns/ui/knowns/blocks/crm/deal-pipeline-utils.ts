@@ -24,6 +24,8 @@ export interface Deal {
   /** ISO date, YYYY-MM-DD. */
   close?: string;
   owner?: string;
+  /** Picture of the owner. Without it the avatar shows initials. */
+  ownerSrc?: string;
   /** Free text such as "2d ago"; the caller owns the clock. */
   lastTouch?: string;
 }

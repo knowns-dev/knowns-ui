@@ -105,7 +105,7 @@ export function DealCardView({ deal, currency = "USD", today, className }: { dea
             "No close date"
           )}
         </span>
-        {deal.owner && <Avatar label={deal.owner} size="xs" />}
+        {deal.owner && <Avatar label={deal.owner} src={deal.ownerSrc} size="xs" shape="circle" />}
       </div>
       {deal.lastTouch && <p className="mt-1 truncate text-[11.5px] text-muted-foreground">Last touch {deal.lastTouch}</p>}
     </div>
