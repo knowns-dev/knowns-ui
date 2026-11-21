@@ -4,7 +4,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type Keyb
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { Kbd } from "../kbd";
 import { Spinner } from "../spinner";
-import { groupBy, highlightParts, hotkeyLabel, isHotkey, moveActive, pushRecent, rankItems } from "./command-utils";
+import { fuzzyMatch, groupBy, highlightParts, hotkeyLabel, isHotkey, moveActive, pushRecent, rankItems } from "./command-utils";
 
 export interface CommandItem {
   id: string;
@@ -13,6 +13,8 @@ export interface CommandItem {
   description?: ReactNode;
   /** Right after the label, e.g. a "Pro" mark or a "New" dot. Not matched. */
   badge?: ReactNode;
+  /** Quiet text on the right of the row, e.g. where a page lives ("Blocks / Agents"). Not matched. */
+  meta?: ReactNode;
   /** 16px box on the left; svgs fill it. */
   icon?: ReactNode;
   /** Keys shown on the right as Kbd, e.g. ["⌘", "N"]. */
@@ -65,8 +67,14 @@ export interface CommandMenuProps {
   /** How many recents to keep; 0 hides the group. Default 5. */
   maxRecents?: number;
   placeholder?: string;
-  /** Shown when nothing matches. Default: "No results for “…”". */
-  empty?: (query: string) => ReactNode;
+  /**
+   * Your own ranking for the root items, e.g. a search index that knows synonyms: return the matching items,
+   * best first. Their order is kept (no regrouping); an item's `group` still shows as a header. Default: fuzzy
+   * match on the label and keywords.
+   */
+  search?: (items: CommandItem[], query: string) => CommandItem[];
+  /** Shown when nothing matches. Default: "No results for “…”". `setQuery` lets it offer other searches. */
+  empty?: (query: string, actions: { setQuery: (query: string) => void }) => ReactNode;
   /** Label for the dialog. Default "Command menu". */
   "aria-label"?: string;
   className?: string;
@@ -157,6 +165,7 @@ export function CommandMenu({
   onRecentsChange,
   maxRecents = 5,
   placeholder = "Type a command or search…",
+  search,
   empty,
   "aria-label": ariaLabel = "Command menu",
   className,
@@ -260,18 +269,23 @@ export function CommandMenu({
         if (it && !it.disabled) out.push({ item: { ...it, icon: it.icon ?? <Clock /> }, ranges: [], group: "Recent", key: `recent:${id}` });
       }
     }
-    const ranked = rankItems(base, query);
-    // With a query, best matches lead: one flat list in score order, grouped by first appearance.
-    const grouped = query.trim()
-      ? groupBy(ranked.map((r) => ({ ...r, group: r.item.group })))
-      : groupBy(ranked.map((r) => ({ ...r, group: r.item.group })), order);
-    for (const g of grouped) for (const r of g.items) out.push({ item: r.item, ranges: r.ranges, group: g.group, key: r.item.id });
+    if (search && !page && query.trim()) {
+      // The caller's ranking: its order as given; the label still highlights where it fuzzy-matches.
+      for (const it of search(base, query)) out.push({ item: it, ranges: fuzzyMatch(query, it.label)?.ranges ?? [], group: it.group ?? "", key: it.id });
+    } else {
+      const ranked = rankItems(base, query);
+      // With a query, best matches lead: one flat list in score order, grouped by first appearance.
+      const grouped = query.trim()
+        ? groupBy(ranked.map((r) => ({ ...r, group: r.item.group })))
+        : groupBy(ranked.map((r) => ({ ...r, group: r.item.group })), order);
+      for (const g of grouped) for (const r of g.items) out.push({ item: r.item, ranges: r.ranges, group: g.group, key: r.item.id });
+    }
     if (loaded && loaded.key === loadKey) {
       const extra = rankItems(loaded.items, page ? "" : query).map((r) => ({ ...r, ranges: query ? (rankItems([r.item], query)[0]?.ranges ?? []) : [] }));
       for (const r of extra) out.push({ item: r.item, ranges: r.ranges, group: r.item.group ?? (page ? "" : loadGroup), key: `loaded:${r.item.id}` });
     }
     return out;
-  }, [page, items, groups, query, recents, maxRecents, allItems, loaded, loadKey, loadGroup]);
+  }, [page, items, groups, query, recents, maxRecents, allItems, loaded, loadKey, loadGroup, search]);
 
   // Keep the active row on an enabled item.
   useEffect(() => {
@@ -419,7 +433,7 @@ export function CommandMenu({
         <div ref={pillRef} aria-hidden data-kn-cmd-pill="" className="pointer-events-none absolute inset-x-1 top-0 rounded-[8px] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] opacity-0" />
         {rows.length === 0 && !loading && (
           <div role="presentation" data-kn-cmd-empty="" className="px-3 py-10 text-center text-[13px] text-muted-foreground">
-            {query ? (empty ? empty(query) : <>No results for “{query}”</>) : "Nothing here yet."}
+            {query ? (empty ? empty(query, { setQuery: (q) => { setQuery(q); inputRef.current?.focus(); } }) : <>No results for “{query}”</>) : "Nothing here yet."}
           </div>
         )}
         {rows.length === 0 && loading && (
@@ -480,6 +494,7 @@ export function CommandMenu({
                   </span>
                   {it.description && <span className="truncate text-[12px] text-muted-foreground">{it.description}</span>}
                 </span>
+                {it.meta && <span className="max-w-[40%] flex-none truncate text-[11.5px] text-muted-foreground">{it.meta}</span>}
                 {it.shortcut && (
                   <span className="flex flex-none items-center gap-0.5" aria-label={`Shortcut ${it.shortcut.join(" ")}`}>
                     {it.shortcut.map((k, j) => (
