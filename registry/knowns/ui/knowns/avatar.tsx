@@ -256,27 +256,40 @@ export interface AvatarGroupProps {
   onAdd?: () => void;
   /** Tooltip and accessible name for the add button. Default "Add people". */
   addLabel?: string;
+  /**
+   * Pure decoration, e.g. a few illustrated faces beside a count: hidden from assistive tech, no group name,
+   * no hover lift and no "+N" (pass only the avatars to show). `onAdd` is ignored.
+   */
+  decorative?: boolean;
   className?: string;
 }
 
 /** Overlapping stack of avatars with an overflow count and an optional add button. */
-export function AvatarGroup({ children, max, size = "md", shape = "circle", label, onAdd, addLabel = "Add people", className }: AvatarGroupProps) {
+export function AvatarGroup({ children, max, size = "md", shape = "circle", label, onAdd, addLabel = "Add people", decorative, className }: AvatarGroupProps) {
   const items = Children.toArray(children).filter((c): c is ReactElement<AvatarProps> => isValidElement(c));
-  const { shown, hidden } = splitGroup(items.length, max);
+  const { shown, hidden } = decorative ? { shown: items.length, hidden: 0 } : splitGroup(items.length, max);
   const rest = items.slice(shown).map((c) => c.props.label);
   const circle = shape === "circle";
 
   return (
-    <div role="group" aria-label={label ?? `${items.length} ${items.length === 1 ? "person" : "people"}`} className={cn("flex items-center", className)}>
+    <div
+      role={decorative ? undefined : "group"}
+      aria-label={decorative ? undefined : (label ?? `${items.length} ${items.length === 1 ? "person" : "people"}`)}
+      aria-hidden={decorative || undefined}
+      data-decorative={decorative ? "" : undefined}
+      className={cn("flex items-center", className)}
+    >
       {items.slice(0, shown).map((child, i) => (
         <span
           key={child.key ?? i}
           className={cn(
-            "relative inline-grid transition-[translate] duration-(--kn-dur) ease-(--kn-ease-out) hover:z-10 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+            "relative inline-grid",
+            // The lift says "you can point at this one"; a decorative stack has nothing to point at.
+            !decorative && "transition-[translate] duration-(--kn-dur) ease-(--kn-ease-out) hover:z-10 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
             i > 0 && OVERLAP[size],
           )}
         >
-          {cloneElement(child, { size, shape, ring: true })}
+          {cloneElement(child, decorative ? { size, shape, ring: true, decorative: true } : { size, shape, ring: true })}
         </span>
       ))}
 
@@ -299,7 +312,7 @@ export function AvatarGroup({ children, max, size = "md", shape = "circle", labe
         </Tooltip>
       )}
 
-      {onAdd && (
+      {onAdd && !decorative && (
         <Tooltip content={addLabel} className="ml-1.5">
           <button
             type="button"

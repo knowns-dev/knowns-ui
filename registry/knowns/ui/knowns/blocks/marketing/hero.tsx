@@ -12,6 +12,7 @@
 import { isValidElement, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { cn, focusRing, writeClipboard } from "@/registry/knowns/lib/knowns/utils";
 import { WordRotate } from "../../text-animation/word-rotate";
+import { Avatar, AvatarGroup } from "../../avatar";
 import { ActionButton, type MediaFrameProps } from "./section-heading";
 import { commandText, type MarketingAction } from "./marketing-utils";
 
@@ -27,6 +28,11 @@ export interface HeroFact {
 export interface HeroProof {
   value: string;
   label: string;
+  /**
+   * Image URLs for a few overlapping faces before the number (4 or 5 reads best). Decoration only: hidden from
+   * assistive tech, unnamed, not interactive. Give each image a fixed square so nothing moves while it loads.
+   */
+  avatars?: string[];
 }
 
 export interface HeroCopy {
@@ -51,7 +57,7 @@ export interface HeroCopy {
   /** The command types through a list of names (see CommandCycle). `command` is the static fallback and the first frame. */
   commandCycle?: CommandCycle;
   /**
-   * A small line right under the actions: a real count and what it counts. Text only, no faces. Leave it out
+   * A small line right under the actions: a real count and what it counts, optionally after a few faces. Leave it out
    * (null) until you have a number worth showing; nothing renders and no space is kept.
    */
   proof?: HeroProof | null;
@@ -294,10 +300,33 @@ function TextAction({ action }: { action: MarketingAction }) {
 /** The proof line: the number in the foreground with even figures, the label quieter. Renders nothing without one. */
 export function Proof({ proof, center, className }: { proof?: HeroProof | null; center?: boolean; className?: string }) {
   if (!proof) return null;
+  const text = (
+    <>
+      <span data-hero-proof-value="" className="font-semibold text-foreground tabular-nums">
+        {proof.value}
+      </span>{" "}
+      {proof.label}
+    </>
+  );
+  const faces = proof.avatars?.filter(Boolean) ?? [];
+  if (!faces.length)
+    return (
+      <p data-hero-proof="" className={cn("text-[13px] leading-5 text-muted-foreground", center && "text-center", className)}>
+        {text}
+      </p>
+    );
+  // The faces sit before the count on one row; the stack is a fixed 24px tall, so the line never shifts.
+  // Centred on a phone, the faces go above the words: a wrapped centred line would drift away from them.
   return (
-    <p data-hero-proof="" className={cn("text-[13px] leading-5 text-muted-foreground", center && "text-center", className)}>
-      <span className="font-semibold text-foreground tabular-nums">{proof.value}</span> {proof.label}
-    </p>
+    <div data-hero-proof="" className={cn("flex items-center text-[13px] leading-5 text-muted-foreground", center ? "flex-col gap-2 text-center sm:flex-row sm:gap-2.5" : "gap-2.5", className)}>
+      <AvatarGroup decorative size="sm" className="flex-none">
+        {faces.map((src) => (
+          <Avatar key={src} label="" src={src} />
+        ))}
+      </AvatarGroup>
+      {/* On a narrow column the words wrap into two even lines, never one word left alone. */}
+      <p className="min-w-0 text-balance">{text}</p>
+    </div>
   );
 }
 

@@ -1751,6 +1751,7 @@
       "description": "Landing page hero, centred: eyebrow chip, rotating headline word, two CTAs, an install command chip, optional facts row and a background slot. align=\"start\" for a left-aligned version. Reduced motion keeps it still. Pro variants: hero-split, hero-product, hero-statement.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
         "https://ui.knowns.dev/r/marketing-core.json",
         "https://ui.knowns.dev/r/word-rotate.json"
       ],
