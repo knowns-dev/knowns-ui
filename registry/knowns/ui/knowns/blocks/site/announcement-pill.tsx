@@ -228,6 +228,7 @@ export function AnnouncementPill({ label = "New", text, card, align = "center", 
 
   const title = card.title ?? text;
   const w = `min(${width}px, calc(100vw - 48px))`;
+  const cardW = fit.max !== undefined ? `min(${w}, ${fit.max}px)` : w;
 
   return (
     <div
@@ -253,6 +254,8 @@ export function AnnouncementPill({ label = "New", text, card, align = "center", 
         ref={pill}
         type="button"
         aria-expanded={shown}
+        // Open, the card's Close button sits at its top right: the pill row stops short of it, so a long text is cut, never covered.
+        style={shown ? { maxWidth: `calc(${cardW} - 46px)` } : undefined}
         aria-controls={mounted ? cardId : undefined}
         onFocus={(e) => {
           if (preview && !quiet.current && e.currentTarget.matches(":focus-visible")) send("focus");
@@ -275,7 +278,7 @@ export function AnnouncementPill({ label = "New", text, card, align = "center", 
       </button>
 
       {mounted && (
-        <div ref={place} className={cn("absolute top-[-6px]", align === "center" ? "left-1/2 -translate-x-1/2" : "left-[-6px]")} style={{ width: fit.max !== undefined ? `min(${w}, ${fit.max}px)` : w, marginLeft: fit.shift || undefined }}>
+        <div ref={place} className={cn("absolute top-[-6px]", align === "center" ? "left-1/2 -translate-x-1/2" : "left-[-6px]")} style={{ width: cardW, marginLeft: fit.shift || undefined }}>
           <div
             id={cardId}
             role="region"
