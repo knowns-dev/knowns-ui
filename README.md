@@ -74,12 +74,12 @@ Registry dependencies (the core types, the run store, icons) come along automati
 
 ## What's in Free
 
-158 components and blocks (188 registry items with their dependencies), MIT licensed. Newest first:
+161 components and blocks (191 registry items with their dependencies), MIT licensed. Newest first:
 
 - **Agent views (14):** JSON Inspector, Agent Graph, Approval Prompt, Call Overlay, Live Activity, Agent Lanes, Tool Call Card, Context Window, Trace Waterfall, Agent Monitor, Agent Fleet, Agent Handoff, and 2 more.
 - **Chat (6):** Chat Composer, Thinking State, Conversation List, AI Answer, Message Actions, Ghost Text.
 - **Components (68):** Animated Number, Calendar, Date Picker, Date Range Picker, Carousel, Context Menu, Data Table, Drawer, Empty, Filter Chips, Floating Dock, Heatmap, and 56 more.
-- **Blocks (44):** Bento Section, Announcement Pill, Answer Pad, Area Trend Card, Class Roster, Eval Score, Feature Trio, Footer Wordmark, Footer Columns, Footer Minimal, Footer Status, Goal Rings, and 32 more.
+- **Blocks (47):** Bento Section, Deal Pipeline, Record Header, Record Timeline, Announcement Pill, Answer Pad, Area Trend Card, Class Roster, Eval Score, Feature Trio, Footer Wordmark, Footer Columns, and 35 more.
 - **Motion and illustrations (26):** Context Memory, Rain Field, Dot Spotlight, Signal Lines, Aurora, Node Field, Perspective Grid, Grid Pattern, Dither Field, Flickering Grid, Cube Field, Gradient Floor, and 14 more.
 
 Browse them all, with live examples and the install command for each: [Components](https://ui.knowns.dev/components) · [Blocks](https://ui.knowns.dev/blocks).

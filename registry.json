@@ -1265,6 +1265,80 @@
       ]
     },
     {
+      "name": "deal-pipeline",
+      "type": "registry:block",
+      "title": "Deal pipeline",
+      "description": "A sales pipeline: stage columns with deal count, total and weighted value, deal cards with amount, close date, owner and last touch, and moving a deal by drag or by keyboard.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/crm/deal-pipeline.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/crm/deal-pipeline.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/crm/deal-pipeline-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/crm/deal-pipeline-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "record-header",
+      "type": "registry:block",
+      "title": "Record header",
+      "description": "The top of a contact or company record: initials or logo, name, role and company, stage, owner, tags, email, call and note actions and a row of key facts.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/avatar.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/tag.json",
+        "https://ui.knowns.dev/r/tooltip.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/crm/record-header.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/crm/record-header.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/crm/record-header-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/crm/record-header-utils.ts"
+        }
+      ]
+    },
+    {
+      "name": "record-timeline",
+      "type": "registry:block",
+      "title": "Record timeline",
+      "description": "One record's history: emails, calls, meetings, notes and stage changes grouped by day, with type and person filters and a note composer.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/badge.json",
+        "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/filter-chips.json",
+        "https://ui.knowns.dev/r/textarea.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/crm/record-timeline.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/crm/record-timeline.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/crm/record-timeline-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/crm/record-timeline-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "docs-install",
       "type": "registry:block",
       "title": "Docs install",
