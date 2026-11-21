@@ -503,6 +503,29 @@
       ]
     },
     {
+      "name": "agent-loader",
+      "type": "registry:ui",
+      "title": "Agent loader",
+      "description": "A small inline loader for an agent run: one glyph per phase (thinking, searching, reading, writing, running a tool, waiting for you, done, failed), an optional label and an optional elapsed time.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json",
+        "https://ui.knowns.dev/r/shimmer-text.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/agent-loader/agent-loader.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-loader/agent-loader.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/agent-loader/agent-loader-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/agent-loader/agent-loader-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "agent-monitor",
       "type": "registry:ui",
       "title": "Agent monitor",
