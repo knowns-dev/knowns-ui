@@ -116,7 +116,8 @@ interface Gesture {
   id: string;
   preview: Deal[];
   /** Pointer drag only: where the floating copy is. */
-  ghost?: { x: number; y: number; w: number; dx: number; dy: number };
+  /** `x`/`y` are the pointer in the viewport. `local` is set when the board sits in a scaled box (a transform on an ancestor): the copy is then placed inside the board, in its own px. */
+  ghost?: { x: number; y: number; w: number; dx: number; dy: number; local?: { x: number; y: number; w: number } };
 }
 
 export function DealPipeline({
@@ -188,6 +189,8 @@ export function DealPipeline({
     if (!root) return;
     const origin = root.getBoundingClientRect();
     const scroll = scrollRef.current?.scrollLeft ?? 0;
+    // Screen px to the board's own px when it sits in a scaled box (1 otherwise).
+    const k = origin.width / (root.offsetWidth || origin.width) || 1;
     const calm = prefersReducedMotion();
     const next = new Map<string, Pt>();
     const drop = released.current;
@@ -204,7 +207,7 @@ export function DealPipeline({
       let from: Pt | null;
       if (drop && drop.id === id) from = flipFrom({ x: drop.x - origin.left + scroll, y: drop.y - origin.top }, { x: drop.x - origin.left + scroll, y: drop.y - origin.top }, layout);
       else from = flipFrom(layouts.current.get(id), { x: seen.left - origin.left + scroll, y: seen.top - origin.top }, layout);
-      if (from) el.animate([{ transform: `translate(${from.x}px, ${from.y}px)` }, { transform: "translate(0, 0)" }], { duration: MOTION.slow, easing: EASE.inOut });
+      if (from) el.animate([{ transform: `translate(${from.x / k}px, ${from.y / k}px)` }, { transform: "translate(0, 0)" }], { duration: MOTION.slow, easing: EASE.inOut });
     }
     layouts.current = next;
   }, [shown, gesture?.ghost ? 1 : 0]);
@@ -322,7 +325,11 @@ export function DealPipeline({
         if (ev.clientX < r.left + 40) sc.scrollLeft -= 14;
         else if (ev.clientX > r.right - 40) sc.scrollLeft += 14;
       }
-      setGesture({ id: deal.id, preview, ghost: { x: ev.clientX, y: ev.clientY, w: rect.width, dx, dy } });
+      // A board inside a scaled box: screen px are not its px. The copy is then drawn inside the board, in its own px.
+      const rr = root.getBoundingClientRect();
+      const k = rr.width / (root.offsetWidth || rr.width) || 1;
+      const local = Math.abs(k - 1) > 0.001 ? { x: (ev.clientX - dx - rr.left) / k, y: (ev.clientY - dy - rr.top) / k, w: rect.width / k } : undefined;
+      setGesture({ id: deal.id, preview, ghost: { x: ev.clientX, y: ev.clientY, w: rect.width, dx, dy, local } });
     };
     const up = () => {
       stop();
@@ -426,7 +433,7 @@ export function DealPipeline({
         {live}
       </div>
       {dragging && gesture?.ghost && (
-        <div className="pointer-events-none fixed z-50" style={{ left: gesture.ghost.x - gesture.ghost.dx, top: gesture.ghost.y - gesture.ghost.dy, width: gesture.ghost.w }} aria-hidden>
+        <div className={cn("pointer-events-none z-50", gesture.ghost.local ? "absolute" : "fixed")} style={gesture.ghost.local ? { left: gesture.ghost.local.x, top: gesture.ghost.local.y, width: gesture.ghost.local.w } : { left: gesture.ghost.x - gesture.ghost.dx, top: gesture.ghost.y - gesture.ghost.dy, width: gesture.ghost.w }} aria-hidden>
           <DealCardView deal={dragging} currency={currency} today={today} className="rotate-1 shadow-lg" />
         </div>
       )}
