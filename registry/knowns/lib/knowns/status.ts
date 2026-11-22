@@ -68,7 +68,8 @@ export function actorColors(actors: Actor[]): Map<string, string> {
   const root = rootAgent(actors);
   const agents = actors.filter((a) => a.type === "agent");
   const ordered = root ? [root, ...agents.filter((a) => a !== root)] : agents;
-  return new Map(ordered.map((a, i) => [a.id, AGENT_PALETTE[i % AGENT_PALETTE.length] ?? ""]));
+  // A pinned colour wins; the rest take the palette in order, so pinning one never shifts the others.
+  return new Map(ordered.map((a, i) => [a.id, a.color ?? AGENT_PALETTE[i % AGENT_PALETTE.length] ?? ""]));
 }
 
 /** Colour for a span or link: the specialist agent end, else any agent end, else indigo. */

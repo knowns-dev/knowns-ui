@@ -52,6 +52,10 @@ export interface TraceWaterfallProps {
   virtualizeAbove?: number;
   /** Clock override for tests and stills. */
   now?: number;
+  /** The filter, search and critical-path controls. Off for a small read-only view (a dashboard tile, a still): the title and count stay. Default true. */
+  toolbar?: boolean;
+  /** The "Drag the axis to zoom" hint over the labels. Off for a still or a video, where it reads as chrome; brushing still zooms. Default true. */
+  axisHint?: boolean;
   className?: string;
 }
 
@@ -138,6 +142,8 @@ export function TraceWaterfall({
   maxHeight = 460,
   virtualizeAbove = 200,
   now: fixedNow,
+  toolbar = true,
+  axisHint = true,
   className,
 }: TraceWaterfallProps) {
   const snap = useAgentSnapshot(run);
@@ -646,13 +652,17 @@ export function TraceWaterfall({
             {spans.length > 0 && ` · ${formatDuration(total)}${live ? "…" : ""}`}
           </span>
         </div>
-        <SegmentedControl size="sm" aria-label="Filter calls" options={FILTERS} value={filter} onValueChange={(v) => setFilter(v as WaterfallFilter)} />
-        <span className="w-40 flex-none">
-          <Input size="sm" type="search" aria-label="Search calls" placeholder="Search" icon={<SearchGlyph />} value={query} onChange={(e) => setQuery(e.target.value)} />
-        </span>
-        <Button size="sm" variant={showCritical ? "primary" : "secondary"} aria-pressed={showCritical} onClick={() => setShowCritical((v) => !v)}>
-          Critical path
-        </Button>
+        {toolbar && (
+          <>
+            <SegmentedControl size="sm" aria-label="Filter calls" options={FILTERS} value={filter} onValueChange={(v) => setFilter(v as WaterfallFilter)} />
+            <span className="w-40 flex-none">
+              <Input size="sm" type="search" aria-label="Search calls" placeholder="Search" icon={<SearchGlyph />} value={query} onChange={(e) => setQuery(e.target.value)} />
+            </span>
+            <Button size="sm" variant={showCritical ? "primary" : "secondary"} aria-pressed={showCritical} onClick={() => setShowCritical((v) => !v)}>
+              Critical path
+            </Button>
+          </>
+        )}
         {zoom && (
           <Button size="sm" variant="ghost" onClick={() => setZoom(null)}>
             Reset zoom
@@ -662,7 +672,7 @@ export function TraceWaterfall({
 
       {/* Axis */}
       <div className={cn("flex h-7 border-y select-none [--label-w:11rem] @[640px]:[--label-w:19rem]", HAIR)}>
-        <div className="flex w-(--label-w) flex-none items-center px-3 text-[11px] text-muted-foreground">{zoom ? `Zoomed · ${formatOffset(viewLen, step)}` : "Drag the axis to zoom"}</div>
+        <div className="flex w-(--label-w) flex-none items-center px-3 text-[11px] text-muted-foreground">{zoom ? `Zoomed · ${formatOffset(viewLen, step)}` : axisHint ? "Drag the axis to zoom" : null}</div>
         <div
           ref={axisRef}
           role="slider"

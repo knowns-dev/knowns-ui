@@ -110,3 +110,27 @@ export function gridColumns(size: "card" | "page", interactive: boolean): string
   if (interactive) return "grid grid-cols-1 gap-x-4 gap-y-6 @[520px]:grid-cols-2 @[900px]:grid-cols-3";
   return "grid grid-cols-2 gap-x-4 gap-y-6 @[640px]:grid-cols-3 @[1080px]:grid-cols-5";
 }
+
+/**
+ * What a card's poster is before its live preview shows. "unknown": the grid has not checked the device yet (first
+ * paint, server render). "live": cards go live as they come into view, so a waiting card shows its placeholder.
+ * "still": cards never go live here (reduced motion, Save-Data, a touch or narrow screen on a non-interactive grid,
+ * live off, or hover mode, where a card that is not hovered stays as it is), so the thumbnail is the picture.
+ */
+export type PosterMode = "unknown" | "live" | "still";
+
+export function posterMode({ enabled, hover, known, allowed }: { enabled: boolean; hover: boolean; known: boolean; allowed: boolean }): PosterMode {
+  if (!enabled || hover) return "still";
+  if (!known) return "unknown";
+  return allowed ? "live" : "still";
+}
+
+/**
+ * Which poster a card paints: its thumbnail, its placeholder, or "either" (both, CSS shows the one this device will
+ * want, while the mode is still unknown). Only a card with a scaled live preview and a placeholder ever shows the
+ * placeholder; inline text cards render their own still frame.
+ */
+export function posterFor(mode: PosterMode, card: { preview: boolean; inline: boolean; placeholder: boolean }): "thumb" | "placeholder" | "either" {
+  if (!card.preview || card.inline || !card.placeholder || mode === "still") return "thumb";
+  return mode === "live" ? "placeholder" : "either";
+}

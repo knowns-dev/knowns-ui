@@ -28,6 +28,8 @@ export interface Actor {
   spend?: number;
   /** The coordinating agent, placed right under the human. Defaults to the first agent. */
   root?: boolean;
+  /** Agents: a fixed hex colour (e.g. "#0d9488", your brand colour) for its bars, links and marks, instead of the next one from the palette. Hex, because text on it picks its ink from it. */
+  color?: string;
 }
 
 /** One call from an actor to another. No `outcome` yet means it is still running. */

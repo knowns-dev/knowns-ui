@@ -2,18 +2,19 @@
 /** @registry name="agent-loader" type="ui" title="Agent loader" description="A small inline loader for an agent run: one glyph per phase (thinking, searching, reading, writing, running a tool, waiting for you, done, failed), an optional label and an optional elapsed time." */
 /**
  * The compact sibling of ThinkingState: it fits in a chat bubble, a button, a table row, a toast or a status bar.
- * Each phase has its own small loop that explains the work. A phase change crossfades the glyph, and done and failed
- * play once (a check that draws, a shake and an X). Nothing plays on first render except the loop of an active phase.
+ * Each phase has its own small loop that explains the work. A phase change crossfades the glyph (at size "xl", or with
+ * `morph`, it twists the old glyph out and the new one in), and done and failed play once (a check that draws, a shake and an X). Nothing plays on first render except the loop of an active phase.
  * Reduced motion shows a still glyph for every phase. Screen readers hear the label once, on a phase change.
  */
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
-import { MOTION, SwapText, prefersReducedMotion } from "@/registry/knowns/lib/knowns/motion";
+import { MOTION, prefersReducedMotion, useChangeCount } from "@/registry/knowns/lib/knowns/motion";
 import { ShimmerText } from "../text-animation/shimmer-text";
 import { type AgentPhase, defaultLabel, elapsedSeconds, formatElapsed, isBusyPhase, playFor } from "./agent-loader-utils";
 
 export type { AgentPhase } from "./agent-loader-utils";
-export type AgentLoaderSize = "sm" | "md";
+export type AgentLoaderSize = "sm" | "md" | "xl";
+export type AgentLoaderLayout = "inline" | "stack";
 export type AgentLoaderTone = "accent" | "neutral";
 
 export interface AgentLoaderProps {
@@ -29,8 +30,12 @@ export interface AgentLoaderProps {
   endedAt?: number | Date;
   /** Seconds spent, if you track it yourself. Wins over startedAt. */
   elapsed?: number;
-  /** "sm" is 16px, "md" is 20px. Default "sm". */
+  /** "sm" is 16px, "md" is 20px, "xl" is a 112px mark for a hero or a status panel. Default "sm". */
   size?: AgentLoaderSize;
+  /** "inline" puts the label beside the glyph. "stack" centres it under the glyph (the time under the label). Default "inline", or "stack" for size "xl". */
+  layout?: AgentLoaderLayout;
+  /** On a phase change, twist the old glyph out and the new one in (280ms) instead of the quick crossfade, so a large mark reads as one thing changing shape. Default true for size "xl", false otherwise. */
+  morph?: boolean;
   /** "accent" tints a working glyph with --kn-accent, "neutral" keeps it in the text colour. Waiting, done and failed always use their status colour. Default "accent". */
   tone?: AgentLoaderTone;
   /** Sweep a light band through the label while the agent is busy. Default true. */
@@ -57,18 +62,22 @@ const CSS = `
 @keyframes knal-out { from { opacity: 1; } to { opacity: 0; } }
 [data-knal] [data-k] { transform-box: fill-box; transform-origin: center; }
 [data-knal] [data-k="grow"], [data-knal] [data-k="caret"] { transform-origin: left center; }
-[data-knal] .knal-in { animation: knal-in var(--kn-dur, 180ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
+[data-knal] .knal-in, .knal-label-in { animation: knal-in var(--kn-dur, 180ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
+@keyframes knal-morph-in { from { opacity: 0; transform: rotate(60deg) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes knal-morph-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: rotate(-60deg) scale(.9); } }
+[data-knal] .knal-morph-in { animation: knal-morph-in var(--kn-dur-slow, 280ms) var(--kn-ease-inout, cubic-bezier(.65,0,.35,1)) both; }
+[data-knal] .knal-morph-out { animation: knal-morph-out var(--kn-dur-slow, 280ms) var(--kn-ease-inout, cubic-bezier(.65,0,.35,1)) both; }
 [data-knal] .knal-out { animation: knal-out var(--kn-dur-fast, 120ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
 [data-knal] [data-play] [data-k="check"], [data-knal] [data-play] [data-k="cross"] { animation: knal-draw var(--kn-dur-slow, 280ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
 [data-knal] [data-play="done"] [data-k="disc"] { animation: knal-pop var(--kn-dur-slow, 280ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
 [data-knal] [data-play="error"] { animation: knal-shake var(--kn-dur-slow, 280ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
 @media (prefers-reduced-motion: reduce) {
-  [data-knal] *, [data-knal] *::before, [data-knal] *::after { animation: none !important; }
+  [data-knal] *, [data-knal] *::before, [data-knal] *::after, .knal-label-in { animation: none !important; }
   [data-knal] [data-k="dot"] { opacity: .7; }
   [data-knal] [data-k="scan"] { opacity: .7; }
   [data-knal] [data-k="caret"] { transform: translateX(5.9px); }
   [data-knal] [data-k="ring"] { opacity: .35; }
-  [data-knal] .knal-out { display: none; }
+  [data-knal] .knal-out, [data-knal] .knal-morph-out { display: none; }
 }
 `;
 
@@ -167,8 +176,8 @@ function Svg({ phase, play, size, className, busy }: { phase: AgentPhase; play?:
  * Just the glyph, for a button, a row or a header. Decorative (aria-hidden): pair it with text. On a phase change the old glyph
  * fades out as the new one fades in.
  */
-export function AgentLoaderMark({ phase, size = "sm", tone = "accent", className }: { phase: AgentPhase; size?: AgentLoaderSize; tone?: AgentLoaderTone; className?: string }) {
-  const px = size === "md" ? 20 : 16;
+export function AgentLoaderMark({ phase, size = "sm", tone = "accent", morph = size === "xl", className }: { phase: AgentPhase; size?: AgentLoaderSize; tone?: AgentLoaderTone; morph?: boolean; className?: string }) {
+  const px = size === "xl" ? 112 : size === "md" ? 20 : 16;
   const last = useRef(phase);
   const [leaving, setLeaving] = useState<AgentPhase | null>(null);
   const [play, setPlay] = useState<"done" | "error" | undefined>(undefined);
@@ -182,16 +191,16 @@ export function AgentLoaderMark({ phase, size = "sm", tone = "accent", className
   }
   useEffect(() => {
     if (!leaving) return;
-    const t = setTimeout(() => setLeaving(null), MOTION.fast + 20);
+    const t = setTimeout(() => setLeaving(null), (morph ? MOTION.slow : MOTION.fast) + 20);
     return () => clearTimeout(t);
-  }, [leaving]);
+  }, [leaving, morph]);
   return (
     <span aria-hidden data-knal={phase} data-phase={phase} className={cn("relative inline-block flex-none", toneClass(phase, tone), className)} style={{ width: px, height: px }}>
       <style href="knal" precedence="default">
         {CSS}
       </style>
-      {leaving && <Svg key={`out-${leaving}`} phase={leaving} size={px} className={cn("knal-out", toneClass(leaving, tone))} busy />}
-      <Svg key={phase} phase={phase} play={play} size={px} className={changed ? "knal-in" : undefined} busy />
+      {leaving && <Svg key={`out-${leaving}`} phase={leaving} size={px} className={cn(morph ? "knal-morph-out" : "knal-out", toneClass(leaving, tone))} busy />}
+      <Svg key={phase} phase={phase} play={play} size={px} className={changed ? (morph ? "knal-morph-in" : "knal-in") : undefined} busy />
     </span>
   );
 }
@@ -220,17 +229,19 @@ function useSeconds(o: { busy: boolean; elapsed?: number; startedAt?: number | D
  * "[glyph] Searching 12s": an inline loader for the phase a run is in. The label changes through SwapText, the
  * timer is optional, and screen readers hear the label once per phase change (the timer is silent).
  */
-export function AgentLoader({ phase, label, showLabel = true, startedAt, endedAt, elapsed, size = "sm", tone = "accent", shimmer = true, className }: AgentLoaderProps) {
+export function AgentLoader({ phase, label, showLabel = true, startedAt, endedAt, elapsed, size = "sm", layout = size === "xl" ? "stack" : "inline", morph, tone = "accent", shimmer = true, className }: AgentLoaderProps) {
   const text = label ?? defaultLabel(phase);
   const busy = isBusyPhase(phase);
   const seconds = useSeconds({ busy, elapsed, startedAt, endedAt });
-  return (
-    <span role="status" className={cn("inline-flex items-center gap-2 align-middle text-[13px] text-muted-foreground", size === "md" && "text-[13.5px]", className)}>
-      <AgentLoaderMark phase={phase} size={size} tone={tone} />
+  const stack = layout === "stack";
+  const swaps = useChangeCount(phase + text);
+  const parts = (
+    <>
       {showLabel ? (
-        <SwapText value={phase + text} className="inline-flex min-w-0 items-center">
-          <ShimmerText text={text} active={busy && shimmer} variant="sweep" className="truncate font-medium text-foreground/85" />
-        </SwapText>
+        <span key={swaps} className={cn("inline-flex min-w-0 items-center", swaps > 0 && "knal-label-in")}>
+          {/* Wraps instead of clipping: a label is never cut, and the swap is opacity only (no travel for an overflow box to clip). */}
+          <ShimmerText text={text} active={busy && shimmer} variant="sweep" className={cn("whitespace-normal font-medium text-foreground/85", size === "xl" && "font-semibold")} />
+        </span>
       ) : (
         <span className="sr-only">{text}</span>
       )}
@@ -239,6 +250,12 @@ export function AgentLoader({ phase, label, showLabel = true, startedAt, endedAt
           {formatElapsed(seconds)}
         </span>
       )}
+    </>
+  );
+  return (
+    <span role="status" className={cn("inline-flex items-center align-middle text-[13px] text-muted-foreground", stack ? "flex-col gap-3 text-center" : "gap-2", size === "md" && "text-[13.5px]", size === "xl" && "text-[17px]", className)}>
+      <AgentLoaderMark phase={phase} size={size} tone={tone} morph={morph} />
+      {stack ? <span className="inline-flex items-baseline gap-2">{parts}</span> : parts}
     </span>
   );
 }

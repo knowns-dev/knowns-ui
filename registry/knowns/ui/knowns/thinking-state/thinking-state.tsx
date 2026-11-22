@@ -85,6 +85,8 @@ export interface ThinkingStateProps {
   variant?: "panel" | "compact";
   /** Swap the header dot for a moving mark while thinking: "grid", "chain", "ring" or "bars" (see ThinkingIndicator). Default: the breathing dot. */
   indicator?: ThinkingIndicatorVariant;
+  /** Your own mark in front of the header, in every status (for example an agent loader that follows the run). Replaces the dot and `indicator`. */
+  leading?: ReactNode;
   className?: string;
 }
 
@@ -256,6 +258,7 @@ export function ThinkingState({
   maxSources = 4,
   variant = "panel",
   indicator,
+  leading,
   className,
 }: ThinkingStateProps) {
   const running = status === "thinking";
@@ -362,7 +365,11 @@ export function ThinkingState({
           focusRing,
         )}
       >
-        {running && indicator ? (
+        {leading ? (
+          <span aria-hidden className="grid flex-none place-items-center">
+            {leading}
+          </span>
+        ) : running && indicator ? (
           <ThinkingMark variant={indicator} size={compact ? 14 : 16} />
         ) : (
         <span

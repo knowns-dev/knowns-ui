@@ -1,12 +1,13 @@
 "use client";
-/** @registry name="catalog-grid" type="block" title="Catalog grid" description="A catalogue page: category tabs with counts over a grid of thumbnail cards with New and Pro badges, plus a Sketch kit for quiet monochrome thumbnails in one visual language." */
+/** @registry name="catalog-grid" type="block" title="Catalog grid" description="A catalogue page: category tabs with counts over a grid of thumbnail cards with New and Pro badges, plus a Sketch kit for quiet monochrome thumbnails in one visual language and skeleton placeholders for cards waiting to go live." */
 
 import { createContext, startTransition, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Toggle } from "../../toggle-group";
 import { SegmentedControl } from "../../segmented-control";
 import { Input } from "../../input";
-import { CATALOG_TIERS, categoryCounts, countLabel, effectiveMaxLive, filterCatalog, gridColumns, orderCategories, pickLiveRowGroups, sampleScale, tierCounts, type CatalogTier, type LiveCard } from "./catalog-utils";
+import { CATALOG_TIERS, categoryCounts, countLabel, effectiveMaxLive, filterCatalog, gridColumns, orderCategories, pickLiveRowGroups, posterFor, posterMode, sampleScale, tierCounts, type CatalogTier, type LiveCard, type PosterMode } from "./catalog-utils";
+export { CatalogPlaceholder, type CatalogPlaceholderShape } from "./placeholder";
 
 export interface CatalogItem {
   id: string;
@@ -29,6 +30,13 @@ export interface CatalogItem {
   hint?: string;
   /** The drawing: an <img>, an SVG, or a <Sketch> from ./sketch. */
   thumb?: ReactNode;
+  /**
+   * The poster while the card waits to go live or its preview is still loading, instead of `thumb`, e.g. a
+   * <CatalogPlaceholder shape="block" />. Used only where cards go live as they come into view: devices that never go
+   * live (reduced motion, Save-Data, touch on a non-interactive grid), `live={false}` and `liveOn="hover"` keep `thumb`,
+   * so no card stays a skeleton for good. The live preview fades in over it with no layout shift.
+   */
+  placeholder?: ReactNode;
   /**
    * The live preview, mounted when the card comes into view (the thumbnail is the poster until then). Laid out
    * at `previewWidth` px and scaled down to the card. Inert and hidden from assistive tech.
@@ -121,8 +129,9 @@ export interface CatalogGridProps {
 /* ── Live previews ── */
 
 /** Whether this device should run live previews: a fine pointer, room, no Save-Data, motion allowed. */
-function useLiveAllowed(enabled: boolean, interactive = false): boolean {
-  const [ok, setOk] = useState(false);
+function useLiveAllowed(enabled: boolean, interactive = false): { allowed: boolean; known: boolean } {
+  // null until the device has been checked (the first paint and the server render).
+  const [ok, setOk] = useState<boolean | null>(null);
   useEffect(() => {
     if (!enabled) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -138,7 +147,7 @@ function useLiveAllowed(enabled: boolean, interactive = false): boolean {
       removeEventListener("resize", check);
     };
   }, [enabled, interactive]);
-  return enabled && ok;
+  return { allowed: enabled && ok === true, known: ok !== null };
 }
 
 /** True below 640px: the one-column phone layout. */
@@ -155,6 +164,10 @@ function useNarrow(): boolean {
 }
 
 const Interactive = createContext(false);
+const Poster = createContext<PosterMode>("still");
+
+/** The poster layer: a thumbnail drawing scaled to the card, or a placeholder. */
+const POSTER = "absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full";
 
 type LiveCtx = { mode: "view"; observe: (id: string, el: Element) => () => void; mounted: ReadonlySet<string> } | { mode: "hover" };
 const Live = createContext<LiveCtx | null>(null);
@@ -418,6 +431,7 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
   const count = countLabel(item.count, countNoun);
   const live = useContext(Live);
   const interactive = useContext(Interactive);
+  const mode = useContext(Poster);
   const [paused, setPaused] = useState(false);
   const thumbRef = useRef<HTMLSpanElement>(null);
   const observe = live?.mode === "view" ? live.observe : undefined;
@@ -442,14 +456,26 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
     return () => window.clearTimeout(t);
   }, [running]);
   const inline = Boolean(item.inline && item.preview);
+  const poster = posterFor(mode, { preview: hasPreview, inline, placeholder: item.placeholder != null });
   // Extras go in visually hidden text after the visible title, count and description, so the accessible name starts with what is shown (WCAG 2.5.3, label in name).
   const extras = [item.kind ?? null, item.pro ? "Pro" : item.proVariants ? "Pro variants" : null, item.isNew ? "New" : null, count].filter(Boolean).join(", ");
   const body = (
     <>
       <span ref={thumbRef} className="relative block aspect-[16/10] w-full overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)] transition-[box-shadow,background-color] duration-(--kn-dur) ease-(--kn-ease-out) group-hover:bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))] group-hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_16%,transparent)]">
-        <span className="absolute inset-0 grid place-items-center p-3 [&>img]:size-full [&>img]:object-contain [&>svg]:size-full">{inline ? <span className="block w-full">{item.preview?.({ live: isLive, paused: paused && isLive })}</span> : item.thumb}</span>
-
-
+        {inline ? (
+          <span className={POSTER}>
+            <span className="block w-full">{item.preview?.({ live: isLive, paused: paused && isLive })}</span>
+          </span>
+        ) : poster === "either" ? (
+          // Not known yet whether this device goes live: paint both and let CSS show the likely one, so the first paint
+          // already matches (motion allowed, and for a non-interactive grid a wide screen with a mouse).
+          <>
+            <span className={cn(POSTER, "hidden", interactive ? "motion-safe:grid" : "motion-safe:md:pointer-fine:grid")}>{item.placeholder}</span>
+            <span className={cn(POSTER, interactive ? "motion-safe:hidden" : "motion-safe:md:pointer-fine:hidden")}>{item.thumb}</span>
+          </>
+        ) : (
+          <span className={POSTER}>{poster === "placeholder" ? item.placeholder : item.thumb}</span>
+        )}
       </span>
       <span className="mt-2.5 block min-w-0 px-0.5">
         <span className="flex min-w-0 items-baseline gap-2">
@@ -466,7 +492,7 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
   const cls = cn("group flex w-full min-w-0 flex-col rounded-[12px] text-left transition-transform duration-(--kn-dur) ease-(--kn-ease-out) active:scale-[.97] motion-reduce:transition-none motion-reduce:active:scale-100", focusRing);
   // Outside the link (a preview has links of its own), over the thumbnail, click-through.
   const overlay = mounted && item.preview && !inline && (
-    <span className={cn("pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground transition-opacity ease-(--kn-ease-out) motion-reduce:transition-none", running && shownLive ? "opacity-100 duration-(--kn-dur)" : "opacity-0 duration-(--kn-dur-fast)")}>
+    <span className={cn("pointer-events-none absolute inset-x-0 top-0 block aspect-[16/10] overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] text-foreground transition-opacity ease-(--kn-ease-out) motion-reduce:transition-none", "duration-(--kn-dur-fast)", running && shownLive ? "opacity-100" : "opacity-0")}>
       <LivePreview interactive={interactive} width={item.previewWidth ?? 720} align={item.previewAlign} render={() => item.preview?.({ live: true, paused: paused && item.pausable })} onShown={setShownLive} />
       {item.previewWidth !== "fit" && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] to-transparent" />}
       <span aria-hidden="true" className="absolute inset-0 rounded-[12px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_8%,transparent)]" />
@@ -482,6 +508,8 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
     </button>
   );
   const showControls = interactive && isLive && Boolean(item.preview);
+  // The live layer has painted (or the card renders its own preview inline), or the demo was paused by hand.
+  const controlReady = inline || shownLive || paused;
   const btn = "pointer-events-auto inline-flex size-7 items-center justify-center rounded-[8px] bg-background/90 text-foreground shadow-[0_0_0_1px_var(--border)] backdrop-blur-sm transition-colors duration-(--kn-dur-fast) ease-(--kn-ease-out) hover:bg-muted pointer-coarse:size-9 [&_svg]:size-3.5";
   return (
     <div
@@ -500,7 +528,15 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
       )}
       {showControls && (
         <span data-slot="catalog-live-controls" className="pointer-events-none absolute inset-x-0 top-0 flex aspect-[16/10] items-end justify-end gap-1 p-2 opacity-100 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) pointer-fine:opacity-0 pointer-fine:group-focus-within/live:opacity-100 pointer-fine:group-hover/live:opacity-100">
-          <button type="button" className={btn} aria-label={`${paused ? "Play" : "Pause"} demo: ${item.title}`} onClick={() => setPaused((p) => !p)}>
+          {/* Pause only once there is something playing: it fades in with the live layer (and stays as Play once paused). */}
+          <button
+            type="button"
+            className={cn(btn, "transition-[opacity,visibility,background-color] duration-(--kn-dur-fast) ease-(--kn-ease-out)", !controlReady && "invisible opacity-0")}
+            aria-label={`${paused ? "Play" : "Pause"} demo: ${item.title}`}
+            aria-hidden={controlReady ? undefined : true}
+            tabIndex={controlReady ? undefined : -1}
+            onClick={() => setPaused((p) => !p)}
+          >
             {paused ? (
               <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
                 <path d="M5 3.2v9.6a.5.5 0 0 0 .76.43l7.7-4.8a.5.5 0 0 0 0-.86l-7.7-4.8A.5.5 0 0 0 5 3.2Z" />
@@ -562,7 +598,9 @@ export function CatalogGrid({
   className,
 }: CatalogGridProps) {
   const narrow = useNarrow();
-  const liveAllowed = useLiveAllowed(liveProp && items.some((i) => i.preview), interactive);
+  const wantLive = liveProp && items.some((i) => i.preview);
+  const { allowed: liveAllowed, known } = useLiveAllowed(wantLive, interactive);
+  const mode = posterMode({ enabled: wantLive, hover: liveOn === "hover", known, allowed: liveAllowed });
   const viewCtx = useLiveManager(liveAllowed && liveOn === "view", effectiveMaxLive(maxLive, narrow, interactive));
   const liveCtx = useMemo<LiveCtx | null>(() => (liveAllowed && liveOn === "hover" ? { mode: "hover" } : viewCtx), [liveAllowed, liveOn, viewCtx]);
   const [own, setOwn] = useState(defaultCategory);
@@ -593,7 +631,9 @@ export function CatalogGrid({
   const shown = useMemo(() => filterCatalog(base, sections ? "all" : category), [base, sections, category]);
   const labelOf = (id: string) => (id === "all" ? "All" : (labels[id] ?? id));
   const gridCls = gridColumns(size, interactive);
-  const notice = typeof liveNotice === "function" ? liveNotice({ live: liveAllowed, narrow }) : liveNotice;
+  // Before the device is checked (first paint, server render) the notice says what most devices will do, matching the
+  // placeholders CSS shows then; a device that never goes live switches to its own line once checked.
+  const notice = typeof liveNotice === "function" ? liveNotice({ live: mode !== "still", narrow }) : liveNotice;
   const grid = (list: typeof shown) => (
     <ul data-size={size} className={gridCls}>
       {list.map((item) => (
@@ -608,6 +648,7 @@ export function CatalogGrid({
   return (
     <Live.Provider value={liveCtx}>
     <Interactive.Provider value={interactive}>
+    <Poster.Provider value={mode}>
     <section aria-label="Catalog" className={cn("@container w-full", className)}>
       {notice ? (
         <div data-slot="catalog-live-notice" className="mb-5 text-[13.5px] text-muted-foreground">
@@ -673,6 +714,7 @@ export function CatalogGrid({
         {status}
       </p>
     </section>
+    </Poster.Provider>
     </Interactive.Provider>
     </Live.Provider>
   );

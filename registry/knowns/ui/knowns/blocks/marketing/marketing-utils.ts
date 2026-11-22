@@ -35,17 +35,7 @@ export function tiltFor(progress: number, max = 14) {
 
 /* ── Marquee ── */
 
-/** Seconds for one loop at a steady speed: wider tracks take longer, so speed feels the same. */
-export function marqueeDuration(itemCount: number, speed: "slow" | "normal" | "fast" = "normal", itemWidth = 160) {
-  const pxPerSec = speed === "slow" ? 30 : speed === "fast" ? 80 : 50;
-  return Math.max(8, Math.round((itemCount * itemWidth) / pxPerSec));
-}
-
-/** Copies of the list needed so one track is at least `minItems` long (the marquee renders two tracks). */
-export function marqueeCopies(itemCount: number, minItems = 8) {
-  if (itemCount <= 0) return 0;
-  return Math.max(1, Math.ceil(minItems / itemCount));
-}
+export { marqueeCopies, marqueeDuration } from "../../marquee/marquee-utils";
 
 /* ── Bento ── */
 
