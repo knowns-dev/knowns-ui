@@ -8,6 +8,7 @@
  * Command Menu, a notifications slot, your UserMenu) and the page. ⌘B / Ctrl+B toggles the sidebar.
  */
 import { useEffect, useState, type ReactNode } from "react";
+import { goToTop } from "@/registry/knowns/lib/knowns/home";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
 import { Breadcrumb, type BreadcrumbItem } from "../../breadcrumb";
 import { Kbd } from "../../kbd";
@@ -67,6 +68,8 @@ export interface AppShellProps {
 
   /* Topbar */
   breadcrumb?: BreadcrumbItem[];
+  /** Go to the app's home view. The breadcrumb's first crumb (the workspace) becomes the home control and calls it, then the page scrolls to the top. */
+  onHome?: () => void;
   /** A search button (⌘K hint from 768px). Open your Command Menu in onOpen. */
   search?: { onOpen: () => void; label?: string };
   /** A notifications button or popover. */
@@ -152,6 +155,7 @@ export function AppShell({
   sidebarWidth,
   sidebarClassName,
   breadcrumb,
+  onHome,
   search,
   notifications,
   actions,
@@ -198,7 +202,7 @@ export function AppShell({
               <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
               {/* One line in the topbar; below 640px only the current page shows. */}
               <Breadcrumb
-                items={breadcrumb}
+                items={onHome ? breadcrumb.map((item, i) => (i === 0 ? { ...item, href: undefined, onClick: () => (item.onClick?.(), onHome(), goToTop()) } : item)) : breadcrumb}
                 aria-label={named("Breadcrumb")}
                 size="sm"
                 maxItems={3}

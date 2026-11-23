@@ -8,6 +8,7 @@
  */
 import { useId, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { useHomeLink } from "@/registry/knowns/lib/knowns/home";
 import { socialOf, type SocialKind } from "@/registry/knowns/lib/knowns/social";
 import { Button } from "../../button";
 import { Input } from "../../input";
@@ -172,6 +173,7 @@ export function SiteFooter({
   containerClassName = "max-w-6xl",
   className,
 }: SiteFooterProps) {
+  const home = useHomeLink(brandHref);
   const st = status ? STATUS[status.state ?? "operational"] : null;
   const statusInner = st && (
     <>
@@ -188,8 +190,8 @@ export function SiteFooter({
           <div className="flex max-w-sm flex-col gap-4">
             <a
               href={brandHref}
-              aria-label={brandLabel}
-              onClick={(e) => onNavigate?.(brandHref, e)}
+              aria-label={brandLabel ? `${brandLabel} home` : undefined}
+              onClick={(e) => (onNavigate?.(brandHref, e), home(e))}
               className={cn("flex w-fit items-center gap-2 rounded-[8px] text-[15px] font-semibold tracking-tight", focusRing)}
             >
               {brand}

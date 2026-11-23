@@ -1,9 +1,11 @@
+"use client";
 /**
  * Shared pieces of the marketing footers: a link, a column of links, a text-only social row and the legal row.
  * No platform marks: a social link is its name in words, and `icon` takes your own glyph.
  */
 import type { MouseEvent, ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { useHomeLink } from "@/registry/knowns/lib/knowns/home";
 
 export interface FooterLinkItem {
   label: string;
@@ -88,10 +90,11 @@ export function FooterLegal({ copyright, legal = [], onNavigate, className }: { 
   );
 }
 
-/** The brand as a link. */
+/** The brand as a link home: on the home page itself, or in a preview frame, it scrolls back to the top instead. */
 export function FooterBrand({ brand, href = "/", label, onNavigate, className }: { brand: ReactNode; href?: string; label?: string; onNavigate?: FooterNavigate; className?: string }) {
+  const home = useHomeLink(href);
   return (
-    <a href={href} aria-label={label} onClick={(e) => onNavigate?.(href, e)} className={cn("flex w-fit items-center gap-2 rounded-[8px] text-[15px] font-semibold tracking-tight", focusRing, className)}>
+    <a href={href} aria-label={label ? `${label} home` : undefined} onClick={(e) => (onNavigate?.(href, e), home(e))} className={cn("flex w-fit items-center gap-2 rounded-[8px] text-[15px] font-semibold tracking-tight", focusRing, className)}>
       {brand}
     </a>
   );

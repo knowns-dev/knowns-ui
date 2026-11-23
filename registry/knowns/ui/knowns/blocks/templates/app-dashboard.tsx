@@ -90,6 +90,7 @@ export function AppDashboardTemplate({ layout = "page", embedded, labelPrefix, c
   return (
     <div onClickCapture={keepHere} className={className}>
       <AppShell
+        onHome={() => setActive("home")}
         layout={layout}
         embedded={embedded}
         labelPrefix={labelPrefix}

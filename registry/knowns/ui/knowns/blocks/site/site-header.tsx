@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { prefersReducedMotion } from "@/registry/knowns/lib/knowns/motion";
+import { useHomeLink } from "@/registry/knowns/lib/knowns/home";
 import { Button } from "../../button";
 import { Kbd } from "../../kbd";
 import { ThemeToggle } from "../../theme-toggle";
@@ -42,6 +43,8 @@ export interface SiteHeaderProps {
   /** Logo and name. Wrapped in a link to brandHref. */
   brand: ReactNode;
   brandHref?: string;
+  /** Go to an in-place home view instead of following brandHref (an app that switches views), e.g. a docs home. */
+  onHome?: () => void;
   /** Accessible name of the brand link when the brand is only a mark. */
   brandLabel?: string;
   nav?: NavEntry[];
@@ -210,6 +213,7 @@ export function SiteHeader({
   leading,
   brand,
   brandHref = "/",
+  onHome,
   brandLabel,
   nav = [],
   currentHref,
@@ -234,6 +238,8 @@ export function SiteHeader({
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLUListElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  // The brand goes home; on the home page itself, or in a preview frame, it scrolls back to the top instead.
+  const home = useHomeLink(brandHref, { scrollRoot, onHome });
   const hoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const active = activeEntry(nav, currentHref);
   const minimal = variant === "minimal";
@@ -460,8 +466,8 @@ export function SiteHeader({
         {leading}
         <a
           href={brandHref}
-          aria-label={brandLabel}
-          onClick={(e) => onNavigate?.(brandHref, e)}
+          aria-label={brandLabel ? `${brandLabel} home` : undefined}
+          onClick={(e) => (onNavigate?.(brandHref, e), home(e))}
           className={cn("flex flex-none items-center gap-2 rounded-[8px] text-[15px] font-semibold tracking-tight", focusRing)}
         >
           {brand}

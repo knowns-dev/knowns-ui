@@ -99,6 +99,7 @@ export function DocsSiteTemplate({ scrollRoot, defaultView = "home", className }
   return (
     <div onClickCapture={onClick} className={className}>
       <SiteHeader
+        onHome={() => setView("home")}
         variant="minimal"
         solid
         brand={<Mark />}

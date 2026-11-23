@@ -4,6 +4,27 @@
   "homepage": "https://ui.knowns.dev",
   "items": [
     {
+      "name": "home-link",
+      "type": "registry:lib",
+      "title": "Home link",
+      "description": "Makes a brand or logo link go home: to its href, or, when that is the page already open or a preview frame, back to the top with a smooth scroll, the hash cleared and focus on the top. App templates pass onHome to switch to their home view instead.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/lib/knowns/home.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/home.ts"
+        },
+        {
+          "path": "registry/knowns/lib/knowns/home-utils.ts",
+          "type": "registry:lib",
+          "target": "lib/knowns/home-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "knowns-icons",
       "type": "registry:lib",
       "title": "Knowns UI icons",
@@ -792,6 +813,7 @@
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/breadcrumb.json",
+        "https://ui.knowns.dev/r/home-link.json",
         "https://ui.knowns.dev/r/kbd.json",
         "https://ui.knowns.dev/r/sidebar.json"
       ],
@@ -1688,6 +1710,7 @@
       "description": "Marketing footer with the brand and a blurb, the Newsletter block as its sign-up, two to four link columns that stay two across on a phone, text-only social links and the legal row.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/home-link.json",
         "https://ui.knowns.dev/r/newsletter.json"
       ],
       "files": [
@@ -1709,7 +1732,8 @@
       "title": "Footer minimal",
       "description": "One-line marketing footer: brand, a few links and the copyright. Wraps to a centred stack on a phone. For a landing page that ends at a call to action.",
       "registryDependencies": [
-        "https://ui.knowns.dev/r/knowns-core.json"
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/home-link.json"
       ],
       "files": [
         {
@@ -1731,6 +1755,7 @@
       "description": "Marketing footer with a live system status pill (a still dot, a label and a link to your status page), an optional 30-day uptime strip, link columns and the legal row. Status comes from your data; the footer never fetches.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/home-link.json",
         "https://ui.knowns.dev/r/status-dot.json",
         "https://ui.knowns.dev/r/uptime-bar.json"
       ],
@@ -1753,7 +1778,8 @@
       "title": "Footer wordmark",
       "description": "Marketing footer that ends in the brand word set as wide as the page and cropped at the bottom edge, fading out. A quiet row of links, text-only socials and the legal line sit above it. No JavaScript.",
       "registryDependencies": [
-        "https://ui.knowns.dev/r/knowns-core.json"
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/home-link.json"
       ],
       "files": [
         {
@@ -2236,6 +2262,7 @@
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/accordion.json",
         "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/home-link.json",
         "https://ui.knowns.dev/r/input.json",
         "https://ui.knowns.dev/r/segmented-control.json",
         "https://ui.knowns.dev/r/social.json"
@@ -2262,6 +2289,7 @@
         "https://ui.knowns.dev/r/knowns-core.json",
         "https://ui.knowns.dev/r/accordion.json",
         "https://ui.knowns.dev/r/button.json",
+        "https://ui.knowns.dev/r/home-link.json",
         "https://ui.knowns.dev/r/kbd.json",
         "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/theme-toggle.json"

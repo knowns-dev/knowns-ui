@@ -74,7 +74,7 @@ Registry dependencies (the core types, the run store, icons) come along automati
 
 ## What's in Free
 
-166 components and blocks (196 registry items with their dependencies), MIT licensed. Newest first:
+166 components and blocks (197 registry items with their dependencies), MIT licensed. Newest first:
 
 - **Agent views (15):** Agent Lanes, Tool Call Card, Agent Loader, Trace Waterfall, JSON Inspector, Agent Graph, Approval Prompt, Call Overlay, Live Activity, Context Window, Agent Monitor, Agent Fleet, and 3 more.
 - **Chat (6):** Chat Composer, Thinking State, Conversation List, AI Answer, Message Actions, Ghost Text.
