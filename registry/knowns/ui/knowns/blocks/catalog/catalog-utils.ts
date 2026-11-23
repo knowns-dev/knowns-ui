@@ -106,7 +106,7 @@ export function effectiveMaxLive(max: number, narrow: boolean, interactive: bool
 
 /** Column classes of the grid. Interactive demos need room to be used, so phones get one column and tablets two. */
 export function gridColumns(size: "card" | "page", interactive: boolean): string {
-  if (size === "page") return "grid grid-cols-1 gap-x-6 gap-y-8 @[640px]:grid-cols-2 @[1080px]:grid-cols-3";
+  if (size === "page") return "grid grid-cols-1 gap-x-6 gap-y-8 @[640px]:grid-cols-2";
   if (interactive) return "grid grid-cols-1 gap-x-4 gap-y-6 @[520px]:grid-cols-2 @[900px]:grid-cols-3";
   return "grid grid-cols-2 gap-x-4 gap-y-6 @[640px]:grid-cols-3 @[1080px]:grid-cols-5";
 }
@@ -133,4 +133,26 @@ export function posterMode({ enabled, hover, known, allowed }: { enabled: boolea
 export function posterFor(mode: PosterMode, card: { preview: boolean; inline: boolean; placeholder: boolean }): "thumb" | "placeholder" | "either" {
   if (!card.preview || card.inline || !card.placeholder || mode === "still") return "thumb";
   return mode === "live" ? "placeholder" : "either";
+}
+
+/** The card's window is 16:10. */
+const WINDOW_RATIO = 10 / 16;
+
+/**
+ * How far a template card's shot scrolls, as a negative percentage of the shot's own height (translateY percentages
+ * refer to the element itself): the shot is `height / width` times as tall as the card is wide, the window shows
+ * 10/16 of the width. A shot no taller than the window does not scroll.
+ */
+export function templateShift(width: number, height: number): number {
+  if (!(width > 0) || !(height > 0)) return 0;
+  const ratio = height / width;
+  if (ratio <= WINDOW_RATIO) return 0;
+  return -Math.round((1 - WINDOW_RATIO / ratio) * 1000) / 10;
+}
+
+/** How long the scroll takes, in ms: slow enough to read, about 3.2s for each window of page past the first, between 3 and 8 seconds. */
+export function templateDuration(width: number, height: number): number {
+  const ratio = height / width;
+  const windows = Math.max(0, ratio / WINDOW_RATIO - 1);
+  return Math.round(Math.min(8000, Math.max(3000, 2000 + windows * 3200)));
 }

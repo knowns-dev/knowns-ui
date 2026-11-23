@@ -46,9 +46,9 @@ export interface AgentLoaderProps {
 /* Private keyframes (knal-): periods, not UI durations. Each moves transform, opacity or a stroke offset only. The one-shots
    use the global duration tokens. Reduced motion drops every animation and leaves a still glyph for each phase. */
 const CSS = `
-@keyframes knal-dot { 0%, 100% { opacity: .35; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-1.5px); } }
+@keyframes knal-dot { 0%, 100% { opacity: var(--knal-dim, .35); transform: translateY(0); } 40% { opacity: 1; transform: translateY(-1.5px); } }
 @keyframes knal-lens { 0%, 100% { transform: translate(-1.25px, -.75px); } 50% { transform: translate(1.5px, 1px); } }
-@keyframes knal-scan { 0%, 100% { opacity: .3; } 30% { opacity: 1; } 60% { opacity: .3; } }
+@keyframes knal-scan { 0%, 100% { opacity: var(--knal-dim, .3); } 30% { opacity: 1; } 60% { opacity: var(--knal-dim, .3); } }
 @keyframes knal-grow { 0% { transform: scaleX(.35); } 70%, 100% { transform: scaleX(1); } }
 @keyframes knal-caret { 0% { transform: translateX(0); } 70%, 100% { transform: translateX(5.9px); } }
 @keyframes knal-brl { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(1.25px); } }
@@ -61,6 +61,8 @@ const CSS = `
 @keyframes knal-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes knal-out { from { opacity: 1; } to { opacity: 0; } }
 [data-knal] [data-k] { transform-box: fill-box; transform-origin: center; }
+/* The resting think dots and read lines: about a third on a light page (the fallbacks), brighter on a dark page or a black surface such as a notch, where a third of the accent is lost. */
+.dark [data-knal] { --knal-dim: .55; }
 [data-knal] [data-k="grow"], [data-knal] [data-k="caret"] { transform-origin: left center; }
 [data-knal] .knal-in, .knal-label-in { animation: knal-in var(--kn-dur, 180ms) var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)) both; }
 @keyframes knal-morph-in { from { opacity: 0; transform: rotate(60deg) scale(.9); } to { opacity: 1; transform: none; } }
@@ -99,7 +101,7 @@ function Glyph({ phase, play }: { phase: AgentPhase; play?: "done" | "error" }) 
       return (
         <g fill="currentColor" stroke="none">
           {[3.5, 8, 12.5].map((x, i) => (
-            <circle key={x} data-k="dot" cx={x} cy={8} r={1.5} style={{ ...a("knal-dot", "1.3s", `${i * 0.18}s`), opacity: 0.35 }} />
+            <circle key={x} data-k="dot" cx={x} cy={8} r={1.5} style={{ ...a("knal-dot", "1.3s", `${i * 0.18}s`), opacity: "var(--knal-dim, .35)" }} />
           ))}
         </g>
       );
@@ -118,7 +120,7 @@ function Glyph({ phase, play }: { phase: AgentPhase; play?: "done" | "error" }) 
             ["M3 8h8", 0.22],
             ["M3 11.5h9.5", 0.44],
           ].map(([d, delay]) => (
-            <path key={d as string} data-k="scan" d={d as string} style={{ ...a("knal-scan", "1.5s", `${delay}s`), opacity: 0.3 }} />
+            <path key={d as string} data-k="scan" d={d as string} style={{ ...a("knal-scan", "1.5s", `${delay}s`), opacity: "var(--knal-dim, .3)" }} />
           ))}
         </g>
       );

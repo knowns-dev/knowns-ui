@@ -2147,6 +2147,7 @@
         "https://ui.knowns.dev/r/avatar.json",
         "https://ui.knowns.dev/r/kbd.json",
         "https://ui.knowns.dev/r/menu.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/popover.json",
         "https://ui.knowns.dev/r/sheet.json",
         "https://ui.knowns.dev/r/tooltip.json"
@@ -3315,9 +3316,10 @@
       "name": "otp-input",
       "type": "registry:ui",
       "title": "OTP input",
-      "description": "One-time code in N slots: paste fills all, auto-advance and backspace, numeric or alphanumeric, masked, error state, onComplete.",
+      "description": "One-time code in N slots: paste fills all, auto-advance and backspace, numeric or alphanumeric, masked, error state, onComplete. Characters drop into place, one focus tint slides to the active slot, and with onVerify the slots merge into one pill that turns green with Verified, or shakes and splits back.",
       "registryDependencies": [
-        "https://ui.knowns.dev/r/knowns-core.json"
+        "https://ui.knowns.dev/r/knowns-core.json",
+        "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [
         {

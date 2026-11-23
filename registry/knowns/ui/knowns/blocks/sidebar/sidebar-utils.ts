@@ -190,3 +190,29 @@ export const BOOT_ATTR = "data-kn-sidebar-boot";
 export function sidebarBootScript(keys: string[]): string {
   return `try{var h=document.documentElement,k=${JSON.stringify(keys)};for(var i=0;i<k.length;i++)if(localStorage.getItem(k[i]+":collapsed")==="true")h.setAttribute("${BOOT_ATTR}",((h.getAttribute("${BOOT_ATTR}")||"")+" "+k[i]).trim())}catch(e){}`;
 }
+
+/* ── Active pill ── */
+
+/** A row's box inside the nav, in the nav's own px. */
+export interface PillBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The pill's rest transform on `box` (it is drawn at the box's size, origin top left). */
+export const pillTransform = (b: PillBox) => `translate(${b.x}px, ${b.y}px)`;
+
+/**
+ * FLIP keyframes that carry the active pill from the row it was on to the new one: it starts drawn over the old row
+ * (translate plus a scale from the new size to the old) and ends at rest on the new row, so only transform moves.
+ * Null when there is nothing to travel (no old row, or the same place and size).
+ */
+export function pillFrames(from: PillBox | null, to: PillBox): { transform: string }[] | null {
+  if (!from || !to.w || !to.h) return null;
+  if (from.x === to.x && from.y === to.y && from.w === to.w && from.h === to.h) return null;
+  const sx = +(from.w / to.w).toFixed(4);
+  const sy = +(from.h / to.h).toFixed(4);
+  return [{ transform: `translate(${from.x}px, ${from.y}px) scale(${sx}, ${sy})` }, { transform: `${pillTransform(to)} scale(1, 1)` }];
+}

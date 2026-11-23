@@ -1,13 +1,23 @@
 "use client";
 /** @registry name="catalog-grid" type="block" title="Catalog grid" description="A catalogue page: category tabs with counts over a grid of thumbnail cards with New and Pro badges, plus a Sketch kit for quiet monochrome thumbnails in one visual language and skeleton placeholders for cards waiting to go live." */
 
-import { createContext, startTransition, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, startTransition, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
 import { Toggle } from "../../toggle-group";
 import { SegmentedControl } from "../../segmented-control";
 import { Input } from "../../input";
-import { CATALOG_TIERS, categoryCounts, countLabel, effectiveMaxLive, filterCatalog, gridColumns, orderCategories, pickLiveRowGroups, posterFor, posterMode, sampleScale, tierCounts, type CatalogTier, type LiveCard, type PosterMode } from "./catalog-utils";
+import { CATALOG_TIERS, categoryCounts, templateDuration, templateShift, countLabel, effectiveMaxLive, filterCatalog, gridColumns, orderCategories, pickLiveRowGroups, posterFor, posterMode, sampleScale, tierCounts, type CatalogTier, type LiveCard, type PosterMode } from "./catalog-utils";
 export { CatalogPlaceholder, type CatalogPlaceholderShape } from "./placeholder";
+
+export interface CatalogShot {
+  light: string;
+  dark?: string;
+  /** What the page looks like, for the image. */
+  alt: string;
+  /** Natural size of the image, so the card reserves its space and knows how far to scroll. */
+  width: number;
+  height: number;
+}
 
 export interface CatalogItem {
   id: string;
@@ -30,6 +40,11 @@ export interface CatalogItem {
   hint?: string;
   /** The drawing: an <img>, an SVG, or a <Sketch> from ./sketch. */
   thumb?: ReactNode;
+  /**
+   * `variant="template"` only: a screenshot of the whole page, as tall as the page is. The card shows its top, and
+   * slowly scrolls it through on hover or focus (not with reduced motion). `dark` is shown when the site is dark.
+   */
+  shot?: CatalogShot;
   /**
    * The poster while the card waits to go live or its preview is still loading, instead of `thumb`, e.g. a
    * <CatalogPlaceholder shape="block" />. Used only where cards go live as they come into view: devices that never go
@@ -83,7 +98,7 @@ export interface CatalogGridProps {
   empty?: ReactNode;
   /**
    * Card size. "card" (default): 2 / 3 / 5 columns. "page": page-sized cards for full-page items such as
-   * templates, 1 / 2 / 3 columns, so a desktop-shaped (16:10) thumbnail reads at a useful size.
+   * templates, 1 / 2 wide columns, so a desktop-shaped (16:10) thumbnail reads at a useful size.
    */
   size?: "card" | "page";
   /**
@@ -121,6 +136,12 @@ export interface CatalogGridProps {
    * count, so a long catalogue reads as a page. Empty sections are dropped.
    */
   layout?: "tabs" | "sections";
+  /**
+   * "card" (default): the thumbnail cards above. "template": big cards for whole products, each a bright shot of the page
+   * that scrolls through on hover, with a name, a one-line purpose (`description`), a Free or Pro badge and a screen
+   * count (`count`). Sets `size="page"` and `countNoun="screen"` unless you pass them.
+   */
+  variant?: "card" | "template";
   /** Link for a section title in "sections" layout, e.g. its category page. */
   sectionHref?: (category: string) => string | undefined;
   className?: string;
@@ -566,6 +587,73 @@ export function CatalogCard({ item, countNoun = "example", onSelect }: { item: C
 }
 
 /**
+ * A template card: a bright shot of the whole page in a 16:10 window, the page's name with a Free or Pro badge, one
+ * line on what it is for and how many screens it has. On hover or focus the shot scrolls slowly through the full page
+ * (transform only, never with reduced motion); at rest it shows the top. The whole card is the link.
+ */
+export function TemplateCard({ item, countNoun = "screen", onSelect }: { item: CatalogItem; countNoun?: string; onSelect?: (item: CatalogItem) => void }) {
+  const count = countLabel(item.count, countNoun);
+  const shot = item.shot;
+  const shift = shot ? templateShift(shot.width, shot.height) : 0;
+  const body = (
+    <>
+      <span
+        data-slot="template-shot"
+        className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl bg-card text-foreground shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent),0_1px_2px_color-mix(in_srgb,var(--foreground)_6%,transparent)]"
+      >
+        {shot ? (
+          <span
+            data-slot="template-scroll"
+            className="knt-scroll absolute inset-x-0 top-0 block w-full will-change-transform"
+            style={{ "--knt-shift": `${shift}%`, "--knt-dur": `${templateDuration(shot.width, shot.height)}ms` } as CSSProperties}
+          >
+            <img src={shot.light} alt={shot.alt} width={shot.width} height={shot.height} loading="lazy" decoding="async" className={cn("block h-auto w-full", shot.dark && "dark:hidden")} />
+            {shot.dark && <img src={shot.dark} alt="" aria-hidden="true" width={shot.width} height={shot.height} loading="lazy" decoding="async" className="hidden h-auto w-full dark:block" />}
+          </span>
+        ) : (
+          <span className={POSTER}>{item.thumb}</span>
+        )}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_6%,transparent)]" />
+      </span>
+      <span className="mt-3 block min-w-0 px-0.5">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 truncate text-[16px] leading-6 font-semibold text-foreground">{item.title}</span>
+          <Badge tone={item.pro ? "pro" : "kind"}>{item.pro ? "Pro" : "Free"}</Badge>
+          {count && <span className="ml-auto flex-none text-[12.5px] leading-5 text-muted-foreground tabular-nums">{count}</span>}
+        </span>
+        {item.description && <span className="mt-0.5 block text-[13.5px] leading-5 text-muted-foreground">{item.description}</span>}
+      </span>
+    </>
+  );
+  const cls = cn("group flex w-full min-w-0 flex-col rounded-2xl text-left", focusRing);
+  return (
+    <>
+      <style>{TEMPLATE_SCROLL_CSS}</style>
+      {item.href ? (
+        <a href={item.href} className={cls} onClick={onSelect ? () => onSelect(item) : undefined}>
+          {body}
+        </a>
+      ) : (
+        <button type="button" className={cls} onClick={() => onSelect?.(item)}>
+          {body}
+        </button>
+      )}
+    </>
+  );
+}
+
+/**
+ * The hover scroll. Private names (--knt-*), transform only. Out is slow and linear (a page being read, a constant
+ * travel); back is the standard 280ms. Reduced motion: the shot stays at the top.
+ */
+export const TEMPLATE_SCROLL_CSS = `
+.knt-scroll{transform:translate3d(0,0,0);transition:transform var(--kn-dur-slow,280ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1))}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+.group:hover .knt-scroll,.group:focus-visible .knt-scroll{transform:translate3d(0,var(--knt-shift),0);transition:transform var(--knt-dur) linear}
+}
+`;
+
+/**
  * A catalogue page: category tabs with counts over a grid of thumbnail cards (2 columns on phones, 3 on
  * tablets, 5 on wide screens), each with New and Pro badges. Bring your own thumbnails, or draw them with
  * the Sketch kit so they share one quiet visual language.
@@ -581,7 +669,7 @@ export function CatalogGrid({
   countNoun,
   onSelect,
   empty,
-  size = "card",
+  size: sizeProp,
   live: liveProp = true,
   maxLive = 12,
   interactive = false,
@@ -595,14 +683,18 @@ export function CatalogGrid({
   onTierChange,
   layout = "tabs",
   sectionHref,
+  variant = "card",
   className,
 }: CatalogGridProps) {
   const narrow = useNarrow();
-  const wantLive = liveProp && items.some((i) => i.preview);
+  const templates = variant === "template";
+  const size = sizeProp ?? (templates ? "page" : "card");
+  const wantLive = liveProp && !templates && items.some((i) => i.preview);
   const { allowed: liveAllowed, known } = useLiveAllowed(wantLive, interactive);
   const mode = posterMode({ enabled: wantLive, hover: liveOn === "hover", known, allowed: liveAllowed });
   const viewCtx = useLiveManager(liveAllowed && liveOn === "view", effectiveMaxLive(maxLive, narrow, interactive));
   const liveCtx = useMemo<LiveCtx | null>(() => (liveAllowed && liveOn === "hover" ? { mode: "hover" } : viewCtx), [liveAllowed, liveOn, viewCtx]);
+  const noun = countNoun ?? (templates ? "screen" : undefined);
   const [own, setOwn] = useState(defaultCategory);
   const [ownQuery, setOwnQuery] = useState("");
   const [ownTier, setOwnTier] = useState<CatalogTier>("all");
@@ -638,7 +730,7 @@ export function CatalogGrid({
     <ul data-size={size} className={gridCls}>
       {list.map((item) => (
         <li key={item.id} className="flex min-w-0">
-          <CatalogCard item={item} countNoun={countNoun} onSelect={onSelect} />
+          {templates ? <TemplateCard item={item} countNoun={noun} onSelect={onSelect} /> : <CatalogCard item={item} countNoun={noun} onSelect={onSelect} />}
         </li>
       ))}
     </ul>

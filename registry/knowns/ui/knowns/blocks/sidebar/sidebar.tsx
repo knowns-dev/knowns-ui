@@ -10,6 +10,7 @@
  * alone say nothing). sidebarBootScript() applies a remembered collapse before the first paint.
  */
 import {
+  Children,
   createContext,
   useCallback,
   useContext,
@@ -25,13 +26,14 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "@/registry/knowns/lib/knowns/utils";
+import { EASE, MOTION as DUR } from "@/registry/knowns/lib/knowns/motion-utils";
 import { Avatar } from "../../avatar";
 import { Kbd } from "../../kbd";
 import { Menu, type MenuItem } from "../../menu";
 import { Popover } from "../../popover";
 import { Sheet } from "../../sheet";
 import { Tooltip } from "../../tooltip";
-import { BOOT_ATTR, ancestorsOf, initialOpen, pathTo, isToggleKey, loadJSON, saveJSON, treeKey, visibleRows, workspaceInitials, type SidebarNode } from "./sidebar-utils";
+import { BOOT_ATTR, ancestorsOf, initialOpen, pathTo, isToggleKey, loadJSON, pillFrames, pillTransform, saveJSON, treeKey, visibleRows, workspaceInitials, type PillBox, type SidebarNode } from "./sidebar-utils";
 
 export { sidebarBootScript } from "./sidebar-utils";
 
@@ -182,15 +184,23 @@ function unboot(key: string) {
 }
 
 /*
- * Motion, all CSS:
- * - the aside switches width at once between 256px and the 56px rail (or 0 when off-canvas) and labels fade, so no layout is animated;
- * (the mobile sheet's slide is the Sheet component's.) Reduced motion: no fade.
+ * Motion, CSS:
+ * - the aside's width eases between 256px and the 56px rail (or 0 off-canvas) over --kn-dur, in and out: one element a
+ *   person toggles a few times a day (a named exception to transform-only, see tests/motion-guard.test.ts);
+ * - opening, the labels fade in and slide 10px into place one after another down each list (a step of a quarter of
+ *   --kn-dur-fast, at most three steps, so four rows at most move apart); closing, they all fade out together, fast;
+ * - the mobile sheet's slide is the Sheet component's. Reduced motion: all of it is instant.
  */
 const MOTION = `
 [data-kn-sidebar-reveal]:not([data-shown]){display:none}
-[data-kn-sidebar-fade]{transition:opacity var(--kn-dur-fast,120ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1))}
+[data-kn-sidebar-aside]{transition:width var(--kn-dur,180ms) var(--kn-ease-inout,cubic-bezier(.65,0,.35,1))}
+[data-kn-sidebar-fade]{transition:opacity var(--kn-dur-fast,120ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1)),translate var(--kn-dur-fast,120ms) var(--kn-ease-out,cubic-bezier(.22,1,.36,1))}
+[data-kn-sidebar-aside][data-expanded] [data-kn-sidebar-fade]{transition-duration:var(--kn-dur,180ms);transition-delay:calc(var(--kn-sb-i,0) * var(--kn-dur-fast,120ms) / 4)}
+[data-kn-sidebar-list]>:nth-child(2){--kn-sb-i:1}
+[data-kn-sidebar-list]>:nth-child(3){--kn-sb-i:2}
+[data-kn-sidebar-list]>:nth-child(n+4){--kn-sb-i:3}
 @media (prefers-reduced-motion:reduce){
-  [data-kn-sidebar-fade]{transition:none}
+  [data-kn-sidebar-fade],[data-kn-sidebar-aside]{transition:none}
 }
 `;
 
@@ -243,6 +253,7 @@ export function Sidebar({ children, label = "Sidebar", collapsible = true, width
           data-below={s.mobileBelow}
           data-key={s.storageKey}
           data-rail={rail || undefined}
+          data-expanded={(!rail && !off) || undefined}
           data-offcanvas={offcanvas || undefined}
           data-collapsed={off || undefined}
           aria-label={landmark ? label : undefined}
@@ -323,11 +334,25 @@ function SidebarSheet({ children, label, header, className }: { children: ReactN
   );
 }
 
-/** Top of the sidebar: a logo, a SidebarSwitcher, a SidebarSearch. */
-export function SidebarHeader({ children, className }: { children: ReactNode; className?: string }) {
-  const { closeInline } = useContext(SurfaceCtx);
-  // In a sheet without a header row, the first row (a switcher, a logo) leaves room for the close button.
-  return <div className={cn("flex shrink-0 flex-col gap-2 p-2", closeInline && "[&>:first-child]:max-w-[calc(100%-3rem)]", className)}>{children}</div>;
+/**
+ * Top of the sidebar: a logo, a SidebarSwitcher, a SidebarSearch. `toggle` puts a SidebarTrigger at the end of the first
+ * row (pass `{ collapse, expand }` to name it by state); in the rail that first row gives way and the toggle takes its
+ * place. The mobile sheet has its own close button, so there it shows no toggle.
+ */
+export function SidebarHeader({ children, className, toggle }: { children: ReactNode; className?: string; toggle?: boolean | { collapse: string; expand: string } }) {
+  const { closeInline, sheet } = useContext(SurfaceCtx);
+  const cls = cn("flex shrink-0 flex-col gap-2 p-2", closeInline && "[&>:first-child]:max-w-[calc(100%-3rem)]", className);
+  if (!toggle || sheet) return <div className={cls}>{children}</div>;
+  const [first, ...rest] = Children.toArray(children);
+  return (
+    <div className={cls}>
+      <div className="flex min-w-0 items-center gap-1">
+        <div className="min-w-0 flex-1 group-data-[rail]/sb:hidden">{first}</div>
+        <SidebarTrigger labels={typeof toggle === "object" ? toggle : { collapse: "Collapse sidebar", expand: "Expand sidebar" }} className="group-data-[rail]/sb:mx-auto" />
+      </div>
+      {rest}
+    </div>
+  );
 }
 
 /** The scrolling middle. */
@@ -352,15 +377,20 @@ export function SidebarInset({ children, className }: { children: ReactNode; cla
 }
 
 /**
- * Panel-left: a rounded frame with a tinted left panel and its divider, so it reads at 16px. `opens` adds a
- * chevron pointing out of the panel (panel-left-open), for the button that brings a hidden sidebar back.
+ * Panel-left: a rounded frame with a tinted left panel and its divider, so it reads at 16px. `chevron` adds a chevron in
+ * the panel: "open" points out of it (panel-left-open, bring the sidebar back), "close" points in. Between the two it
+ * turns 180 degrees, so the toggle shows which way the sidebar will go.
  */
-const PanelGlyph = ({ opens }: { opens?: boolean }) => (
+const PanelGlyph = ({ chevron }: { chevron?: "open" | "close" }) => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-4 shrink-0">
     <path d="M4 2.75h2.25v10.5H4A2.25 2.25 0 0 1 1.75 11V5A2.25 2.25 0 0 1 4 2.75z" fill="currentColor" fillOpacity="0.28" stroke="none" />
     <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2.25" />
     <path d="M6.25 2.75v10.5" />
-    {opens && <path d="M9.5 6.25 11.25 8 9.5 9.75" />}
+    {chevron && (
+      <g data-chevron={chevron} style={{ transformOrigin: "10.375px 8px" }} className={cn("transition-transform duration-(--kn-dur) ease-(--kn-ease-inout) motion-reduce:transition-none", chevron === "close" && "rotate-180")}>
+        <path d="M9.5 6.25 11.25 8 9.5 9.75" />
+      </g>
+    )}
   </svg>
 );
 
@@ -426,7 +456,7 @@ export function SidebarTrigger({ className, label = "Toggle sidebar", labels, lo
                 : "size-8 rounded-[9px] text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          <PanelGlyph opens={!s.isMobile && s.collapsed} />
+          <PanelGlyph chevron={(s.isMobile ? !s.mobileOpen : s.collapsed) ? "open" : "close"} />
         </button>
       </span>
     </Tooltip>
@@ -438,7 +468,7 @@ export function SidebarTrigger({ className, label = "Toggle sidebar", labels, lo
 /** Text that fades out in the rail (the row keeps its icon). */
 function Fade({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span data-kn-sidebar-fade className={cn("min-w-0 group-data-[rail]/sb:pointer-events-none group-data-[rail]/sb:opacity-0", className)}>
+    <span data-kn-sidebar-fade className={cn("min-w-0 group-data-[rail]/sb:pointer-events-none group-data-[rail]/sb:-translate-x-2.5 group-data-[rail]/sb:opacity-0", className)}>
       {children}
     </span>
   );
@@ -523,7 +553,7 @@ export function SidebarGroup({
         </div>
       )}
       <Collapse id={id} open={shown}>
-        <div className="flex flex-col gap-px">{children}</div>
+        <div data-kn-sidebar-list className="flex flex-col gap-px">{children}</div>
       </Collapse>
     </div>
   );
@@ -687,6 +717,75 @@ export function SidebarNav({ items, active, onSelect, linkAs, storageKey, label 
   };
   const rowProps = (id: string) => ({ tabIndex: id === tabStop ? 0 : -1, onKeyDown: onKey(id), onFocus: () => setFocus(id), "data-kn-sidebar-row": id });
 
+  // One active pill behind the rows: it travels to the picked row instead of the row's own fill jumping (FLIP, transform
+  // only). It follows folds and the rail's resize without travelling, and hides when the row is inside a closed branch.
+  const pill = useRef<HTMLSpanElement>(null);
+  const placed = useRef<PillBox | null>(null);
+  const travel = useRef<Animation | null>(null);
+  const shown = useRef(false);
+  const [pillOn, setPillOn] = useState(false);
+  const place = useCallback(
+    (animate: boolean) => {
+      const nav = root.current;
+      const el = pill.current;
+      if (!nav || !el) return;
+      const row = active ? nav.querySelector<HTMLElement>(`[data-kn-sidebar-row="${CSS.escape(active)}"]`) : null;
+      if (!row || row.closest("[inert]")) {
+        placed.current = null;
+        el.style.opacity = "0";
+        return;
+      }
+      let x = 0;
+      let y = 0;
+      for (let n: HTMLElement | null = row; n && n !== nav; n = n.offsetParent as HTMLElement | null) {
+        x += n.offsetLeft;
+        y += n.offsetTop;
+      }
+      const box: PillBox = { x, y, w: row.offsetWidth, h: row.offsetHeight };
+      const frames = animate ? pillFrames(placed.current, box) : null;
+      placed.current = box;
+      el.style.width = `${box.w}px`;
+      el.style.height = `${box.h}px`;
+      el.style.transform = pillTransform(box);
+      // The first placement replaces the row's own fill in the same frame: no fade, nothing plays on first render.
+      if (!shown.current) {
+        el.style.transition = "none";
+        requestAnimationFrame(() => (el.style.transition = ""));
+        shown.current = true;
+      }
+      el.style.opacity = "1";
+      if (travel.current) {
+        travel.current.finished?.catch(() => {});
+        travel.current.cancel();
+        travel.current = null;
+      }
+      const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (frames && !still && typeof el.animate === "function") travel.current = el.animate(frames, { duration: DUR.base, easing: EASE.inOut });
+      setPillOn(true);
+    },
+    [active],
+  );
+  const placeRef = useRef(place);
+  placeRef.current = place;
+  useIsoLayoutEffect(() => place(true), [place, open]);
+  useIsoLayoutEffect(() => placeRef.current(false), [rail]);
+  // One observer for the nav's life: a fold or the rail's resize moves the row, and the pill follows without travelling.
+  // Its first call (on observe) is skipped, so it never cancels a travel that has just started.
+  useEffect(() => {
+    const nav = root.current;
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    let first = true;
+    const ro = new ResizeObserver(() => {
+      if (first) {
+        first = false;
+        return;
+      }
+      placeRef.current(false);
+    });
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []);
+
   const render = (nodes: SidebarNode[], depth: number): ReactNode =>
     nodes.map((n) => {
       const branch = Boolean(n.children?.length);
@@ -748,8 +847,9 @@ export function SidebarNav({ items, active, onSelect, linkAs, storageKey, label 
     });
 
   return (
-    <nav ref={root} aria-label={label} className={cn("flex flex-col", className)}>
-      <ul className="flex flex-col gap-px">{render(items, 0)}</ul>
+    <nav ref={root} aria-label={label} data-pill={pillOn || undefined} className={cn("relative flex flex-col", pillOn && "[&_[aria-current=page]]:bg-transparent!", className)}>
+      <span ref={pill} aria-hidden="true" data-slot="sidebar-pill" className="pointer-events-none absolute top-0 left-0 origin-top-left rounded-[9px] bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] opacity-0 transition-opacity duration-(--kn-dur-fast) ease-(--kn-ease-out) motion-reduce:transition-none forced-colors:hidden" />
+      <ul data-kn-sidebar-list className="flex flex-col gap-px">{render(items, 0)}</ul>
     </nav>
   );
 }

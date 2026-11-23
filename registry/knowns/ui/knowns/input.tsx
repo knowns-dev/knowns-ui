@@ -55,11 +55,16 @@ function useMergedRef<T>(...refs: (Ref<T> | undefined)[]): RefCallback<T> {
   }, refs);
 }
 
+/**
+ * The reveal toggle's eye. `off` (the password is showing) draws the slash in from its top end, and the pupil is full;
+ * hidden, the slash draws back out and the pupil shrinks. Stroke offset and transform only, --kn-dur ease-out; nothing
+ * plays on first render, reduced motion is instant.
+ */
 const Eye = ({ off }: { off?: boolean }) => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-off={off || undefined}>
     <path d="M1.75 8S4 3.75 8 3.75 14.25 8 14.25 8 12 12.25 8 12.25 1.75 8 1.75 8z" />
-    <circle cx="8" cy="8" r="2" />
-    {off && <path d="M2.5 2.5l11 11" />}
+    <circle cx="8" cy="8" r="2" data-slot="eye-pupil" style={{ transformOrigin: "8px 8px" }} className={cn("transition-transform duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none", !off && "scale-[0.6]")} />
+    <path d="M2.5 2.5l11 11" pathLength={1} data-slot="eye-slash" strokeDasharray="1" style={{ strokeDashoffset: off ? 0 : 1 }} className="transition-[stroke-dashoffset] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none" />
   </svg>
 );
 
