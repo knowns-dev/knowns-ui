@@ -15,6 +15,7 @@
  */
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { cn, focusRing } from "@/registry/knowns/lib/knowns/utils";
+import { prefersReducedMotion } from "@/registry/knowns/lib/knowns/motion";
 import { Button } from "../../button";
 import { Kbd } from "../../kbd";
 import { ThemeToggle } from "../../theme-toggle";
@@ -22,6 +23,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 import {
   activeEntry,
   entryKind,
+  inPageHash,
   isActiveHref,
   isScrolled,
   lockScroll,
@@ -231,6 +233,7 @@ export function SiteHeader({
   const [drawer, setDrawer] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLUListElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const active = activeEntry(nav, currentHref);
   const minimal = variant === "minimal";
@@ -243,6 +246,45 @@ export function SiteHeader({
     read();
     target.addEventListener("scroll", read, { passive: true });
     return () => target.removeEventListener("scroll", read);
+  }, [sticky, scrollRoot]);
+
+  // In-page links: a click on any link to an id on this page (the header's, a footer's, a CTA's) scrolls there smoothly
+  // instead of jumping, updates the address without a jump, and moves focus to the target. The sticky header's height
+  // is kept clear with scroll-padding-top on the scroller, so a title never lands under it (a page loaded with a hash
+  // too). Reduced motion: an instant scroll. A click a component already handled (defaultPrevented), a modified click
+  // or a link to a missing id is left alone.
+  useEffect(() => {
+    const scroller = scrollRoot ?? document.documentElement;
+    const header = headerRef.current;
+    let mine = "";
+    const pad = () => {
+      if (!sticky || !header) return;
+      mine = `${header.offsetHeight}px`;
+      scroller.style.scrollPaddingTop = mine;
+    };
+    pad();
+    const ro = typeof ResizeObserver !== "undefined" && header ? new ResizeObserver(pad) : null;
+    if (ro && header) ro.observe(header);
+    const onClick = (e: globalThis.MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const link = (e.target as Element | null)?.closest?.("a[href]");
+      if (!link || (link as HTMLAnchorElement).target === "_blank") return;
+      const id = inPageHash(link.getAttribute("href") ?? "", window.location);
+      const el = id ? document.getElementById(id) : null;
+      if (!id || !el) return;
+      e.preventDefault();
+      // After this frame, so a mobile drawer the click closed has released the page scroll first.
+      requestAnimationFrame(() => el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" }));
+      if (window.location.hash !== `#${id}`) history.pushState(null, "", `#${encodeURIComponent(id)}`);
+      if (!el.hasAttribute("tabindex") && !/^(a|button|input|select|textarea)$/i.test(el.tagName)) el.setAttribute("tabindex", "-1");
+      el.focus({ preventScroll: true });
+    };
+    document.addEventListener("click", onClick);
+    return () => {
+      document.removeEventListener("click", onClick);
+      ro?.disconnect();
+      if (mine && scroller.style.scrollPaddingTop === mine) scroller.style.scrollPaddingTop = "";
+    };
   }, [sticky, scrollRoot]);
 
   // Close an open panel on an outside press.
@@ -402,6 +444,7 @@ export function SiteHeader({
 
   return (
     <header
+      ref={headerRef}
       data-slot="site-header"
       data-scrolled={scrolled || undefined}
       className={cn(

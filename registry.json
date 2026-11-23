@@ -2263,6 +2263,7 @@
         "https://ui.knowns.dev/r/accordion.json",
         "https://ui.knowns.dev/r/button.json",
         "https://ui.knowns.dev/r/kbd.json",
+        "https://ui.knowns.dev/r/motion.json",
         "https://ui.knowns.dev/r/theme-toggle.json"
       ],
       "files": [

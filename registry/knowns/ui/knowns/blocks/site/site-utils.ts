@@ -215,3 +215,24 @@ export function lockScroll(doc: Document = document) {
     root.style.paddingRight = prev.paddingRight;
   };
 }
+
+/**
+ * The element id an in-page link points at, or null when the link leaves the page. "#features" and "/landing#features"
+ * on /landing both give "features"; "#" alone, "#!", another path, another origin or a link without a hash give null.
+ * `here` is the current location (path and search), without the hash.
+ */
+export function inPageHash(href: string, here: { origin: string; pathname: string; search?: string }): string | null {
+  const hash = href.indexOf("#");
+  if (hash < 0) return null;
+  const id = decodeURIComponent(href.slice(hash + 1));
+  if (!id || id.startsWith("!")) return null;
+  if (hash === 0) return id;
+  let url: URL;
+  try {
+    url = new URL(href, `${here.origin}${here.pathname}${here.search ?? ""}`);
+  } catch {
+    return null;
+  }
+  const same = url.origin === here.origin && url.pathname.replace(/\/+$/, "") === here.pathname.replace(/\/+$/, "") && url.search === (here.search ?? "");
+  return same ? id : null;
+}
