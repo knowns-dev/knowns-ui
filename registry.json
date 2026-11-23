@@ -4096,16 +4096,22 @@
       "name": "tooltip",
       "type": "registry:ui",
       "title": "Tooltip",
-      "description": "Short hint on hover or focus, four sides, optional description; portaled above everything.",
+      "description": "Short hint on hover or focus, four sides, optional description; portaled above everything. TooltipGroup shares one tooltip across a toolbar that glides between triggers, with an optional hover highlight that glides with it.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
-        "https://ui.knowns.dev/r/knowns-floating.json"
+        "https://ui.knowns.dev/r/knowns-floating.json",
+        "https://ui.knowns.dev/r/motion.json"
       ],
       "files": [
         {
           "path": "registry/knowns/ui/knowns/tooltip.tsx",
           "type": "registry:ui",
           "target": "components/ui/knowns/tooltip.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/tooltip-utils.ts",
+          "type": "registry:ui",
+          "target": "components/ui/knowns/tooltip-utils.ts"
         }
       ]
     },
