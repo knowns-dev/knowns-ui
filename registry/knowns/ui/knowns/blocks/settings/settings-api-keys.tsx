@@ -17,6 +17,7 @@ import { Button } from "../../button";
 import { CheckboxGroup } from "../../checkbox";
 import { Dialog } from "../../dialog";
 import { Field, Input } from "../../input";
+import { HoldButton } from "../../hold-button/hold-button";
 import { Menu } from "../../menu";
 import { SegmentedControl } from "../../segmented-control";
 import { Select } from "../../select";
@@ -26,11 +27,8 @@ import {
   ENV_LABEL,
   HOLD_MS,
   filterKeysByEnv,
-  holdPhase,
-  holdProgress,
   idleDays,
   idleLabel,
-  isHoldKey,
   keyEnv,
   keyMenuItems,
   keyNameError,
@@ -629,7 +627,7 @@ function RevokeStrip({ target, holdMs, onCancel, onRevoke }: { target: ApiKey; h
           )
         ) : (
           <>
-            <HoldButton duration={holdMs} busy={busy} onComplete={run} describedBy={hintId}>
+            <HoldButton size="sm" duration={holdMs} onComplete={run} describedBy={hintId} busyLabel="Revoking...">
               Hold to revoke
             </HoldButton>
             <Button size="sm" variant="ghost" onClick={onCancel} disabled={busy}>
@@ -649,67 +647,6 @@ function RevokeStrip({ target, holdMs, onCancel, onRevoke }: { target: ApiKey; h
         </p>
       )}
     </div>
-  );
-}
-
-/** A button that fires `onComplete` only after a full press-and-hold. Progress fills left to right; releasing resets it. */
-function HoldButton({ duration, busy, onComplete, describedBy, children }: { duration: number; busy?: boolean; onComplete: () => void | Promise<void>; describedBy?: string; children: string }) {
-  const [progress, setProgress] = useState(0);
-  const startedAt = useRef<number | null>(null);
-  const raf = useRef(0);
-  const stop = () => {
-    cancelAnimationFrame(raf.current);
-    startedAt.current = null;
-    setProgress(0);
-  };
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
-  const begin = () => {
-    if (busy || startedAt.current !== null) return;
-    startedAt.current = performance.now();
-    const tick = () => {
-      const at = startedAt.current;
-      if (at === null) return;
-      const now = performance.now();
-      setProgress(holdProgress(now - at, duration));
-      if (holdPhase(at, now, duration) === "done") {
-        startedAt.current = null;
-        void Promise.resolve(onComplete()).finally(() => setProgress(0));
-        return;
-      }
-      raf.current = requestAnimationFrame(tick);
-    };
-    raf.current = requestAnimationFrame(tick);
-  };
-  return (
-    <button
-      type="button"
-      aria-describedby={describedBy}
-      aria-busy={busy || undefined}
-      disabled={busy}
-      className={cn(
-        "relative inline-flex h-8 touch-manipulation select-none items-center justify-center overflow-hidden rounded-[9px] shadow-[0_0_0_1px_rgb(220_38_38/0.4)] px-3 text-[13px] font-medium text-red-700 dark:shadow-[0_0_0_1px_rgb(248_113_113/0.4)] dark:text-red-300",
-        "active:scale-[0.97] transition-transform duration-(--kn-dur-fast) ease-(--kn-ease-out) disabled:opacity-70",
-        focusRing,
-      )}
-      onPointerDown={(e) => {
-        if (e.button !== 0) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        begin();
-      }}
-      onPointerUp={stop}
-      onPointerCancel={stop}
-      onLostPointerCapture={stop}
-      onContextMenu={(e) => e.preventDefault()}
-      onKeyDown={(e) => {
-        if (e.key === " " || e.key === "Enter") e.preventDefault();
-        if (isHoldKey(e)) begin();
-      }}
-      onKeyUp={(e) => (e.key === " " || e.key === "Enter") && stop()}
-      onBlur={stop}
-    >
-      <span aria-hidden="true" className="absolute inset-0 origin-left bg-red-500/25 dark:bg-red-400/25" style={{ transform: `scaleX(${progress})` }} />
-      <span className="relative">{busy ? "Revoking..." : children}</span>
-    </button>
   );
 }
 

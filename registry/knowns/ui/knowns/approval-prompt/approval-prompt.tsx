@@ -94,7 +94,9 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
         <article
           key={a.id}
           aria-label={`${nameOf(a.actor)} asks: ${a.title}`}
-          className="overflow-hidden rounded-2xl border border-amber-500/40 bg-card text-card-foreground shadow-xs [box-shadow:0_0_0_4px_color-mix(in_srgb,#f59e0b_8%,transparent)]"
+          // A plain card: the default border and shadow, no coloured outline, glow or side stripe. The amber clock on the
+          // avatar is the one quiet "waiting on you" signal; the buttons say the rest.
+          className="overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-xs"
         >
           <div className="flex items-start gap-3 px-4 pb-3 pt-3.5">
             <div className="relative">
@@ -141,22 +143,20 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
       ))}
 
       {resolved.length > 0 && (
-        <ul className="divide-y rounded-2xl border bg-card text-[13px] text-card-foreground">
+        <ul className="@container divide-y rounded-2xl border bg-card text-[13px] text-card-foreground">
           {resolved.map((a) => (
-            <li key={a.id} className="flex items-center gap-2.5 px-4 py-2.5">
+            // Narrow (under 22rem): the title on its own line, the status and time under it. Wide: one row.
+            <li key={a.id} className="flex items-start gap-2.5 px-4 py-2.5 @[22rem]:items-center">
               {avatar(a.actor, "size-6")}
-              <span className="min-w-0 flex-1 leading-snug">
-                <span className="font-medium">{nameOf(a.actor)}</span> <span className="text-muted-foreground">· {a.title}</span>
-              </span>
-              <span
-                className={cn(
-                  "flex-none text-xs font-medium",
-                  a.decision === "approved" ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300",
-                )}
-              >
-                {a.decision === "approved" ? "Approved" : "Denied"}
-              </span>
-              <span className="flex-none text-xs tabular-nums text-muted-foreground">{ago(now - (a.decidedAt ?? now))}</span>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 @[22rem]:flex-row @[22rem]:items-center @[22rem]:gap-2.5">
+                <span className="min-w-0 leading-snug @[22rem]:flex-1">
+                  <span className="font-medium">{nameOf(a.actor)}</span> <span className="text-muted-foreground">· {a.title}</span>
+                </span>
+                <span className="flex flex-none items-center gap-2.5 text-xs">
+                  <span className={cn("font-medium", a.decision === "approved" ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300")}>{a.decision === "approved" ? "Approved" : "Denied"}</span>
+                  <span className="tabular-nums text-muted-foreground">{ago(now - (a.decidedAt ?? now))}</span>
+                </span>
+              </div>
             </li>
           ))}
         </ul>

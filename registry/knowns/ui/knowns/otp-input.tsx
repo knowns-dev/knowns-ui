@@ -66,6 +66,17 @@ export function mergeOffsets(lefts: number[], widths: number[]): { dx: number[];
 
 export type OtpStatus = "idle" | "verifying" | "verified" | "error";
 
+/**
+ * The merged pill's look per status. Verified is a plain filled tint, with no ring and no shadow (owner, 2026-11-23: no
+ * glow outlines); the label is emerald-700 (emerald-300 in dark) on it, 4.5:1 or better. Error keeps its red ring, since a
+ * miss should be loud.
+ */
+export function otpPillTone(status: OtpStatus): string {
+  if (status === "verified") return "bg-emerald-500/15";
+  if (status === "error") return "bg-red-500/10 shadow-[0_0_0_1.5px_rgb(239_68_68/0.6)]";
+  return "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]";
+}
+
 /* ── Component ── */
 
 export interface OtpInputProps {
@@ -118,7 +129,7 @@ const SLOT = {
  * - one focus tint slides to the active slot (--kn-dur-fast, ease-out) instead of each slot lighting up on its own;
  * - a caret blinks in the empty active slot, like the native one;
  * - verifying, the slots slide together and square their inner corners over one pill (--kn-dur, ease-out); verified,
- *   the pill tints green and the check and label rise in; an error shakes it once (--kn-dur-slow) and splits it back.
+ *   the pill tints green (a plain fill, no ring) and the check and label rise in; an error shakes it once (--kn-dur-slow) and splits it back.
  */
 const CSS = `
 @keyframes kn-otp-drop{from{opacity:0;translate:0 -6px}}
@@ -317,7 +328,7 @@ export function OtpInput({
             className={cn(
               "pointer-events-none absolute top-0 transition-[opacity,background-color,box-shadow] duration-(--kn-dur) ease-(--kn-ease-out) motion-reduce:transition-none",
               merged ? "opacity-100" : "opacity-0",
-              verified ? "bg-emerald-500/12 shadow-[0_0_0_1.5px_rgb(16_185_129/0.55)]" : status === "error" ? "bg-red-500/10 shadow-[0_0_0_1.5px_rgb(239_68_68/0.6)]" : "bg-card shadow-[0_0_0_1px_color-mix(in_srgb,var(--foreground)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--muted)_35%,var(--card))]",
+              otpPillTone(status),
             )}
             style={{ left: m.left, width: m.width, height: geo!.h, borderRadius: radius }}
           />

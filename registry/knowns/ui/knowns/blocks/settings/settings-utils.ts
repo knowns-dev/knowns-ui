@@ -113,20 +113,8 @@ export function sparkPoints(values: number[], w: number, h: number, pad = 2): st
   return values.map((v, i) => `${r(pad + (i / (values.length - 1)) * (w - pad * 2))},${r(span === 0 ? h / 2 : h - pad - ((v - min) / span) * (h - pad * 2))}`).join(" ");
 }
 
-/* Hold to revoke: the press must last HOLD_MS before it counts. */
-
-export const HOLD_MS = 1200;
-
-/** 0..1 of the hold done after `elapsed` ms. */
-export const holdProgress = (elapsed: number, duration = HOLD_MS) => (duration <= 0 ? 1 : Math.min(1, Math.max(0, elapsed / duration)));
-
-export type HoldPhase = "idle" | "holding" | "done";
-
-/** The phase of a hold that started at `startedAt` (null = not pressed). Done once progress reaches 1. */
-export const holdPhase = (startedAt: number | null, now: number, duration = HOLD_MS): HoldPhase => (startedAt === null ? "idle" : holdProgress(now - startedAt, duration) >= 1 ? "done" : "holding");
-
-/** Keys that start a keyboard hold. A repeat event from holding the key down is not a new press. */
-export const isHoldKey = (e: { key: string; repeat?: boolean }) => (e.key === " " || e.key === "Enter") && !e.repeat;
+/* Hold to revoke: the hold helpers live with HoldButton; re-exported here so existing imports keep working. */
+export { HOLD_MS, holdPhase, holdProgress, isHoldKey, type HoldPhase } from "../../hold-button/hold-button-utils";
 
 /** Key names: trimmed, 1 to 60 characters. Null when fine. */
 export function keyNameError(raw: string, taken: string[] = []): string | null {
