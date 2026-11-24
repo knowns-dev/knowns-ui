@@ -41,6 +41,9 @@ function ago(ms: number) {
   return m < 60 ? `${m}m ago` : `${Math.round(m / 60)}h ago`;
 }
 
+/** On a touch screen the decision buttons are 44px tall, a full finger, one step past Button's own coarse-pointer height. */
+const TOUCH = "pointer-coarse:h-11 pointer-coarse:px-4";
+
 /** Requests waiting for a human decision, newest first, with Approve / Deny. */
 export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsProp, onDecision, onEdit, history = 3, empty = null, live = true, pressed, renderDetail, className }: ApprovalPromptProps) {
   const snap = useAgentSnapshot(run);
@@ -127,15 +130,15 @@ export function ApprovalPrompt({ run, approvals: approvalsProp, actors: actorsPr
                 <CodeBlock code={a.detail} label={false} copy={false} wrapToggle={false} defaultWrap maxHeight={192} aria-label={`${a.title}, details`} className="mx-4 mb-3 rounded-lg [&_pre]:py-2.5! [&_pre]:text-[12px]! [&_[data-line]]:px-3!" />
               )}
           <div className="flex justify-end gap-2 border-t bg-muted/30 px-4 py-2.5">
-            <Button variant="secondary" data-pressed={pressed === "denied" || undefined} className="data-[pressed=true]:scale-[.97]" onClick={() => decide(a, "denied")}>
+            <Button variant="secondary" data-pressed={pressed === "denied" || undefined} className={cn(TOUCH, "data-[pressed=true]:scale-[.97]")} onClick={() => decide(a, "denied")}>
               Deny
             </Button>
             {onEdit && (
-              <Button variant="ghost" onClick={() => onEdit(a)}>
+              <Button variant="ghost" className={TOUCH} onClick={() => onEdit(a)}>
                 Edit
               </Button>
             )}
-            <Button data-pressed={pressed === "approved" || undefined} className="data-[pressed=true]:scale-[.97]" onClick={() => decide(a, "approved")}>
+            <Button data-pressed={pressed === "approved" || undefined} className={cn(TOUCH, "data-[pressed=true]:scale-[.97]")} onClick={() => decide(a, "approved")}>
               Approve
             </Button>
           </div>

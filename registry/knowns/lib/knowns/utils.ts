@@ -89,3 +89,18 @@ export async function writeClipboard(text: string): Promise<void> {
   }
   if (!ok) throw new Error("clipboard unavailable");
 }
+
+/** Theme variables for a palette: names like "--background" mapped to CSS colours. */
+export type PaletteVars = Record<`--${string}`, string>;
+
+/**
+ * Scoped CSS for a page with its own palette (a landing template): `light` on `[data-palette="<id>"]`, `dark` under a
+ * dark host (`.dark` on an ancestor) or with `data-theme="dark"` on the root; `data-theme="light"` keeps it light inside
+ * a dark host. Render it in a <style> next to the root, give the root `data-palette`, and add the `dark` class to the
+ * root for an explicit dark theme so Tailwind's `dark:` variants inside follow.
+ */
+export function paletteCss(id: string, light: PaletteVars, dark: PaletteVars): string {
+  const decl = (v: PaletteVars, scheme: "light" | "dark") => `${Object.entries(v).map(([k, val]) => `${k}:${val}`).join(";")};color-scheme:${scheme}`;
+  const at = `[data-palette="${id}"]`;
+  return `${at}{${decl(light, "light")}}:where(.dark) ${at}:not([data-theme="light"]),${at}[data-theme="dark"]{${decl(dark, "dark")}}`;
+}

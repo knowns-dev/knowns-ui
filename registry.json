@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "knowns-ui",
-  "homepage": "https://ui.knowns.dev",
+  "homepage": "https://knowns-ui.com",
   "items": [
     {
       "name": "home-link",
@@ -1644,6 +1644,27 @@
       ]
     },
     {
+      "name": "display-heading",
+      "type": "registry:block",
+      "title": "Display heading",
+      "description": "A display headline at 72 to 96px with tight tracking and one accent device (a marker, one coloured word or a coloured full stop), plus an intro layout with the headline on the left and the paragraph and buttons on the right.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/display-heading.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/display-heading.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/display-heading-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/display-heading-utils.ts"
+        }
+      ]
+    },
+    {
       "name": "faq-section",
       "type": "registry:block",
       "title": "FAQ section",
@@ -1791,6 +1812,27 @@
           "path": "registry/knowns/ui/knowns/blocks/marketing/footer-parts.tsx",
           "type": "registry:component",
           "target": "components/ui/knowns/blocks/marketing/footer-parts.tsx"
+        }
+      ]
+    },
+    {
+      "name": "frame",
+      "type": "registry:block",
+      "title": "Frame",
+      "description": "The structure of a crafted landing page: a centred frame with hairline rules down both sides, sections cut by hairline rows, hairline-boxed grid cells that share their borders, tick marks where rules cross and one full-bleed band that breaks the frame.",
+      "registryDependencies": [
+        "https://ui.knowns.dev/r/knowns-core.json"
+      ],
+      "files": [
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/frame.tsx",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/frame.tsx"
+        },
+        {
+          "path": "registry/knowns/ui/knowns/blocks/marketing/frame-utils.ts",
+          "type": "registry:component",
+          "target": "components/ui/knowns/blocks/marketing/frame-utils.ts"
         }
       ]
     },
@@ -2383,13 +2425,16 @@
       "name": "template-waitlist-landing",
       "type": "registry:block",
       "title": "Waitlist landing page",
-      "description": "A one-screen launch page: an announcement pill, a headline over an aurora, a countdown to the launch day, an email field that returns the person's place on the list, and a line of faces and a count as proof.",
+      "description": "A launch page that shows the product working: a finished call turns into a summary and a follow-up beside the headline (thinking, a streamed answer, message actions), then an email field that returns the person's place on the list, a countdown to the launch day and a line of faces as proof.",
       "registryDependencies": [
         "https://ui.knowns.dev/r/knowns-core.json",
-        "https://ui.knowns.dev/r/announcement-pill.json",
+        "https://ui.knowns.dev/r/ai-answer.json",
         "https://ui.knowns.dev/r/aurora.json",
         "https://ui.knowns.dev/r/avatar.json",
-        "https://ui.knowns.dev/r/newsletter.json"
+        "https://ui.knowns.dev/r/message-actions.json",
+        "https://ui.knowns.dev/r/newsletter.json",
+        "https://ui.knowns.dev/r/site-header.json",
+        "https://ui.knowns.dev/r/thinking-state.json"
       ],
       "files": [
         {

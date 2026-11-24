@@ -10,7 +10,7 @@
 The UI kit for AI products.<br>
 Every screen your AI product needs: agent views and chat, app screens, marketing sections and backgrounds. React and Tailwind, copied into your repo with the shadcn CLI.
 
-[Docs](https://ui.knowns.dev/docs/introduction) · [Components](https://ui.knowns.dev/components) · [Blocks](https://ui.knowns.dev/blocks) · [Pricing](https://ui.knowns.dev/pricing)
+[Docs](https://knowns-ui.com/docs/introduction) · [Components](https://knowns-ui.com/components) · [Blocks](https://knowns-ui.com/blocks) · [Pricing](https://knowns-ui.com/pricing)
 
 </div>
 
@@ -74,19 +74,19 @@ Registry dependencies (the core types, the run store, icons) come along automati
 
 ## What's in Free
 
-166 components and blocks (197 registry items with their dependencies), MIT licensed. Newest first:
+166 components and blocks (199 registry items with their dependencies), MIT licensed. Newest first:
 
 - **Agent views (15):** Agent Lanes, Tool Call Card, Agent Loader, Trace Waterfall, JSON Inspector, Agent Graph, Approval Prompt, Call Overlay, Live Activity, Context Window, Agent Monitor, Agent Fleet, and 3 more.
 - **Chat (6):** Chat Composer, Thinking State, Conversation List, AI Answer, Message Actions, Ghost Text.
 - **Components (71):** Action Button, Avatar, Hold Button, Marquee, Animated Number, Calendar, Date Picker, Date Range Picker, Carousel, Context Menu, Data Table, Drawer, and 59 more.
-- **Blocks (48):** Bento Section, Deal Pipeline, Hero, Record Header, Record Timeline, Waitlist Landing, Announcement Pill, Answer Pad, Area Trend Card, Class Roster, Eval Score, Feature Trio, and 36 more.
+- **Blocks (48):** Bento Section, Deal Pipeline, Frame, Display Heading, Hero, Record Header, Record Timeline, Announcement Pill, Answer Pad, Area Trend Card, Class Roster, Eval Score, and 36 more.
 - **Motion and illustrations (26):** Context Memory, Rain Field, Dot Spotlight, Signal Lines, Aurora, Node Field, Perspective Grid, Grid Pattern, Dither Field, Flickering Grid, Cube Field, Gradient Floor, and 14 more.
 
-Browse them all, with live examples and the install command for each: [Components](https://ui.knowns.dev/components) · [Blocks](https://ui.knowns.dev/blocks).
+Browse them all, with live examples and the install command for each: [Components](https://knowns-ui.com/components) · [Blocks](https://knowns-ui.com/blocks).
 
 ## Pro
 
-[Knowns UI Pro](https://ui.knowns.dev/pricing) adds, on the same run store:
+[Knowns UI Pro](https://knowns-ui.com/pricing) adds, on the same run store:
 
 - **AI whiteboard:** a board a person and an AI work on together. Ask a question on the board and the AI cursor builds linked guide panels beside it (Explain, Answer, Hint, Steps).
 - **AI CMS:** a content table, a post editor with AI help, an SEO panel, a media library with search by description, and an editorial desk template.
@@ -98,7 +98,7 @@ Browse them all, with live examples and the install command for each: [Component
 
 ## Using with AI
 
-Install the agent skill with `npx knowns-ui@latest skill`: it teaches your coding agent the kit's visual rules (type, spacing, colour, motion) so new screens match. Connect it to the Knowns UI MCP server (`https://ui.knowns.dev/mcp`), point it at one component's JSON (`https://ui.knowns.dev/r/<name>.json`), or give it the docs as text (`https://ui.knowns.dev/llms.txt`). Setup for Claude Code, Cursor, VS Code and Codex: https://ui.knowns.dev/docs/ai-and-mcp
+Install the agent skill with `npx knowns-ui@latest skill`: it teaches your coding agent the kit's visual rules (type, spacing, colour, motion) so new screens match. Connect it to the Knowns UI MCP server (`https://knowns-ui.com/mcp`), point it at one component's JSON (`https://ui.knowns.dev/r/<name>.json`), or give it the docs as text (`https://knowns-ui.com/llms.txt`). Setup for Claude Code, Cursor, VS Code and Codex: https://knowns-ui.com/docs/ai-and-mcp
 
 ## Contributing
 
